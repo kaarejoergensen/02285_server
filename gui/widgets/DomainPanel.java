@@ -3,19 +3,13 @@ package gui.widgets;
 import domain.Domain;
 import server.Server;
 
-import javax.swing.JPanel;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.image.VolatileImage;
 
-import static java.awt.RenderingHints.KEY_ANTIALIASING;
-import static java.awt.RenderingHints.KEY_TEXT_ANTIALIASING;
-import static java.awt.RenderingHints.VALUE_ANTIALIAS_ON;
-import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON;
+import static java.awt.RenderingHints.*;
 
-public class DomainPanel
-        extends JPanel
-{
+public class DomainPanel extends JPanel {
     /**
      * TODO: Benchmark this against BufferedImage version when domain actually does some real rendering.
      */
@@ -38,8 +32,7 @@ public class DomainPanel
     private boolean shutdown = false;
     private boolean signal = false;
 
-    public DomainPanel(Domain domain)
-    {
+    public DomainPanel(Domain domain) {
         super();
         this.setOpaque(true);
 
@@ -50,12 +43,11 @@ public class DomainPanel
          * can wait for rendering to finish before painting the buffers to screen if newly rendered.
          */
         this.domainRenderingThread = new Thread(this::renderLoop,
-                                                "DomainRenderingThread-" + DomainPanel.renderingThreadCount++);
+                "DomainRenderingThread-" + DomainPanel.renderingThreadCount++);
     }
 
     @Override
-    public void paint(Graphics g)
-    {
+    public void paint(Graphics g) {
         g.drawImage(this.stateTransitionBuffer, 0, 0, null);
     }
 
@@ -64,39 +56,30 @@ public class DomainPanel
      * <p>
      * IMPORTANT: Must only be called by the EDT, after waiting on waitRenderFinish().
      */
-    public void repaintIfNewlyRendered()
-    {
-        if (this.isNewlyRendered)
-        {
+    public void repaintIfNewlyRendered() {
+        if (this.isNewlyRendered) {
             this.paintImmediately(0, 0, this.getWidth(), this.getHeight());
         }
     }
 
-    public void startRenderingThread()
-    {
+    public void startRenderingThread() {
         this.domainRenderingThread.start();
     }
 
     /**
      * Signals the rendering thread for this DomainPanel to shut down, and waits for it to join.
      */
-    public void shutdownRenderingThread()
-    {
-        synchronized (this)
-        {
+    public void shutdownRenderingThread() {
+        synchronized (this) {
             this.shutdown = true;
             this.signal = true;
             this.notifyAll();
         }
-        while (true)
-        {
-            try
-            {
+        while (true) {
+            try {
                 this.domainRenderingThread.join();
                 return;
-            }
-            catch (InterruptedException ignored)
-            {
+            } catch (InterruptedException ignored) {
             }
         }
     }
@@ -104,8 +87,7 @@ public class DomainPanel
     /**
      * Signals the rendering thread for this DomainPanel to render the given state interpolation.
      */
-    public synchronized void signalRenderBegin(double stateInterpolation)
-    {
+    public synchronized void signalRenderBegin(double stateInterpolation) {
         this.validateBuffers();
         this.currentStateInterpolation = stateInterpolation;
         this.signal = true;
@@ -115,16 +97,11 @@ public class DomainPanel
     /**
      * Wait for this DomainPanel's rendering thread to finish rendering after the last call to signalRenderBegin().
      */
-    public synchronized void waitRenderFinish()
-    {
-        while (this.signal)
-        {
-            try
-            {
+    public synchronized void waitRenderFinish() {
+        while (this.signal) {
+            try {
                 this.wait();
-            }
-            catch (InterruptedException ignored)
-            {
+            } catch (InterruptedException ignored) {
             }
         }
     }
@@ -150,25 +127,22 @@ public class DomainPanel
      * It doesn't really matter if the GC is a stop-the-world kind, but otherwise might make sense.
      */
 //    static int counter = 0;
-    private void validateBuffers()
-    {
+    private void validateBuffers() {
 //        ++counter;
 
         // Don't reallocate if size is 0 or less in any dimension, or we are not visible.
-        if (this.getWidth() <= 0 || this.getHeight() <= 0 || !this.isVisible())
-        {
+        if (this.getWidth() <= 0 || this.getHeight() <= 0 || !this.isVisible()) {
             return;
         }
 
         // Reallocate if this is the first render (buffers are null).
-        if (this.domainBackgroundBuffer == null)
-        {
+        if (this.domainBackgroundBuffer == null) {
             this.domainBackgroundBuffer = this.getGraphicsConfiguration()
-                                              .createCompatibleVolatileImage(this.getWidth(), this.getHeight());
+                    .createCompatibleVolatileImage(this.getWidth(), this.getHeight());
             this.stateBackgroundBuffer = this.getGraphicsConfiguration()
-                                             .createCompatibleVolatileImage(this.getWidth(), this.getHeight());
+                    .createCompatibleVolatileImage(this.getWidth(), this.getHeight());
             this.stateTransitionBuffer = this.getGraphicsConfiguration()
-                                             .createCompatibleVolatileImage(this.getWidth(), this.getHeight());
+                    .createCompatibleVolatileImage(this.getWidth(), this.getHeight());
             this.domainBackgroundGraphics = this.domainBackgroundBuffer.createGraphics();
             this.stateBackgroundGraphics = this.stateBackgroundBuffer.createGraphics();
             this.stateTransitionGraphics = this.stateTransitionBuffer.createGraphics();
@@ -204,11 +178,10 @@ public class DomainPanel
         // display device).
         // Reallocate if the panel has changed size.
         if (status1 == VolatileImage.IMAGE_INCOMPATIBLE ||
-            status2 == VolatileImage.IMAGE_INCOMPATIBLE ||
-            status3 == VolatileImage.IMAGE_INCOMPATIBLE ||
-            this.getWidth() != this.domainBackgroundBuffer.getWidth() ||
-            this.getHeight() != this.domainBackgroundBuffer.getHeight())
-        {
+                status2 == VolatileImage.IMAGE_INCOMPATIBLE ||
+                status3 == VolatileImage.IMAGE_INCOMPATIBLE ||
+                this.getWidth() != this.domainBackgroundBuffer.getWidth() ||
+                this.getHeight() != this.domainBackgroundBuffer.getHeight()) {
             this.domainBackgroundGraphics.dispose();
             this.stateBackgroundGraphics.dispose();
             this.stateTransitionGraphics.dispose();
@@ -216,11 +189,11 @@ public class DomainPanel
             this.stateBackgroundBuffer.flush();
             this.stateTransitionBuffer.flush();
             this.domainBackgroundBuffer = this.getGraphicsConfiguration()
-                                              .createCompatibleVolatileImage(this.getWidth(), this.getHeight());
+                    .createCompatibleVolatileImage(this.getWidth(), this.getHeight());
             this.stateBackgroundBuffer = this.getGraphicsConfiguration()
-                                             .createCompatibleVolatileImage(this.getWidth(), this.getHeight());
+                    .createCompatibleVolatileImage(this.getWidth(), this.getHeight());
             this.stateTransitionBuffer = this.getGraphicsConfiguration()
-                                             .createCompatibleVolatileImage(this.getWidth(), this.getHeight());
+                    .createCompatibleVolatileImage(this.getWidth(), this.getHeight());
             this.domainBackgroundGraphics = this.domainBackgroundBuffer.createGraphics();
             this.stateBackgroundGraphics = this.stateBackgroundBuffer.createGraphics();
             this.stateTransitionGraphics = this.stateTransitionBuffer.createGraphics();
@@ -252,8 +225,7 @@ public class DomainPanel
         // We have to revalidate if we just reallocated the buffers, otherwise we will miss a frame.
         // (Because .validate() does not restore an image if it returns IMAGE_INCOMPATIBLE.)
         // Since we have just checked compatibility with the graphics configuration, we will skip that check here.
-        if (revalidate)
-        {
+        if (revalidate) {
             status1 = this.domainBackgroundBuffer.validate(null);
             status2 = this.stateBackgroundBuffer.validate(null);
             status3 = this.stateTransitionBuffer.validate(null);
@@ -263,9 +235,8 @@ public class DomainPanel
 
         // If buffers were restored, require a full render.
         if (status1 == VolatileImage.IMAGE_RESTORED ||
-            status2 == VolatileImage.IMAGE_RESTORED ||
-            status3 == VolatileImage.IMAGE_RESTORED)
-        {
+                status2 == VolatileImage.IMAGE_RESTORED ||
+                status3 == VolatileImage.IMAGE_RESTORED) {
             this.requireFullRender = true;
 
 //            System.out.println("" + counter + ": Buffers restored.");
@@ -276,8 +247,7 @@ public class DomainPanel
      * Assumes the buffers are valid and of appropriate sizes.
      * Call validateBuffers() first to validate and restore/reallocate buffers as necessary.
      */
-    private void renderDomainBackground()
-    {
+    private void renderDomainBackground() {
         this.domain.renderDomainBackground(
                 this.domainBackgroundGraphics,
                 this.domainBackgroundBuffer.getWidth(),
@@ -287,8 +257,7 @@ public class DomainPanel
     /**
      * Assumes the domainBackgroundBuffer is up-to-date. Call renderDomainBackground() first if not.
      */
-    private void renderStateBackground(int stateID)
-    {
+    private void renderStateBackground(int stateID) {
         this.stateBackgroundGraphics.drawImage(this.domainBackgroundBuffer, 0, 0, null);
         this.domain.renderStateBackground(this.stateBackgroundGraphics, stateID);
     }
@@ -296,8 +265,7 @@ public class DomainPanel
     /**
      * Assumes the stateBackgroundBuffer is up-to-date. Call renderStateBackground() first if not.
      */
-    private void renderStateTransition(int stateID, double interpolation)
-    {
+    private void renderStateTransition(int stateID, double interpolation) {
         this.stateTransitionGraphics.drawImage(this.stateBackgroundBuffer, 0, 0, null);
         this.domain.renderStateTransition(this.stateTransitionGraphics, stateID, interpolation);
     }
@@ -305,16 +273,11 @@ public class DomainPanel
     /**
      * The rendering thread waits here until signalRenderBegin() is called.
      */
-    private synchronized void waitRenderBegin()
-    {
-        while (!this.signal)
-        {
-            try
-            {
+    private synchronized void waitRenderBegin() {
+        while (!this.signal) {
+            try {
                 this.wait();
-            }
-            catch (InterruptedException ignored)
-            {
+            } catch (InterruptedException ignored) {
             }
         }
     }
@@ -322,8 +285,7 @@ public class DomainPanel
     /**
      * The rendering thread calls this to release the EDT waiting on waitRenderFinish().
      */
-    private synchronized void signalRenderFinish()
-    {
+    private synchronized void signalRenderFinish() {
         this.signal = false;
         this.notifyAll();
     }
@@ -332,44 +294,34 @@ public class DomainPanel
      * The rendering loop for this DomainPanel's rendering thread.
      * The thread is started in the constructur, and runs until shutdown is signaled.
      */
-    private void renderLoop()
-    {
+    private void renderLoop() {
         Server.printDebug("Thread started.");
 
-        while (true)
-        {
+        while (true) {
             // The EDT's call to signalDomainRender() has a happens-before relationship with this thread's call below.
             this.waitRenderBegin();
 
-            if (this.shutdown)
-            {
+            if (this.shutdown) {
                 break;
             }
 
             // Render only as much as is necessary.
             this.isNewlyRendered = true;
             int curState = (int) this.currentStateInterpolation;
-            if (this.requireFullRender)
-            {
+            if (this.requireFullRender) {
 //                System.out.println("Full render.");
                 this.renderDomainBackground();
                 this.renderStateBackground(curState);
                 this.renderStateTransition(curState, this.currentStateInterpolation - curState);
                 this.requireFullRender = false;
-            }
-            else if ((int) this.lastStateInterpolation != curState)
-            {
+            } else if ((int) this.lastStateInterpolation != curState) {
 //                System.out.println("State render.");
                 this.renderStateBackground(curState);
                 this.renderStateTransition(curState, this.currentStateInterpolation - curState);
-            }
-            else if (this.lastStateInterpolation != this.currentStateInterpolation)
-            {
+            } else if (this.lastStateInterpolation != this.currentStateInterpolation) {
 //                System.out.println("Interpolation render.");
                 this.renderStateTransition(curState, this.currentStateInterpolation - curState);
-            }
-            else
-            {
+            } else {
                 this.isNewlyRendered = false;
             }
 

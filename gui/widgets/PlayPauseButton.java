@@ -1,39 +1,28 @@
 package gui.widgets;
 
-import javax.swing.JComponent;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics;
-import java.awt.Polygon;
-import java.awt.RenderingHints;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 
-public class PlayPauseButton
-        extends JComponent
-{
+public class PlayPauseButton extends JComponent {
     private BufferedImage playIcon;
     private BufferedImage pauseIcon;
     private BufferedImage currentIcon;
 
-    public PlayPauseButton(Runnable action)
-    {
+    public PlayPauseButton(Runnable action) {
         super();
         this.setOpaque(true);
 
-        this.addMouseListener(new MouseAdapter()
-        {
+        this.addMouseListener(new MouseAdapter() {
             @Override
-            public void mouseReleased(MouseEvent e)
-            {
-                if (e.getButton() != MouseEvent.BUTTON1)
-                {
+            public void mouseReleased(MouseEvent e) {
+                if (e.getButton() != MouseEvent.BUTTON1) {
                     return;
                 }
                 JComponent source = (JComponent) e.getSource();
-                if (0 <= e.getX() && e.getX() <= source.getWidth() && 0 <= e.getY() && e.getY() <= source.getHeight())
-                {
+                if (0 <= e.getX() && e.getX() <= source.getWidth() && 0 <= e.getY() && e.getY() <= source.getHeight()) {
                     action.run();
                 }
             }
@@ -41,13 +30,11 @@ public class PlayPauseButton
     }
 
     @Override
-    public void paint(Graphics g)
-    {
+    public void paint(Graphics g) {
         g.drawImage(this.currentIcon, 0, 0, null);
     }
 
-    public void render(int width, int height, int margin, Color backgroundColor, Color foregroundColor)
-    {
+    public void render(int width, int height, int margin, Color backgroundColor, Color foregroundColor) {
         // Fixed size.
         this.setMinimumSize(new Dimension(width, height));
         this.setPreferredSize(new Dimension(width, height));
@@ -90,8 +77,7 @@ public class PlayPauseButton
         this.currentIcon = this.playIcon;
     }
 
-    public void setCurrentIcon(boolean isPlaying)
-    {
+    public void setCurrentIcon(boolean isPlaying) {
         this.currentIcon = isPlaying ? this.pauseIcon : this.playIcon;
         this.repaint();
     }

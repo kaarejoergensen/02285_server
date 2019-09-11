@@ -13,8 +13,7 @@ package client;
  * - The timeout is infinite.
  * - The Protocol Thread holds a lock on the Timeout object.
  */
-public class Timeout
-{
+public class Timeout {
     private volatile boolean expired = false;
     private volatile boolean stopped = false;
     private long startNS;
@@ -23,8 +22,7 @@ public class Timeout
     /**
      * Constructs a Timeout object with an infinite timeout period.
      */
-    public Timeout()
-    {
+    public Timeout() {
         this.startNS = 0;
         this.timeoutNS = 0;
     }
@@ -35,10 +33,8 @@ public class Timeout
      * Otherwise, it resets the timeout and returns true.
      * If timeoutNS == 0, then the new timeout period is infinite.
      */
-    public synchronized boolean reset(long startNS, long timeoutNS)
-    {
-        if (this.expired || this.stopped)
-        {
+    public synchronized boolean reset(long startNS, long timeoutNS) {
+        if (this.expired || this.stopped) {
             return false;
         }
 
@@ -55,15 +51,12 @@ public class Timeout
      * Otherwise, it adds incrementNS to the current timeout period and returns true.
      * If the current timeout period is infinite, then this does nothing and returns true.
      */
-    public synchronized boolean increment(long incrementNS)
-    {
-        if (this.expired || this.stopped)
-        {
+    public synchronized boolean increment(long incrementNS) {
+        if (this.expired || this.stopped) {
             return false;
         }
 
-        if (this.timeoutNS != 0)
-        {
+        if (this.timeoutNS != 0) {
             this.timeoutNS += incrementNS;
             this.notifyAll();
         }
@@ -77,15 +70,12 @@ public class Timeout
      * Otherwise, it subtracts decrementNS from the current timeout period and returns true.
      * If the current timeout period is infinite, then this does nothing and returns true.
      */
-    public synchronized boolean decrement(long decrementNS)
-    {
-        if (this.expired || this.stopped)
-        {
+    public synchronized boolean decrement(long decrementNS) {
+        if (this.expired || this.stopped) {
             return false;
         }
 
-        if (this.timeoutNS != 0)
-        {
+        if (this.timeoutNS != 0) {
             this.timeoutNS -= decrementNS;
             this.notifyAll();
         }
@@ -105,10 +95,8 @@ public class Timeout
      * If the timeout expires before this is called, then the Client Thread will assume that the Protocol Thread is
      * blocked indefinitely and proceed to forcibly terminate the client process before joining on the Protocol Thread.
      */
-    public synchronized boolean stop()
-    {
-        if (this.expired || this.stopped)
-        {
+    public synchronized boolean stop() {
+        if (this.expired || this.stopped) {
             return false;
         }
 
@@ -126,10 +114,8 @@ public class Timeout
      * This function is called from the Main Thread to signal timeout when the GUI was closed before
      * the normal time out expired and we want to time the client out immediately to shut down.
      */
-    public synchronized boolean expire()
-    {
-        if (this.expired || this.stopped)
-        {
+    public synchronized boolean expire() {
+        if (this.expired || this.stopped) {
             return false;
         }
 
@@ -143,8 +129,7 @@ public class Timeout
      * Returns true if the timeout was stopped before it expired.
      * Returns false otherwise.
      */
-    public boolean isStopped()
-    {
+    public boolean isStopped() {
         return this.stopped;
     }
 
@@ -152,8 +137,7 @@ public class Timeout
      * Returns true if the timeout expired before it was stopped.
      * Returns false otherwise.
      */
-    public boolean isExpired()
-    {
+    public boolean isExpired() {
         return this.expired;
     }
 
@@ -161,36 +145,28 @@ public class Timeout
      * The Client Thread waits here for the timeout to expire or the timeout to be stopped.
      * This function returns true if the timeout expired, and false if the timeout was stopped before expiration.
      */
-    public synchronized boolean waitTimeout()
-    {
-        if (this.stopped || this.expired)
-        {
+    public synchronized boolean waitTimeout() {
+        if (this.stopped || this.expired) {
             return this.expired;
         }
 
         long remainingNS = (this.timeoutNS == 0 ? 0 : this.getRemainingNS());
-        while (!this.stopped && !this.expired && (this.timeoutNS == 0 || remainingNS > 0))
-        {
-            try
-            {
+        while (!this.stopped && !this.expired && (this.timeoutNS == 0 || remainingNS > 0)) {
+            try {
                 this.wait((remainingNS + 999_999L) / 1_000_000L); // Round up to next millisecond.
-            }
-            catch (InterruptedException ignored)
-            {
+            } catch (InterruptedException ignored) {
             }
             remainingNS = (this.timeoutNS == 0 ? 0 : this.getRemainingNS());
         }
 
-        if (!this.stopped)
-        {
+        if (!this.stopped) {
             this.expired = true;
         }
 
         return this.expired;
     }
 
-    private synchronized long getRemainingNS()
-    {
+    private synchronized long getRemainingNS() {
         return this.timeoutNS - (System.nanoTime() - this.startNS);
     }
 }

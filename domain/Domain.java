@@ -3,7 +3,7 @@ package domain;
 import client.Timeout;
 import domain.gridworld.hospital.HospitalDomain;
 
-import java.awt.Graphics2D;
+import java.awt.*;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -17,8 +17,7 @@ import java.nio.file.Path;
 /**
  * FIXME: Check up on all thread safety.
  */
-public interface Domain
-{
+public interface Domain {
     /**
      * Loads a Domain from the given file.
      * The type of domain is parsed from the initial segment of the file interpreted as ASCII text.
@@ -30,16 +29,13 @@ public interface Domain
      * Make sure the getSupportedDomains() function returns the corresponding domain types that this function supports.
      * <p>
      * TODO: This function may be called from the Main thread as well as the EDT threads if we implement live
-     *       change of levels/clients/logs).
+     * change of levels/clients/logs).
      */
-    static Domain loadLevel(Path levelFile)
-    throws IOException, ParseException
-    {
+    static Domain loadLevel(Path levelFile) throws IOException, ParseException {
         String domainType = Domain.getDomainType(levelFile);
         Domain domain;
         //noinspection SwitchStatementWithTooFewBranches
-        switch (domainType)
-        {
+        switch (domainType) {
             case "hospital":
                 domain = new HospitalDomain(levelFile, false);
                 break;
@@ -53,13 +49,11 @@ public interface Domain
      * TODO: Documentation.
      */
     static Domain loadReplay(Path replayFile)
-    throws IOException, ParseException
-    {
+            throws IOException, ParseException {
         String domainType = Domain.getDomainType(replayFile);
         Domain domain;
         //noinspection SwitchStatementWithTooFewBranches
-        switch (domainType)
-        {
+        switch (domainType) {
             case "hospital":
                 domain = new HospitalDomain(replayFile, true);
                 break;
@@ -69,8 +63,7 @@ public interface Domain
         return domain;
     }
 
-    static String[] getSupportedDomains()
-    {
+    static String[] getSupportedDomains() {
         return new String[]{"hospital"};
     }
 
@@ -79,47 +72,38 @@ public interface Domain
      * Throws an exception if the file is not ASCII or does not adhere to the domain file specification.
      */
     private static String getDomainType(Path domainFile)
-    throws IOException, ParseException
-    {
-        try (var domainStream = Files.newInputStream(domainFile))
-        {
+            throws IOException, ParseException {
+        try (var domainStream = Files.newInputStream(domainFile)) {
             byte[] buffer = domainStream.readNBytes(128);
 
             int lf1 = 0;
-            while (lf1 < buffer.length && buffer[lf1] != '\n')
-            {
+            while (lf1 < buffer.length && buffer[lf1] != '\n') {
                 ++lf1;
             }
             int lf2 = lf1 + 1;
-            while (lf2 < buffer.length && buffer[lf2] != '\n')
-            {
+            while (lf2 < buffer.length && buffer[lf2] != '\n') {
                 ++lf2;
             }
 
-            if (lf1 == buffer.length || lf2 == buffer.length)
-            {
+            if (lf1 == buffer.length || lf2 == buffer.length) {
                 throw new ParseException("Invalid level file header. Can not parse initial segment as two lines of " +
-                                         "ASCII.");
+                        "ASCII.");
             }
 
             var asciiDecoder = StandardCharsets.US_ASCII.newDecoder();
-            try
-            {
+            try {
                 int strlen = (lf1 > 0 && buffer[lf1 - 1] == '\r') ? lf1 - 1 : lf1;
                 String domainHeader = asciiDecoder.decode(ByteBuffer.wrap(buffer, 0, strlen)).toString();
-                if (!domainHeader.equals("#domain"))
-                {
+                if (!domainHeader.equals("#domain")) {
                     throw new ParseException(String.format("Invalid level file header. Expected '#domain' header, but" +
-                                                           " got '%s'.", domainHeader), 1);
+                            " got '%s'.", domainHeader), 1);
                 }
 
                 strlen = (lf2 > 0 && buffer[lf2 - 1] == '\r') ? lf2 - lf1 - 2 : lf2 - lf1 - 1;
                 return asciiDecoder.decode(ByteBuffer.wrap(buffer, lf1 + 1, strlen)).toString();
-            }
-            catch (MalformedInputException e)
-            {
+            } catch (MalformedInputException e) {
                 throw new ParseException("Invalid level file header. Can not parse initial segment as two lines of " +
-                                         "ASCII.");
+                        "ASCII.");
             }
         }
     }

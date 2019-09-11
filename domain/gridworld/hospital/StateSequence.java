@@ -3,7 +3,7 @@ package domain.gridworld.hospital;
 import domain.ParseException;
 import server.Server;
 
-import java.awt.Color;
+import java.awt.*;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.nio.charset.MalformedInputException;
@@ -32,8 +32,7 @@ import java.util.BitSet;
  * StateSequence objects are thread-safe to write only from a single thread (the protocol thread), but can be read
  * from any number threads (e.g. the GUI threads). The state is up-to-date with calls to getNumStates().
  */
-class StateSequence
-{
+class StateSequence {
     /**
      * Bookkeeping for writing/reading logs.
      */
@@ -127,122 +126,103 @@ class StateSequence
     /**
      * Parses the given level file to construct a new state sequence.
      * FIXME: With the current parsing, we can not know if the level file ends with a newline or not, but we should
-     *        require that it does. Right now this is simply patched when sending the level to clients, but we should
-     *        rather reject the level as invalid.
-     *        Fixing this may require us to do more decoding ourselves?
-     *
+     * require that it does. Right now this is simply patched when sending the level to clients, but we should
+     * rather reject the level as invalid.
+     * Fixing this may require us to do more decoding ourselves?
+     * <p>
      * TODO: Stricter level specification; do not allow superfluous spaces states.
-     *       Initial and goal states must match exactly, with only agents+boxes as difference.
+     * Initial and goal states must match exactly, with only agents+boxes as difference.
      */
     StateSequence(Path domainFile, boolean isLogFile)
-    throws IOException, ParseException
-    {
+            throws IOException, ParseException {
         var tStart = System.nanoTime();
         try (LineNumberReader levelReader = new LineNumberReader(Files.newBufferedReader(domainFile,
-                                                                                         StandardCharsets.US_ASCII)))
-        {
-            try
-            {
+                StandardCharsets.US_ASCII))) {
+            try {
                 // Skip the domain type lines.
                 levelReader.readLine();
                 levelReader.readLine();
 
                 String line = levelReader.readLine();
-                if (line == null || !line.equals("#levelname"))
-                {
+                if (line == null || !line.equals("#levelname")) {
                     throw new ParseException("Expected beginning of level name section (#levelname).",
-                                             levelReader.getLineNumber());
+                            levelReader.getLineNumber());
                 }
                 line = this.parseNameSection(levelReader);
 
-                if (line == null || !line.equals("#colors"))
-                {
+                if (line == null || !line.equals("#colors")) {
                     throw new ParseException("Expected beginning of color section (#colors).",
-                                             levelReader.getLineNumber());
+                            levelReader.getLineNumber());
                 }
                 line = this.parseColorsSection(levelReader);
 
-                if (!line.equals("#initial"))
-                {
+                if (!line.equals("#initial")) {
                     throw new ParseException("Expected beginning of initial state section (#initial).",
-                                             levelReader.getLineNumber());
+                            levelReader.getLineNumber());
                 }
                 line = this.parseInitialSection(levelReader);
 
-                if (!line.equals("#goal"))
-                {
+                if (!line.equals("#goal")) {
                     throw new ParseException("Expected beginning of goal state section (#goal).",
-                                             levelReader.getLineNumber());
+                            levelReader.getLineNumber());
                 }
                 line = this.parseGoalSection(levelReader);
 
                 // Initial and goal states loaded; check that states are legal.
                 this.checkObjectsEnclosedInWalls();
 
-                if (!line.stripTrailing().equalsIgnoreCase("#end"))
-                {
+                if (!line.stripTrailing().equalsIgnoreCase("#end")) {
                     throw new ParseException("Expected end section (#end).", levelReader.getLineNumber());
                 }
                 line = parseEndSection(levelReader);
 
                 // If this is a log file, then parse additional sections.
-                if (isLogFile)
-                {
+                if (isLogFile) {
                     // Parse client name.
-                    if (!line.stripTrailing().equalsIgnoreCase("#clientname"))
-                    {
+                    if (!line.stripTrailing().equalsIgnoreCase("#clientname")) {
                         throw new ParseException("Expected client name section (#clientname).",
-                                                 levelReader.getLineNumber());
+                                levelReader.getLineNumber());
                     }
                     line = parseClientNameSection(levelReader);
 
                     // Parse and simulate actions.
-                    if (!line.stripTrailing().equalsIgnoreCase("#actions"))
-                    {
+                    if (!line.stripTrailing().equalsIgnoreCase("#actions")) {
                         throw new ParseException("Expected actions section (#actions).", levelReader.getLineNumber());
                     }
                     line = parseActionsSection(levelReader);
 
-                    if (!line.stripTrailing().equalsIgnoreCase("#end"))
-                    {
+                    if (!line.stripTrailing().equalsIgnoreCase("#end")) {
                         throw new ParseException("Expected end section (#end).", levelReader.getLineNumber());
                     }
                     line = parseEndSection(levelReader);
 
                     // Parse summary to check if it is consistent with simulation.
-                    if (!line.stripTrailing().equalsIgnoreCase("#solved"))
-                    {
+                    if (!line.stripTrailing().equalsIgnoreCase("#solved")) {
                         throw new ParseException("Expected solved section (#solved).", levelReader.getLineNumber());
                     }
                     line = parseSolvedSection(levelReader);
 
-                    if (!line.stripTrailing().equalsIgnoreCase("#numactions"))
-                    {
+                    if (!line.stripTrailing().equalsIgnoreCase("#numactions")) {
                         throw new ParseException("Expected numactions section (#numactions).", levelReader.getLineNumber());
                     }
                     line = parseNumActionsSection(levelReader);
 
-                    if (!line.stripTrailing().equalsIgnoreCase("#time"))
-                    {
+                    if (!line.stripTrailing().equalsIgnoreCase("#time")) {
                         throw new ParseException("Expected time section (#time).", levelReader.getLineNumber());
                     }
                     line = parseTimeSection(levelReader);
 
-                    if (!line.stripTrailing().equalsIgnoreCase("#end"))
-                    {
+                    if (!line.stripTrailing().equalsIgnoreCase("#end")) {
                         throw new ParseException("Expected end section (#end).", levelReader.getLineNumber());
                     }
                     line = parseEndSection(levelReader);
                 }
 
-                if (line != null)
-                {
+                if (line != null) {
                     throw new ParseException("Expected no more content after end section.",
-                                             levelReader.getLineNumber());
+                            levelReader.getLineNumber());
                 }
-            }
-            catch (MalformedInputException e)
-            {
+            } catch (MalformedInputException e) {
                 throw new ParseException("Level file content not valid ASCII.", levelReader.getLineNumber());
             }
         }
@@ -255,33 +235,27 @@ class StateSequence
         this.numStates = this.numStates;
     }
 
-    private class LocationStack
-    {
+    private class LocationStack {
         private int size;
         private short[] rows;
         private short[] cols;
 
-        LocationStack(int initialCapacity)
-        {
+        LocationStack(int initialCapacity) {
             this.size = 0;
             this.rows = new short[initialCapacity];
             this.cols = new short[initialCapacity];
         }
 
-        int size()
-        {
+        int size() {
             return this.size;
         }
 
-        void clear()
-        {
+        void clear() {
             this.size = 0;
         }
 
-        void push(short row, short col)
-        {
-            if (this.size == this.rows.length)
-            {
+        void push(short row, short col) {
+            if (this.size == this.rows.length) {
                 this.rows = Arrays.copyOf(this.rows, this.rows.length * 2);
                 this.cols = Arrays.copyOf(this.cols, this.cols.length * 2);
             }
@@ -290,18 +264,15 @@ class StateSequence
             ++this.size;
         }
 
-        short topRow()
-        {
+        short topRow() {
             return this.rows[this.size - 1];
         }
 
-        short topCol()
-        {
+        short topCol() {
             return this.cols[this.size - 1];
         }
 
-        void pop()
-        {
+        void pop() {
             --this.size;
         }
     }
@@ -310,54 +281,46 @@ class StateSequence
      * Verifies that every object (agent, agent goal, box, and box goal) are in areas enclosed by walls.
      */
     private void checkObjectsEnclosedInWalls()
-    throws ParseException
-    {
+            throws ParseException {
         State initialState = this.states[0];
         LocationStack stack = new LocationStack(1024);
         BitSet visitedCells = new BitSet(this.numRows * this.numCols);
 
-        for (byte a = 0; a < this.numAgents; ++a)
-        {
+        for (byte a = 0; a < this.numAgents; ++a) {
             short agentRow = initialState.agentRows[a];
             short agentCol = initialState.agentCols[a];
-            if (!this.isContainedInWalls(agentRow, agentCol, visitedCells, stack))
-            {
+            if (!this.isContainedInWalls(agentRow, agentCol, visitedCells, stack)) {
                 throw new ParseException(String.format("Agent '%s' is not in an area enclosed by walls.",
-                                                       (char) (a + '0')));
+                        (char) (a + '0')));
             }
 
             short agentGoalRow = this.agentGoalRows[a];
             short agentGoalCol = this.agentGoalCols[a];
-            if (agentGoalRow != -1 && !this.isContainedInWalls(agentGoalRow, agentGoalCol, visitedCells, stack))
-            {
+            if (agentGoalRow != -1 && !this.isContainedInWalls(agentGoalRow, agentGoalCol, visitedCells, stack)) {
                 throw new ParseException(String.format("Agent '%s's goal cell is not in an area enclosed by walls.",
-                                                       (char) (a + '0')));
+                        (char) (a + '0')));
             }
         }
 
-        for (int b = 0; b < this.numBoxes; ++b)
-        {
+        for (int b = 0; b < this.numBoxes; ++b) {
             short boxRow = initialState.boxRows[b];
             short boxCol = initialState.boxCols[b];
-            if (!this.isContainedInWalls(boxRow, boxCol, visitedCells, stack))
-            {
+            if (!this.isContainedInWalls(boxRow, boxCol, visitedCells, stack)) {
                 throw new ParseException(String.format("Box '%s' at (%d, %d) is not in an area enclosed by walls.",
-                                                       (char) (this.boxLetters[b] + 'A'),
-                                                       boxRow,
-                                                       boxCol));
+                        (char) (this.boxLetters[b] + 'A'),
+                        boxRow,
+                        boxCol));
             }
         }
 
-        for (int b = 0; b < this.numBoxGoals; ++b)
-        {
+        for (int b = 0; b < this.numBoxGoals; ++b) {
             short boxGoalRow = this.boxGoalRows[b];
             short boxGoalCol = this.boxGoalCols[b];
-            if (!this.isContainedInWalls(boxGoalRow, boxGoalCol, visitedCells, stack))
-            {
+            if (!this.isContainedInWalls(boxGoalRow, boxGoalCol, visitedCells, stack)) {
                 throw new ParseException(String.format("Box goal '%s' at (%d, %d) is not in an area enclosed by walls.",
-                                                       (char) (this.boxLetters[b] + 'A'),
-                                                       boxGoalRow,
-                                                       boxGoalCol));
+                        (char) (this.boxLetters[b] + 'A'),
+                        boxGoalRow,
+                        boxGoalCol));
             }
         }
 
@@ -366,14 +329,12 @@ class StateSequence
         this.walls.or(visitedCells);
     }
 
-    private boolean isContainedInWalls(short startRow, short startCol, BitSet visitedCells, LocationStack stack)
-    {
+    private boolean isContainedInWalls(short startRow, short startCol, BitSet visitedCells, LocationStack stack) {
         // For adjusting (row, col) to neighbour coordinates by accumulation in DFS.
         final short[] deltaRow = {-1, 2, -1, 0};
         final short[] deltaCol = {0, 0, -1, 2};
 
-        if (visitedCells.get(startRow * this.numCols + startCol))
-        {
+        if (visitedCells.get(startRow * this.numCols + startCol)) {
             return true;
         }
 
@@ -382,32 +343,27 @@ class StateSequence
         stack.push(startRow, startCol);
         visitedCells.set(startRow * this.numCols + startCol);
 
-        while (stack.size() > 0)
-        {
+        while (stack.size() > 0) {
             // Pop cell.
             short row = stack.topRow();
             short col = stack.topCol();
             stack.pop();
 
             // If wall cell, do nothing.
-            if (this.walls.get(row * this.numCols + col))
-            {
+            if (this.walls.get(row * this.numCols + col)) {
                 continue;
             }
 
             // If current cell is at level boundary, then agent is not in an area enclosed by walls.
-            if (row == 0 || row == this.numRows - 1 || col == 0 || col == this.numCols - 1)
-            {
+            if (row == 0 || row == this.numRows - 1 || col == 0 || col == this.numCols - 1) {
                 return false;
             }
 
             // Add unvisited neighbour cells to stack.
-            for (int i = 0; i < 4; ++i)
-            {
+            for (int i = 0; i < 4; ++i) {
                 row += deltaRow[i];
                 col += deltaCol[i];
-                if (!visitedCells.get(row * this.numCols + col))
-                {
+                if (!visitedCells.get(row * this.numCols + col)) {
                     visitedCells.set(row * this.numCols + col);
                     stack.push(row, col);
                 }
@@ -418,15 +374,12 @@ class StateSequence
     }
 
     private String parseNameSection(LineNumberReader levelReader)
-    throws IOException, ParseException
-    {
+            throws IOException, ParseException {
         String line = levelReader.readLine();
-        if (line == null)
-        {
+        if (line == null) {
             throw new ParseException("Expected a level name, but reached end of file.", levelReader.getLineNumber());
         }
-        if (line.isBlank())
-        {
+        if (line.isBlank()) {
             throw new ParseException("Level name can not be blank.", levelReader.getLineNumber());
         }
         this.levelName = line;
@@ -435,85 +388,67 @@ class StateSequence
     }
 
     private String parseColorsSection(LineNumberReader levelReader)
-    throws IOException, ParseException
-    {
-        while (true)
-        {
+            throws IOException, ParseException {
+        while (true) {
             String line = levelReader.readLine();
-            if (line == null)
-            {
+            if (line == null) {
                 throw new ParseException("Expected more color lines or end of color section, but reached end of file.",
-                                         levelReader.getLineNumber());
+                        levelReader.getLineNumber());
             }
 
-            if (line.length() > 0 && line.charAt(0) == '#')
-            {
+            if (line.length() > 0 && line.charAt(0) == '#') {
                 return line;
             }
 
             String[] split = line.split(":");
-            if (split.length < 1)
-            {
+            if (split.length < 1) {
                 throw new ParseException("Invalid color line syntax - missing a colon?", levelReader.getLineNumber());
             }
-            if (split.length > 2)
-            {
+            if (split.length > 2) {
                 throw new ParseException("Invalid color line syntax - too many colons?", levelReader.getLineNumber());
             }
 
             String colorName = split[0].strip().toLowerCase(java.util.Locale.ROOT);
             Color color = Colors.fromString(colorName);
-            if (color == null)
-            {
+            if (color == null) {
                 throw new ParseException(String.format("Invalid color name: '%s'.", colorName),
-                                         levelReader.getLineNumber());
+                        levelReader.getLineNumber());
             }
 
             String[] symbols = split[1].split(",");
-            for (String symbol : symbols)
-            {
+            for (String symbol : symbols) {
                 symbol = symbol.strip();
-                if (symbol.isEmpty())
-                {
+                if (symbol.isEmpty()) {
                     throw new ParseException("Missing agent or box specifier between commas.",
-                                             levelReader.getLineNumber());
+                            levelReader.getLineNumber());
                 }
-                if (symbol.length() > 1)
-                {
+                if (symbol.length() > 1) {
                     throw new ParseException(String.format("Invalid agent or box symbol: '%s'.", symbol),
-                                             levelReader.getLineNumber());
+                            levelReader.getLineNumber());
                 }
                 char s = symbol.charAt(0);
-                if ('0' <= s && s <= '9')
-                {
-                    if (this.agentColors[s - '0'] != null)
-                    {
+                if ('0' <= s && s <= '9') {
+                    if (this.agentColors[s - '0'] != null) {
                         throw new ParseException(String.format("Agent '%s' already has a color specified.", s),
-                                                 levelReader.getLineNumber());
+                                levelReader.getLineNumber());
                     }
                     this.agentColors[s - '0'] = color;
-                }
-                else if ('A' <= s && s <= 'Z')
-                {
-                    if (this.boxColors[s - 'A'] != null)
-                    {
+                } else if ('A' <= s && s <= 'Z') {
+                    if (this.boxColors[s - 'A'] != null) {
                         throw new ParseException(String.format("Box '%s' already has a color specified.", s),
-                                                 levelReader.getLineNumber());
+                                levelReader.getLineNumber());
                     }
                     this.boxColors[s - 'A'] = color;
-                }
-                else
-                {
+                } else {
                     throw new ParseException(String.format("Invalid agent or box symbol: '%s'.", s),
-                                             levelReader.getLineNumber());
+                            levelReader.getLineNumber());
                 }
             }
         }
     }
 
     private String parseInitialSection(LineNumberReader levelReader)
-    throws IOException, ParseException
-    {
+            throws IOException, ParseException {
         int numWalls = 0;
         short[] wallRows = new short[1024];
         short[] wallCols = new short[1024];
@@ -528,82 +463,64 @@ class StateSequence
 
         // Parse level and accumulate walls, agents, and boxes.
         String line;
-        while (true)
-        {
+        while (true) {
             line = levelReader.readLine();
-            if (line == null)
-            {
+            if (line == null) {
                 throw new ParseException(
                         "Expected more initial state lines or end of initial state section, but reached end of file.",
                         levelReader.getLineNumber());
             }
 
-            if (line.length() > 0 && line.charAt(0) == '#')
-            {
+            if (line.length() > 0 && line.charAt(0) == '#') {
                 break;
             }
 
             line = this.stripTrailingSpaces(line);
 
-            if (line.length() > Short.MAX_VALUE)
-            {
+            if (line.length() > Short.MAX_VALUE) {
                 throw new ParseException(
                         String.format("Initial state too large. Width greater than %s.", Short.MAX_VALUE),
                         levelReader.getLineNumber());
             }
 
-            if (line.length() >= this.numCols)
-            {
+            if (line.length() >= this.numCols) {
                 this.numCols = (short) line.length();
             }
 
-            for (short col = 0; col < line.length(); ++col)
-            {
+            for (short col = 0; col < line.length(); ++col) {
                 char c = line.charAt(col);
                 //noinspection StatementWithEmptyBody
-                if (c == ' ')
-                {
+                if (c == ' ') {
                     // Free cell.
-                }
-                else if (c == '+')
-                {
+                } else if (c == '+') {
                     // Wall.
-                    if (numWalls == wallRows.length)
-                    {
+                    if (numWalls == wallRows.length) {
                         wallRows = Arrays.copyOf(wallRows, wallRows.length * 2);
                         wallCols = Arrays.copyOf(wallCols, wallCols.length * 2);
                     }
                     wallRows[numWalls] = this.numRows;
                     wallCols[numWalls] = col;
                     ++numWalls;
-                }
-                else if ('0' <= c && c <= '9')
-                {
+                } else if ('0' <= c && c <= '9') {
                     // Agent.
-                    if (agentRows[c - '0'] != -1)
-                    {
+                    if (agentRows[c - '0'] != -1) {
                         throw new ParseException(
                                 String.format("Agent '%s' appears multiple times in initial state.", c),
                                 levelReader.getLineNumber());
                     }
-                    if (this.agentColors[c - '0'] == null)
-                    {
+                    if (this.agentColors[c - '0'] == null) {
                         throw new ParseException(String.format("Agent '%s' has no color specified.", c),
-                                                 levelReader.getLineNumber());
+                                levelReader.getLineNumber());
                     }
                     agentRows[c - '0'] = this.numRows;
                     agentCols[c - '0'] = col;
-                }
-                else if ('A' <= c && c <= 'Z')
-                {
+                } else if ('A' <= c && c <= 'Z') {
                     // Box.
-                    if (this.boxColors[c - 'A'] == null)
-                    {
+                    if (this.boxColors[c - 'A'] == null) {
                         throw new ParseException(String.format("Box '%s' has no color specified.", c),
-                                                 levelReader.getLineNumber());
+                                levelReader.getLineNumber());
                     }
-                    if (numBoxes == boxRows.length)
-                    {
+                    if (numBoxes == boxRows.length) {
                         boxRows = Arrays.copyOf(boxRows, boxRows.length * 2);
                         boxCols = Arrays.copyOf(boxCols, boxCols.length * 2);
                         boxLetters = Arrays.copyOf(boxLetters, boxLetters.length * 2);
@@ -612,17 +529,14 @@ class StateSequence
                     boxCols[numBoxes] = col;
                     boxLetters[numBoxes] = (byte) (c - 'A');
                     ++numBoxes;
-                }
-                else
-                {
+                } else {
                     throw new ParseException(String.format("Invalid character '%s' in column %s.", c, col),
-                                             levelReader.getLineNumber());
+                            levelReader.getLineNumber());
                 }
             }
 
             ++this.numRows;
-            if (this.numRows < 0)
-            {
+            if (this.numRows < 0) {
                 throw new ParseException(
                         String.format("Initial state too large. Height greater than %s.", Short.MAX_VALUE),
                         levelReader.getLineNumber());
@@ -630,29 +544,22 @@ class StateSequence
         }
 
         // Count the agents; ensure that they are numbered consecutively.
-        for (byte a = 0; a < 10; ++a)
-        {
-            if (agentRows[a] != -1)
-            {
-                if (this.numAgents == a)
-                {
+        for (byte a = 0; a < 10; ++a) {
+            if (agentRows[a] != -1) {
+                if (this.numAgents == a) {
                     ++this.numAgents;
-                }
-                else
-                {
+                } else {
                     throw new ParseException("Agents must be numbered consecutively.", levelReader.getLineNumber());
                 }
             }
         }
-        if (this.numAgents == 0)
-        {
+        if (this.numAgents == 0) {
             throw new ParseException("Level contains no agents.", levelReader.getLineNumber());
         }
 
         // Set walls.
         this.walls = new BitSet(this.numRows * this.numCols);
-        for (int w = 0; w < numWalls; ++w)
-        {
+        for (int w = 0; w < numWalls; ++w) {
             this.walls.set(wallRows[w] * this.numCols + wallCols[w]);
         }
 
@@ -660,16 +567,15 @@ class StateSequence
         this.numBoxes = numBoxes;
         this.boxLetters = Arrays.copyOf(boxLetters, this.numBoxes);
         this.sortedBoxIds = new int[this.numBoxes];
-        for (int i = 0; i < this.numBoxes; ++i)
-        {
+        for (int i = 0; i < this.numBoxes; ++i) {
             this.sortedBoxIds[i] = i;
         }
 
         // Create initial state.
         State initialState = new State(Arrays.copyOf(boxRows, numBoxes),
-                                       Arrays.copyOf(boxCols, numBoxes),
-                                       Arrays.copyOf(agentRows, this.numAgents),
-                                       Arrays.copyOf(agentCols, this.numAgents));
+                Arrays.copyOf(boxCols, numBoxes),
+                Arrays.copyOf(agentRows, this.numAgents),
+                Arrays.copyOf(agentCols, this.numAgents));
 
         this.states[0] = initialState;
         this.stateTimes[0] = 0;
@@ -679,8 +585,7 @@ class StateSequence
     }
 
     private String parseGoalSection(LineNumberReader levelReader)
-    throws IOException, ParseException
-    {
+            throws IOException, ParseException {
         int numBoxGoals = 0;
         short[] boxGoalRows = new short[128];
         short[] boxGoalCols = new short[128];
@@ -694,20 +599,16 @@ class StateSequence
         short row = 0;
 
         String line;
-        while (true)
-        {
+        while (true) {
             line = levelReader.readLine();
-            if (line == null)
-            {
+            if (line == null) {
                 throw new ParseException(
                         "Expected more goal state lines or end of goal state section, but reached end of file.",
                         levelReader.getLineNumber());
             }
 
-            if (line.length() > 0 && line.charAt(0) == '#')
-            {
-                if (row != this.numRows)
-                {
+            if (line.length() > 0 && line.charAt(0) == '#') {
+                if (row != this.numRows) {
                     throw new ParseException(
                             "Goal state must have the same number of rows as the initial state, but has too few.",
                             levelReader.getLineNumber());
@@ -715,8 +616,7 @@ class StateSequence
                 break;
             }
 
-            if (row == this.numRows)
-            {
+            if (row == this.numRows) {
                 throw new ParseException(
                         "Goal state must have the same number of rows as the initial state, but has too many.",
                         levelReader.getLineNumber());
@@ -724,66 +624,51 @@ class StateSequence
 
             line = this.stripTrailingSpaces(line);
 
-            if (line.length() > Short.MAX_VALUE)
-            {
+            if (line.length() > Short.MAX_VALUE) {
                 throw new ParseException(String.format("Goal state too large. Width greater than %s.", Short.MAX_VALUE),
-                                         levelReader.getLineNumber());
+                        levelReader.getLineNumber());
             }
 
-            if (line.length() > this.numCols)
-            {
+            if (line.length() > this.numCols) {
                 throw new ParseException("Goal state can not have more columns than the initial state.",
-                                         levelReader.getLineNumber());
+                        levelReader.getLineNumber());
             }
 
             short col = 0;
-            for (; col < line.length(); ++col)
-            {
+            for (; col < line.length(); ++col) {
                 char c = line.charAt(col);
-                if (c == '+')
-                {
+                if (c == '+') {
                     // Wall.
-                    if (!this.wallAt(row, col))
-                    {
+                    if (!this.wallAt(row, col)) {
                         // Which doesn't match a wall in the initial state.
                         throw new ParseException(
                                 String.format("Initial state has no wall at column %d, but goal state does.", col),
                                 levelReader.getLineNumber());
                     }
-                }
-                else if (this.wallAt(row, col)) // Implicitly c != '+' from first if check.
+                } else if (this.wallAt(row, col)) // Implicitly c != '+' from first if check.
                 {
                     // Missing wall compared to the initial state.
                     throw new ParseException(
                             String.format("Goal state not matching initial state's wall on column %d.", col),
                             levelReader.getLineNumber());
-                }
-                else if (c == ' ')
-                {
+                } else if (c == ' ') {
                     // Free cell.
-                }
-                else if ('0' <= c && c <= '9')
-                {
+                } else if ('0' <= c && c <= '9') {
                     // Agent.
-                    if (c - '0' >= this.numAgents)
-                    {
+                    if (c - '0' >= this.numAgents) {
                         throw new ParseException(
                                 String.format("Goal state has agent '%s' who does not appear in the initial state.", c),
                                 levelReader.getLineNumber());
                     }
-                    if (this.agentGoalRows[c - '0'] != -1)
-                    {
+                    if (this.agentGoalRows[c - '0'] != -1) {
                         throw new ParseException(String.format("Agent '%s' appears multiple times in goal state.", c),
-                                                 levelReader.getLineNumber());
+                                levelReader.getLineNumber());
                     }
                     this.agentGoalRows[c - '0'] = row;
                     this.agentGoalCols[c - '0'] = col;
-                }
-                else if ('A' <= c && c <= 'Z')
-                {
+                } else if ('A' <= c && c <= 'Z') {
                     // Box.
-                    if (numBoxGoals == boxGoalRows.length)
-                    {
+                    if (numBoxGoals == boxGoalRows.length) {
                         boxGoalRows = Arrays.copyOf(boxGoalRows, boxGoalRows.length * 2);
                         boxGoalCols = Arrays.copyOf(boxGoalCols, boxGoalCols.length * 2);
                         boxGoalLetters = Arrays.copyOf(boxGoalLetters, boxGoalLetters.length * 2);
@@ -792,18 +677,14 @@ class StateSequence
                     boxGoalCols[numBoxGoals] = col;
                     boxGoalLetters[numBoxGoals] = (byte) (c - 'A');
                     ++numBoxGoals;
-                }
-                else
-                {
+                } else {
                     throw new ParseException(String.format("Invalid character '%s' in column %s.", c, col),
-                                             levelReader.getLineNumber());
+                            levelReader.getLineNumber());
                 }
             }
             // If the goal state line is shorter than the level width, we must check that no walls were omitted.
-            for (; col < this.numCols; ++col)
-            {
-                if (this.wallAt(row, col))
-                {
+            for (; col < this.numCols; ++col) {
+                if (this.wallAt(row, col)) {
                     throw new ParseException(
                             String.format("Goal state not matching initial state's wall on column %s.", col),
                             levelReader.getLineNumber());
@@ -821,15 +702,12 @@ class StateSequence
     }
 
     private String parseClientNameSection(LineNumberReader levelReader)
-    throws IOException, ParseException
-    {
+            throws IOException, ParseException {
         String line = levelReader.readLine();
-        if (line == null)
-        {
+        if (line == null) {
             throw new ParseException("Expected a client name, but reached end of file.", levelReader.getLineNumber());
         }
-        if (line.isBlank())
-        {
+        if (line.isBlank()) {
             throw new ParseException("Client name can not be blank.", levelReader.getLineNumber());
         }
         this.clientName = line;
@@ -838,33 +716,27 @@ class StateSequence
     }
 
     private String parseActionsSection(LineNumberReader levelReader)
-    throws IOException, ParseException
-    {
+            throws IOException, ParseException {
         Action[] jointAction = new Action[this.numAgents];
 
-        while (true)
-        {
+        while (true) {
             String line = levelReader.readLine();
-            if (line == null)
-            {
+            if (line == null) {
                 throw new ParseException("Expected more action lines or end of actions section, but reached end of " +
-                                         "file.",
-                                         levelReader.getLineNumber());
+                        "file.",
+                        levelReader.getLineNumber());
             }
 
-            if (line.length() > 0 && line.charAt(0) == '#')
-            {
+            if (line.length() > 0 && line.charAt(0) == '#') {
                 return line;
             }
 
             String[] split = line.split(":");
-            if (split.length < 1)
-            {
+            if (split.length < 1) {
                 throw new ParseException("Invalid action line syntax - timestamp missing?",
-                                         levelReader.getLineNumber());
+                        levelReader.getLineNumber());
             }
-            if (split.length > 2)
-            {
+            if (split.length > 2) {
                 throw new ParseException("Invalid action line syntax - too many colons?", levelReader.getLineNumber());
             }
 
@@ -872,23 +744,18 @@ class StateSequence
             long actionTime;
             try {
                 actionTime = Long.valueOf(split[0]);
-            }
-            catch (NumberFormatException e)
-            {
+            } catch (NumberFormatException e) {
                 throw new ParseException("Invalid action timestamp.", levelReader.getLineNumber());
             }
 
             // Parse and execute joint action.
             String[] actionsStr = split[1].split(";");
-            if (actionsStr.length != this.numAgents)
-            {
+            if (actionsStr.length != this.numAgents) {
                 throw new ParseException("Invalid number of agents in joint action.", levelReader.getLineNumber());
             }
-            for (int i = 0; i < jointAction.length; ++i)
-            {
+            for (int i = 0; i < jointAction.length; ++i) {
                 jointAction[i] = Action.parse(actionsStr[i]);
-                if (jointAction[i] == null)
-                {
+                if (jointAction[i] == null) {
                     throw new ParseException("Invalid joint action.", levelReader.getLineNumber());
                 }
             }
@@ -899,57 +766,47 @@ class StateSequence
     }
 
     private String parseSolvedSection(LineNumberReader levelReader)
-    throws IOException, ParseException
-    {
+            throws IOException, ParseException {
         String line = levelReader.readLine();
-        if (line == null)
-        {
+        if (line == null) {
             throw new ParseException("Expected a solved value, but reached end of file.", levelReader.getLineNumber());
         }
 
-        if (!line.equals("true") && !line.equals("false"))
-        {
+        if (!line.equals("true") && !line.equals("false")) {
             throw new ParseException("Invalid solved value.", levelReader.getLineNumber());
         }
 
         boolean logSolved = line.equals("true");
         boolean actuallySolved = true;
-        for (int boxGoalId = 0; boxGoalId < this.numBoxGoals; ++boxGoalId)
-        {
+        for (int boxGoalId = 0; boxGoalId < this.numBoxGoals; ++boxGoalId) {
             short boxGoalRow = this.boxGoalRows[boxGoalId];
             short boxGoalCol = this.boxGoalCols[boxGoalId];
             byte boxGoalLetter = this.boxGoalLetters[boxGoalId];
 
-            if (this.boxAt(boxGoalRow, boxGoalCol) != boxGoalLetter)
-            {
+            if (this.boxAt(boxGoalRow, boxGoalCol) != boxGoalLetter) {
                 actuallySolved = false;
                 break;
             }
         }
         State lastState = this.getState(this.numStates - 1);
-        for (int agent = 0; agent < this.numAgents; ++agent)
-        {
+        for (int agent = 0; agent < this.numAgents; ++agent) {
             short agentGoalRow = this.agentGoalRows[agent];
             short agentGoalCol = this.agentGoalCols[agent];
             short agentRow = lastState.agentRows[agent];
             short agentCol = lastState.agentCols[agent];
 
-            if (agentGoalRow != -1 && (agentRow != agentGoalRow || agentCol != agentGoalCol))
-            {
+            if (agentGoalRow != -1 && (agentRow != agentGoalRow || agentCol != agentGoalCol)) {
                 actuallySolved = false;
                 break;
             }
         }
 
-        if (logSolved && !actuallySolved)
-        {
+        if (logSolved && !actuallySolved) {
             throw new ParseException("Log summary claims level is solved, but the actions don't solve the level.",
-                                     levelReader.getLineNumber());
-        }
-        else if (!logSolved && actuallySolved)
-        {
+                    levelReader.getLineNumber());
+        } else if (!logSolved && actuallySolved) {
             throw new ParseException("Log summary claims level is not solved, but the actions solve the level.",
-                                     levelReader.getLineNumber());
+                    levelReader.getLineNumber());
         }
 
         line = levelReader.readLine();
@@ -957,28 +814,22 @@ class StateSequence
     }
 
     private String parseNumActionsSection(LineNumberReader levelReader)
-    throws IOException, ParseException
-    {
+            throws IOException, ParseException {
         String line = levelReader.readLine();
-        if (line == null)
-        {
+        if (line == null) {
             throw new ParseException("Expected a solved value, but reached end of file.", levelReader.getLineNumber());
         }
 
         long numActions;
-        try
-        {
+        try {
             numActions = Long.valueOf(line);
-        }
-        catch (NumberFormatException e)
-        {
+        } catch (NumberFormatException e) {
             throw new ParseException("Invalid number of actions.", levelReader.getLineNumber());
         }
 
-        if (numActions != this.numStates - 1)
-        {
+        if (numActions != this.numStates - 1) {
             throw new ParseException("Number of action does not conform to the number of actions in the sequence.",
-                                     levelReader.getLineNumber());
+                    levelReader.getLineNumber());
         }
 
         line = levelReader.readLine();
@@ -986,28 +837,22 @@ class StateSequence
     }
 
     private String parseTimeSection(LineNumberReader levelReader)
-    throws IOException, ParseException
-    {
+            throws IOException, ParseException {
         String line = levelReader.readLine();
-        if (line == null)
-        {
+        if (line == null) {
             throw new ParseException("Expected a solved value, but reached end of file.", levelReader.getLineNumber());
         }
 
         long lastStateTime;
-        try
-        {
+        try {
             lastStateTime = Long.valueOf(line);
-        }
-        catch (NumberFormatException e)
-        {
+        } catch (NumberFormatException e) {
             throw new ParseException("Invalid time of last action.", levelReader.getLineNumber());
         }
 
-        if (lastStateTime != this.getStateTime(this.numStates - 1))
-        {
+        if (lastStateTime != this.getStateTime(this.numStates - 1)) {
             throw new ParseException("Last state time does not conform to the timestamp of the last action.",
-                                     levelReader.getLineNumber());
+                    levelReader.getLineNumber());
         }
 
         line = levelReader.readLine();
@@ -1015,28 +860,23 @@ class StateSequence
     }
 
     private String parseEndSection(LineNumberReader levelReader)
-    throws IOException, ParseException
-    {
+            throws IOException, ParseException {
         return levelReader.readLine();
     }
 
-    private String stripTrailingSpaces(String s)
-    {
+    private String stripTrailingSpaces(String s) {
         int endIndex = s.length();
-        while (endIndex > 0 && s.charAt(endIndex - 1) == ' ')
-        {
+        while (endIndex > 0 && s.charAt(endIndex - 1) == ' ') {
             --endIndex;
         }
         return s.substring(0, endIndex);
     }
 
-    void allowDiscardingPastStates()
-    {
+    void allowDiscardingPastStates() {
         this.allowDiscardingPastStates = true;
     }
 
-    String getLevelName()
-    {
+    String getLevelName() {
         return this.levelName;
     }
 
@@ -1044,21 +884,18 @@ class StateSequence
      * Gets the number of available states.
      * NB! This is a volatile read, so any subsequent read of this.states is "up-to-date" as of this call.
      */
-    int getNumStates()
-    {
+    int getNumStates() {
         return this.numStates;
     }
 
     /**
      * Gets the time in nanoseconds for when the given state was generated.
      */
-    long getStateTime(int state)
-    {
+    long getStateTime(int state) {
         return this.stateTimes[state];
     }
 
-    State getState(int state)
-    {
+    State getState(int state) {
         return this.states[state];
     }
 
@@ -1066,8 +903,7 @@ class StateSequence
      * Returns whether there is a wall at the given (row, col).
      * Complexity: O(1).
      */
-    boolean wallAt(short row, short col)
-    {
+    boolean wallAt(short row, short col) {
         return this.walls.get(row * this.numCols + col);
     }
 
@@ -1075,35 +911,24 @@ class StateSequence
      * Binary searches for a box goal cell at the given (row, col) and returns the index if found, and -1 otherwise.
      * Complexity: O(log(numBoxGoals)).
      */
-    int findBoxGoal(short row, short col)
-    {
+    int findBoxGoal(short row, short col) {
         int lowIdx = 0;
         int highIdx = this.numBoxGoals - 1;
 
-        while (lowIdx <= highIdx)
-        {
+        while (lowIdx <= highIdx) {
             int midIdx = lowIdx + (highIdx - lowIdx) / 2;
             short midRow = this.boxGoalRows[midIdx];
             short midCol = this.boxGoalCols[midIdx];
 
-            if (midRow < row)
-            {
+            if (midRow < row) {
                 lowIdx = midIdx + 1;
-            }
-            else if (midRow > row)
-            {
+            } else if (midRow > row) {
                 highIdx = midIdx - 1;
-            }
-            else if (midCol < col)
-            {
+            } else if (midCol < col) {
                 lowIdx = midIdx + 1;
-            }
-            else if (midCol > col)
-            {
+            } else if (midCol > col) {
                 highIdx = midIdx - 1;
-            }
-            else
-            {
+            } else {
                 return midIdx;
             }
         }
@@ -1116,11 +941,9 @@ class StateSequence
      * Returns box goal letter (A..Z = 0..25) if found, and -1 otherwise.
      * Complexity: O(log(numBoxGoals)).
      */
-    byte boxGoalAt(short row, short col)
-    {
+    byte boxGoalAt(short row, short col) {
         int boxGoal = this.findBoxGoal(row, col);
-        if (boxGoal != -1)
-        {
+        if (boxGoal != -1) {
             return this.boxGoalLetters[boxGoal];
         }
         return -1;
@@ -1131,36 +954,25 @@ class StateSequence
      * where the box with the given (row, col) should be.
      * Complexity: O(log(numBoxes)).
      */
-    private int findBox(State currentState, short row, short col)
-    {
+    private int findBox(State currentState, short row, short col) {
         int lowIdx = 0;
         int highIdx = this.numBoxes - 1;
         int midIdx = lowIdx + (highIdx - lowIdx) / 2;
 
-        while (lowIdx <= highIdx)
-        {
+        while (lowIdx <= highIdx) {
             midIdx = lowIdx + (highIdx - lowIdx) / 2;
             short midRow = currentState.boxRows[this.sortedBoxIds[midIdx]];
             short midCol = currentState.boxCols[this.sortedBoxIds[midIdx]];
 
-            if (midRow < row)
-            {
+            if (midRow < row) {
                 lowIdx = midIdx + 1;
-            }
-            else if (midRow > row)
-            {
+            } else if (midRow > row) {
                 highIdx = midIdx - 1;
-            }
-            else if (midCol < col)
-            {
+            } else if (midCol < col) {
                 lowIdx = midIdx + 1;
-            }
-            else if (midCol > col)
-            {
+            } else if (midCol > col) {
                 highIdx = midIdx - 1;
-            }
-            else
-            {
+            } else {
                 // Found.
                 break;
             }
@@ -1174,17 +986,14 @@ class StateSequence
      * Returns box letter (A..Z = 0..25) if found, and -1 otherwise.
      * Complexity: O(log(numBoxes)).
      */
-    byte boxAt(short row, short col)
-    {
-        if (this.numBoxes == 0)
-        {
+    byte boxAt(short row, short col) {
+        if (this.numBoxes == 0) {
             return -1;
         }
         State currentState = this.states[this.numStates - 1];
         int sortedBoxIdx = this.findBox(currentState, row, col);
         int boxId = this.sortedBoxIds[sortedBoxIdx];
-        if (currentState.boxRows[boxId] == row && currentState.boxCols[boxId] == col)
-        {
+        if (currentState.boxRows[boxId] == row && currentState.boxCols[boxId] == col) {
             return this.boxLetters[boxId];
         }
         return -1;
@@ -1193,8 +1002,7 @@ class StateSequence
     /**
      * Moves a box in newState from the given (fromRow, fromCol) to (toRow, toCol) and maintains this.sortedBoxIds.
      */
-    void moveBox(State newState, short fromRow, short fromCol, short toRow, short toCol)
-    {
+    void moveBox(State newState, short fromRow, short fromCol, short toRow, short toCol) {
         int sortedBoxIdx = this.findBox(newState, fromRow, fromCol);
         int boxId = this.sortedBoxIds[sortedBoxIdx];
 
@@ -1202,24 +1010,19 @@ class StateSequence
         short[] boxCols = newState.boxCols;
 
         // Shift sortedBoxIds until sorted order is restored.
-        if (toRow > fromRow || (toRow == fromRow && toCol > fromCol))
-        {
+        if (toRow > fromRow || (toRow == fromRow && toCol > fromCol)) {
             while (sortedBoxIdx + 1 < this.numBoxes &&
-                   (boxRows[this.sortedBoxIds[sortedBoxIdx + 1]] < toRow ||
-                    (boxRows[this.sortedBoxIds[sortedBoxIdx + 1]] == toRow &&
-                     boxCols[this.sortedBoxIds[sortedBoxIdx + 1]] < toCol)))
-            {
+                    (boxRows[this.sortedBoxIds[sortedBoxIdx + 1]] < toRow ||
+                            (boxRows[this.sortedBoxIds[sortedBoxIdx + 1]] == toRow &&
+                                    boxCols[this.sortedBoxIds[sortedBoxIdx + 1]] < toCol))) {
                 this.sortedBoxIds[sortedBoxIdx] = this.sortedBoxIds[sortedBoxIdx + 1];
                 ++sortedBoxIdx;
             }
-        }
-        else
-        {
+        } else {
             while (0 < sortedBoxIdx &&
-                   (boxRows[this.sortedBoxIds[sortedBoxIdx - 1]] > toRow ||
-                    (boxRows[this.sortedBoxIds[sortedBoxIdx - 1]] == toRow &&
-                     boxCols[this.sortedBoxIds[sortedBoxIdx - 1]] > toCol)))
-            {
+                    (boxRows[this.sortedBoxIds[sortedBoxIdx - 1]] > toRow ||
+                            (boxRows[this.sortedBoxIds[sortedBoxIdx - 1]] == toRow &&
+                                    boxCols[this.sortedBoxIds[sortedBoxIdx - 1]] > toCol))) {
                 this.sortedBoxIds[sortedBoxIdx] = this.sortedBoxIds[sortedBoxIdx - 1];
                 --sortedBoxIdx;
             }
@@ -1236,13 +1039,10 @@ class StateSequence
      * Returns agent ID (0..9) if found, and -1 otherwise.
      * Complexity: O(numAgents).
      */
-    byte agentAt(short row, short col)
-    {
+    byte agentAt(short row, short col) {
         State currentState = this.states[this.numStates - 1];
-        for (byte a = 0; a < this.numAgents; ++a)
-        {
-            if (currentState.agentRows[a] == row && currentState.agentCols[a] == col)
-            {
+        for (byte a = 0; a < this.numAgents; ++a) {
+            if (currentState.agentRows[a] == row && currentState.agentCols[a] == col) {
                 return a;
             }
         }
@@ -1253,8 +1053,7 @@ class StateSequence
      * Moves the given agent to the given (row, col).
      * Complexity: O(1).
      */
-    void moveAgent(State newState, byte agent, short row, short col)
-    {
+    void moveAgent(State newState, byte agent, short row, short col) {
         newState.agentRows[agent] = row;
         newState.agentCols[agent] = col;
     }
@@ -1264,12 +1063,9 @@ class StateSequence
      * Returns agent ID (0..9) if found, and -1 otherwise.
      * Complexity: O(numAgents).
      */
-    byte agentGoalAt(short row, short col)
-    {
-        for (byte a = 0; a < this.numAgents; ++a)
-        {
-            if (this.agentGoalRows[a] == row && this.agentGoalCols[a] == col)
-            {
+    byte agentGoalAt(short row, short col) {
+        for (byte a = 0; a < this.numAgents; ++a) {
+            if (this.agentGoalRows[a] == row && this.agentGoalCols[a] == col) {
                 return a;
             }
         }
@@ -1280,8 +1076,7 @@ class StateSequence
      * Checks if the given cell is free (no wall, box, or agent occupies it).
      * Complexity: O(log(numBoxes) + numAgents).
      */
-    boolean freeAt(short row, short col)
-    {
+    boolean freeAt(short row, short col) {
         return !this.wallAt(row, col) && this.boxAt(row, col) == -1 && this.agentAt(row, col) == -1;
     }
 
@@ -1289,8 +1084,7 @@ class StateSequence
      * Determines which actions are applicable and non-conflicting.
      * Returns an array with true for each action which was applicable and non-conflicting, and false otherwise.
      */
-    private boolean[] isApplicable(Action[] jointAction)
-    {
+    private boolean[] isApplicable(Action[] jointAction) {
         State currentState = this.states[this.numStates - 1];
 
         // FIXME: Instance variables to avoid constant new allocations?
@@ -1301,8 +1095,7 @@ class StateSequence
         short[] boxCols = new short[this.numAgents];
 
         // Test applicability.
-        for (byte agent = 0; agent < this.numAgents; ++agent)
-        {
+        for (byte agent = 0; agent < this.numAgents; ++agent) {
             Action action = jointAction[agent];
             short agentRow = currentState.agentRows[agent];
             short agentCol = currentState.agentCols[agent];
@@ -1311,8 +1104,7 @@ class StateSequence
             byte boxLetter;
 
             // Test for applicability.
-            switch (action.type)
-            {
+            switch (action.type) {
                 case NoOp:
                     applicable[agent] = true;
                     break;
@@ -1328,8 +1120,8 @@ class StateSequence
                     destRows[agent] = (short) (boxRows[agent] + action.moveDeltaRow);
                     destCols[agent] = (short) (boxCols[agent] + action.moveDeltaCol);
                     applicable[agent] = boxLetter != -1 &&
-                                        this.agentColors[agent] == this.boxColors[boxLetter] &&
-                                        this.freeAt(destRows[agent], destCols[agent]);
+                            this.agentColors[agent] == this.boxColors[boxLetter] &&
+                            this.freeAt(destRows[agent], destCols[agent]);
                     break;
 
                 case Pull:
@@ -1337,45 +1129,38 @@ class StateSequence
                     destRows[agent] = (short) (agentRow + action.moveDeltaRow);
                     destCols[agent] = (short) (agentCol + action.moveDeltaCol);
                     applicable[agent] = boxLetter != -1 &&
-                                        this.agentColors[agent] == this.boxColors[boxLetter] &&
-                                        this.freeAt(destRows[agent], destCols[agent]);
+                            this.agentColors[agent] == this.boxColors[boxLetter] &&
+                            this.freeAt(destRows[agent], destCols[agent]);
                     break;
             }
         }
 
         // Test conflicts.
         boolean[] conflicting = new boolean[this.numAgents];
-        for (byte a1 = 0; a1 < this.numAgents; ++a1)
-        {
-            if (!applicable[a1] || jointAction[a1] == Action.NoOp)
-            {
+        for (byte a1 = 0; a1 < this.numAgents; ++a1) {
+            if (!applicable[a1] || jointAction[a1] == Action.NoOp) {
                 continue;
             }
-            for (byte a2 = 0; a2 < a1; ++a2)
-            {
-                if (!applicable[a2] || jointAction[a2] == Action.NoOp)
-                {
+            for (byte a2 = 0; a2 < a1; ++a2) {
+                if (!applicable[a2] || jointAction[a2] == Action.NoOp) {
                     continue;
                 }
 
                 // Objects moving into same cell?
-                if (destRows[a1] == destRows[a2] && destCols[a1] == destCols[a2])
-                {
+                if (destRows[a1] == destRows[a2] && destCols[a1] == destCols[a2]) {
                     conflicting[a1] = true;
                     conflicting[a2] = true;
                 }
 
                 // Moving same box?
-                if (boxRows[a1] == boxRows[a2] && boxCols[a1] == boxCols[a2])
-                {
+                if (boxRows[a1] == boxRows[a2] && boxCols[a1] == boxCols[a2]) {
                     conflicting[a1] = true;
                     conflicting[a2] = true;
                 }
             }
         }
 
-        for (byte agent = 0; agent < this.numAgents; ++agent)
-        {
+        for (byte agent = 0; agent < this.numAgents; ++agent) {
             applicable[agent] &= !conflicting[agent];
         }
 
@@ -1385,15 +1170,12 @@ class StateSequence
     /**
      * Applies the actions in jointAction which are applicable to the latest state and returns the resulting state.
      */
-    private State apply(Action[] jointAction, boolean[] applicable)
-    {
+    private State apply(Action[] jointAction, boolean[] applicable) {
         State currentState = this.states[this.numStates - 1];
         State newState = new State(currentState);
 
-        for (byte agent = 0; agent < jointAction.length; ++agent)
-        {
-            if (!applicable[agent])
-            {
+        for (byte agent = 0; agent < jointAction.length; ++agent) {
+            if (!applicable[agent]) {
                 // Inapplicable or conflicting action - do nothing instead.
                 continue;
             }
@@ -1406,8 +1188,7 @@ class StateSequence
             short newBoxRow;
             short newBoxCol;
 
-            switch (action.type)
-            {
+            switch (action.type) {
                 case NoOp:
                     // Do nothing.
                     break;
@@ -1449,8 +1230,7 @@ class StateSequence
      * Execute a joint action.
      * Returns a boolean array with succes for each agent.
      */
-    boolean[] execute(Action[] jointAction, long actionTime)
-    {
+    boolean[] execute(Action[] jointAction, long actionTime) {
         // Determine applicable and non-conflicting actions.
         boolean[] applicable = this.isApplicable(jointAction);
 
@@ -1458,16 +1238,12 @@ class StateSequence
         State newState = this.apply(jointAction, applicable);
 
         // Update this.states and this.numStates. Grow as necessary.
-        if (this.allowDiscardingPastStates)
-        {
+        if (this.allowDiscardingPastStates) {
             this.states[0] = newState;
             this.stateTimes[0] = actionTime;
             // NB. This change will not be visible to other threads; if we needed that we could set numStates = 1.
-        }
-        else
-        {
-            if (this.states.length == this.numStates)
-            {
+        } else {
+            if (this.states.length == this.numStates) {
                 this.states = Arrays.copyOf(this.states, this.states.length * 2);
                 this.stateTimes = Arrays.copyOf(this.stateTimes, this.stateTimes.length * 2);
             }

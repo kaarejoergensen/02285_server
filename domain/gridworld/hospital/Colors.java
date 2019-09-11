@@ -1,13 +1,12 @@
 package domain.gridworld.hospital;
 
-import java.awt.Color;
+import java.awt.*;
 
 /**
  * Supported colors:
- *  blue, red, cyan, purple, green, orange, pink, grey, lightblue, brown
+ * blue, red, cyan, purple, green, orange, pink, grey, lightblue, brown
  */
-class Colors
-{
+class Colors {
     private static final Color Blue = new Color(48, 80, 255);
     private static final Color Red = new Color(255, 0, 0);
     private static final Color Cyan = new Color(0, 255, 255);
@@ -22,10 +21,8 @@ class Colors
     static final Color UnsolvedGoal = new Color(223, 223, 0);
     static final Color SolvedGoal = new Color(0, 160, 0);
 
-    static Color fromString(String colorName)
-    {
-        switch (colorName)
-        {
+    static Color fromString(String colorName) {
+        switch (colorName) {
             case "blue":
                 return Colors.Blue;
             case "red":

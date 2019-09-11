@@ -1,37 +1,26 @@
 package gui.widgets;
 
-import javax.swing.JComponent;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics;
-import java.awt.Polygon;
-import java.awt.RenderingHints;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 
-public class StepForwardButton
-        extends JComponent
-{
+public class StepForwardButton extends JComponent {
     private BufferedImage stepForwardIcon;
 
-    public StepForwardButton(Runnable action)
-    {
+    public StepForwardButton(Runnable action) {
         super();
         this.setOpaque(true);
 
-        this.addMouseListener(new MouseAdapter()
-        {
+        this.addMouseListener(new MouseAdapter() {
             @Override
-            public void mouseReleased(MouseEvent e)
-            {
-                if (e.getButton() != MouseEvent.BUTTON1)
-                {
+            public void mouseReleased(MouseEvent e) {
+                if (e.getButton() != MouseEvent.BUTTON1) {
                     return;
                 }
                 JComponent source = (JComponent) e.getSource();
-                if (0 <= e.getX() && e.getX() <= source.getWidth() && 0 <= e.getY() && e.getY() <= source.getHeight())
-                {
+                if (0 <= e.getX() && e.getX() <= source.getWidth() && 0 <= e.getY() && e.getY() <= source.getHeight()) {
                     action.run();
                 }
             }
@@ -39,13 +28,11 @@ public class StepForwardButton
     }
 
     @Override
-    public void paint(Graphics g)
-    {
+    public void paint(Graphics g) {
         g.drawImage(this.stepForwardIcon, 0, 0, null);
     }
 
-    public void render(int width, int height, int margin, Color backgroundColor, Color foregroundColor)
-    {
+    public void render(int width, int height, int margin, Color backgroundColor, Color foregroundColor) {
         // Fixed size.
         this.setMinimumSize(new Dimension(width, height));
         this.setPreferredSize(new Dimension(width, height));

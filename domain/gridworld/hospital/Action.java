@@ -1,9 +1,7 @@
 package domain.gridworld.hospital;
 
-class Action
-{
-    enum Type
-    {
+class Action {
+    enum Type {
         NoOp,
         Move,
         Push,
@@ -16,8 +14,7 @@ class Action
     final short boxDeltaRow;
     final short boxDeltaCol;
 
-    private Action(Type type, int moveDeltaRow, int moveDeltaCol, int boxDeltaRow, int boxDeltaCol)
-    {
+    private Action(Type type, int moveDeltaRow, int moveDeltaCol, int boxDeltaRow, int boxDeltaCol) {
         this.type = type;
         this.moveDeltaRow = (short) moveDeltaRow;
         this.moveDeltaCol = (short) moveDeltaCol;
@@ -58,10 +55,8 @@ class Action
     static final Action PullWS = new Action(Type.Pull, 0, -1, 1, 0);
     static final Action PullWE = new Action(Type.Pull, 0, -1, 0, 1);
 
-    static Action parse(String action)
-    {
-        switch (action)
-        {
+    static Action parse(String action) {
+        switch (action) {
             case "NoOp":
                 return NoOp;
 
