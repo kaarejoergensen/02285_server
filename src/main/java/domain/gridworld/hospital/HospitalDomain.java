@@ -63,6 +63,8 @@ public final class HospitalDomain
     private int cellBoxMargin;
     // Agent and box letters.
     // FIXME: TextLayout performance sucks. Replace.
+    private List agents = new List();
+
     private TextLayout[] boxLetterText = new TextLayout[26];
     private int[] boxLetterTopOffset = new int[26];
     private int[] boxLetterLeftOffset = new int[26];
