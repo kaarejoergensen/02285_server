@@ -37,8 +37,7 @@ public class State {
      * Arguments are not copied, and therefore should not be modified after being passed in.
      */
     public State(int[] agentRows, int[] agentCols, Color[] agentColors, boolean[][] walls,
-                 char[][] boxes, Color[] boxColors, char[][] goals
-    ) {
+                 char[][] boxes, Color[] boxColors, char[][] goals) {
         this.agentRows = agentRows;
         this.agentCols = agentCols;
         this.agentColors = agentColors;
@@ -59,20 +58,14 @@ public class State {
         // Copy parent.
         this.agentRows = Arrays.copyOf(parent.agentRows, parent.agentRows.length);
         this.agentCols = Arrays.copyOf(parent.agentCols, parent.agentCols.length);
-        this.agentColors = Arrays.copyOf(parent.agentColors, parent.agentColors.length);
-        this.walls = new boolean[parent.walls.length][];
-        for (int i = 0; i < parent.walls.length; i++) {
-            this.walls[i] = Arrays.copyOf(parent.walls[i], parent.walls[i].length);
-        }
+        this.agentColors = parent.agentColors;
+        this.walls = parent.walls;
         this.boxes = new char[parent.boxes.length][];
         for (int i = 0; i < parent.boxes.length; i++) {
             this.boxes[i] = Arrays.copyOf(parent.boxes[i], parent.boxes[i].length);
         }
-        this.boxColors = Arrays.copyOf(parent.boxColors, parent.boxColors.length);
-        this.goals = new char[parent.goals.length][];
-        for (int i = 0; i < parent.goals.length; i++) {
-            this.goals[i] = Arrays.copyOf(parent.goals[i], parent.goals[i].length);
-        }
+        this.boxColors = parent.boxColors;
+        this.goals = parent.goals;
         this.parent = parent;
         this.jointAction = Arrays.copyOf(jointAction, jointAction.length);
         this.g = parent.g + 1;
@@ -335,13 +328,9 @@ public class State {
         if (this._hash == 0) {
             final int prime = 31;
             int result = 1;
-            result = prime * result + Arrays.hashCode(this.agentColors);
             result = prime * result + Arrays.hashCode(this.agentRows);
             result = prime * result + Arrays.hashCode(this.agentCols);
-            result = prime * result + Arrays.deepHashCode(this.walls);
             result = prime * result + Arrays.deepHashCode(this.boxes);
-            result = prime * result + Arrays.hashCode(this.boxColors);
-            result = prime * result + Arrays.deepHashCode(this.goals);
             this._hash = result;
         }
         return this._hash;
@@ -361,11 +350,7 @@ public class State {
         State other = (State) obj;
         return Arrays.equals(this.agentRows, other.agentRows) &&
                 Arrays.equals(this.agentCols, other.agentCols) &&
-                Arrays.equals(this.agentColors, other.agentColors) &&
-                Arrays.deepEquals(this.walls, other.walls) &&
-                Arrays.deepEquals(this.boxes, other.boxes) &&
-                Arrays.equals(this.boxColors, other.boxColors) &&
-                Arrays.deepEquals(this.goals, other.goals);
+                Arrays.deepEquals(this.boxes, other.boxes);
     }
 
     @Override
