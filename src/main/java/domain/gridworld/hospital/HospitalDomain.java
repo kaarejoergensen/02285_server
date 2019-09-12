@@ -4,6 +4,7 @@ import client.Client;
 import client.Timeout;
 import domain.Domain;
 import domain.ParseException;
+import domain.gridworld.hospital.gameobjects.Agent;
 import server.Server;
 
 import java.awt.*;

@@ -1,10 +1,9 @@
-package domain.gridworld.hospital;
+package domain.gridworld.hospital.gameobjects;
 
 import java.awt.*;
 import java.awt.font.TextLayout;
-import java.awt.geom.AffineTransform;
 
-public class Agent {
+public abstract class GameObject {
 
     public byte id;
 
@@ -17,7 +16,7 @@ public class Agent {
     private Color armColor;
 
 
-    public Agent(byte id, Color color){
+    public GameObject(byte id, Color color){
         this.id = id;
         armColor = color.darker();
         outlineColor = color.darker().darker();
@@ -54,4 +53,5 @@ public class Agent {
     public Color getOutlineColor() {
         return outlineColor;
     }
+
 }
