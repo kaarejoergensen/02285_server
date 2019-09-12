@@ -189,7 +189,7 @@ public class SearchClient {
                             "-greedy to set the search strategy.");
             }
         } else {
-            frontier = new FrontierBFS();
+            frontier = new FrontierBestFirst(new HeuristicGreedy(initialState));
             System.err.println("Defaulting to BFS search. Use arguments -bfs, -dfs, -astar, -wastar, or -greedy to " +
                     "set the search strategy.");
         }

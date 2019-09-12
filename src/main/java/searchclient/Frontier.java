@@ -3,6 +3,7 @@ package searchclient;
 import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.PriorityQueue;
 
 public abstract class Frontier {
     protected final HashSet<State> set = new HashSet<>(65536);
@@ -72,21 +73,22 @@ class FrontierDFS extends Frontier {
 
 class FrontierBestFirst extends Frontier {
     private Heuristic heuristic;
-    private final ArrayDeque<State> queue = new ArrayDeque<>(65536);
+    private final PriorityQueue<State> queue;
 
     public FrontierBestFirst(Heuristic h) {
         this.heuristic = h;
+        queue = new PriorityQueue<>(heuristic);
     }
 
     @Override
     public void add(State s) {
-        this.queue.addLast(s);
+        this.queue.add(s);
         this.set.add(s);
     }
 
     @Override
     public State pop() {
-        State s = this.queue.pollFirst();
+        State s = this.queue.poll();
         this.set.remove(s);
         return s;
     }
