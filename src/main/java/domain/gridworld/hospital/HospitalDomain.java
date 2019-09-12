@@ -15,6 +15,7 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.concurrent.TimeUnit;
@@ -63,21 +64,24 @@ public final class HospitalDomain
     private int cellBoxMargin;
     // Agent and box letters.
     // FIXME: TextLayout performance sucks. Replace.
-    private List agents = new List();
+    private ArrayList<Agent> agents;
 
     private TextLayout[] boxLetterText = new TextLayout[26];
     private int[] boxLetterTopOffset = new int[26];
     private int[] boxLetterLeftOffset = new int[26];
+    /*
     private TextLayout[] agentLetterText = new TextLayout[10];
     private int[] agentLetterTopOffset = new int[10];
     private int[] agentLetterLeftOffset = new int[10];
     // Agent colors.
     private Color[] agentOutlineColor = new Color[10];
     private Color[] agentArmColor = new Color[10];
+     */
     // For drawing arms on agents.
     private Polygon agentArmMove = new Polygon();
     private Polygon agentArmPushPull = new Polygon();
     private AffineTransform agentArmTransform = new AffineTransform();
+
     // In an interpolation between two states, we track the static and dynamic elements when possible to draw less.
     private boolean staticElementsRendered = false;
     private int numDynamicBoxes;
@@ -99,9 +103,10 @@ public final class HospitalDomain
             this.numActions = this.stateSequence.getNumStates() - 1;
         }
 
-        for (byte agent = 0; agent < this.stateSequence.numAgents; ++agent) {
-            this.agentArmColor[agent] = this.stateSequence.agentColors[agent].darker();
-            this.agentOutlineColor[agent] = this.stateSequence.agentColors[agent].darker().darker();
+        //Initate Agents
+        agents = new ArrayList<Agent>();
+        for (byte i = 0; i < this.stateSequence.numAgents; ++i) {
+            agents.add(new Agent(i, this.stateSequence.agentColors[i]));
         }
     }
 
@@ -747,13 +752,13 @@ public final class HospitalDomain
             this.boxLetterLeftOffset[letter] = cellTextMargin + (size - bound.width) / 2 - bound.x;
         }
 
-        for (int agent = 0; agent < 10; ++agent) {
+        for(Agent agent : agents) {
             // FIXME: Holy shit, creating a TextLayout object is SLOW!
-            this.agentLetterText[agent] = new TextLayout(Character.toString('0' + agent), curFont, fontRenderContext);
-            Rectangle bound = this.agentLetterText[agent].getPixelBounds(fontRenderContext, 0, 0);
+            agent.setLetterText(new TextLayout(Character.toString('0' + agent.id), curFont, fontRenderContext));
+            Rectangle bound = agent.getLetterText().getPixelBounds(fontRenderContext, 0, 0);
             int size = this.cellSize - 2 * cellTextMargin;
-            this.agentLetterTopOffset[agent] = cellTextMargin + size - (size - bound.height) / 2;
-            this.agentLetterLeftOffset[agent] = cellTextMargin + (size - bound.width) / 2 - bound.x;
+            agent.setLetterTopOffset(cellTextMargin + size - (size - bound.height) / 2);
+            agent.setLetterLeftOffset(cellTextMargin + (size - bound.width) / 2 - bound.x);
         }
         Server.printDebug(String.format("layoutLetters: %d ms.", (System.nanoTime() - t1) / 1000000));
 
@@ -834,11 +839,13 @@ public final class HospitalDomain
 
         // No need to draw text if cell is solved, since agent will be drawn on top of text anyway.
         if (!solved) {
-            TextLayout letterText = this.agentLetterText[letter - '0'];
-            int letterTopOffet = this.agentLetterTopOffset[letter - '0'];
-            int letterLeftOffet = this.agentLetterLeftOffset[letter - '0'];
+            //TODO: Make sure this works - Fredrik
+            var agent = agents.get(letter - '0');
+            TextLayout letterText = agent.getLetterText();
+            int letterTopOffset = agent.getLetterTopOffset();
+            int letterLeftOffset = agent.getLetterLeftOffset();
             g.setColor(GOAL_FONT_COLOR);
-            letterText.draw(g, left + letterLeftOffet, top + letterTopOffet);
+            letterText.draw(g, left + letterLeftOffset, top + letterTopOffset);
             g.drawString("", 0, 0);
         }
     }
@@ -855,11 +862,11 @@ public final class HospitalDomain
         letterText.draw(g, left + letterLeftOffet, top + letterTopOffet);
     }
 
-    private void drawAgent(Graphics2D g, int top, int left, char letter, byte agent) {
+    private void drawAgent(Graphics2D g, int top, int left, char letter, byte agentid) {
         int size = this.cellSize - 2 * this.cellBoxMargin;
 
         // Agent fill.
-        g.setColor(this.stateSequence.agentColors[agent]);
+        g.setColor(this.stateSequence.agentColors[agentid]);
         g.fillOval(left + this.cellBoxMargin, top + this.cellBoxMargin, size, size);
 
         // Agent outline.
@@ -870,26 +877,30 @@ public final class HospitalDomain
 //        g.setStroke(stroke);
 
         // Agent letter.
-        TextLayout letterText = this.agentLetterText[letter - '0'];
-        int letterTopOffet = this.agentLetterTopOffset[letter - '0'];
-        int letterLeftOffet = this.agentLetterLeftOffset[letter - '0'];
+        Agent agent = agents.get(letter - '0');
+        //
+        TextLayout letterText = agent.getLetterText();
+        int letterTopOffet = agent.getLetterTopOffset();
+        int letterLeftOffet = agent.getLetterLeftOffset();
         g.setColor(BOX_AGENT_FONT_COLOR);
         letterText.draw(g, left + letterLeftOffet, top + letterTopOffet);
         g.drawString("W", 0, 0);
     }
 
-    private void drawAgentArm(Graphics2D g, Polygon armShape, int top, int left, double rotation, byte agent) {
+    private void drawAgentArm(Graphics2D g, Polygon armShape, int top, int left, double rotation, byte agentid) {
         int armTop = top + this.cellSize / 2;
         int armLeft = left + this.cellSize / 2;
         this.setArmTransform(armTop, armLeft, rotation);
         g.setTransform(this.agentArmTransform);
 
+        //Get Agent
+        var agent = agents.get(agentid);
         // Arm fill.
-        g.setColor(this.agentArmColor[agent]);
+        g.setColor(agent.getArmColor());
         g.fillPolygon(armShape);
 
         // Arm outline.
-        g.setColor(this.agentOutlineColor[agent]);
+        g.setColor(agent.getOutlineColor());
         Stroke stroke = g.getStroke();
         g.setStroke(OUTLINE_STROKE);
         g.drawPolygon(armShape);

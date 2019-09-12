@@ -6,6 +6,8 @@ import java.awt.geom.AffineTransform;
 
 public class Agent {
 
+    public byte id;
+
     private TextLayout letterText;
 
     private int letterTopOffset;
@@ -14,18 +16,42 @@ public class Agent {
     private Color outlineColor;
     private Color armColor;
 
-    //Arms on agents.
-    private Polygon agentArmMove;
-    private Polygon agentArmPushPull = new Polygon();
-    private AffineTransform agentArmTransform = new AffineTransform();
 
-    public Agent(){
-
-
-        //Initiate arms
-        agentArmMove = new Polygon();
-        agentArmPushPull = new Polygon();
-        agentArmTransform = new AffineTransform();
+    public Agent(byte id, Color color){
+        this.id = id;
+        armColor = color.darker();
+        outlineColor = color.darker().darker();
     }
 
+    public TextLayout getLetterText() {
+        return letterText;
+    }
+
+    public void setLetterText(TextLayout letterText) {
+        this.letterText = letterText;
+    }
+
+    public int getLetterTopOffset() {
+        return letterTopOffset;
+    }
+
+    public void setLetterTopOffset(int letterTopOffset) {
+        this.letterTopOffset = letterTopOffset;
+    }
+
+    public int getLetterLeftOffset() {
+        return letterLeftOffset;
+    }
+
+    public void setLetterLeftOffset(int letterLeftOffset) {
+        this.letterLeftOffset = letterLeftOffset;
+    }
+
+    public Color getArmColor() {
+        return armColor;
+    }
+
+    public Color getOutlineColor() {
+        return outlineColor;
+    }
 }
