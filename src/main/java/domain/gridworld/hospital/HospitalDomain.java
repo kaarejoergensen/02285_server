@@ -5,6 +5,7 @@ import client.Timeout;
 import domain.Domain;
 import domain.ParseException;
 import domain.gridworld.hospital.gameobjects.Agent;
+import domain.gridworld.hospital.gameobjects.Box;
 import server.Server;
 
 import java.awt.*;
@@ -66,18 +67,12 @@ public final class HospitalDomain
     // Agent and box letters.
     // FIXME: TextLayout performance sucks. Replace.
     private ArrayList<Agent> agents;
+    private ArrayList<Box> boxes;
 
     private TextLayout[] boxLetterText = new TextLayout[26];
     private int[] boxLetterTopOffset = new int[26];
     private int[] boxLetterLeftOffset = new int[26];
-    /*
-    private TextLayout[] agentLetterText = new TextLayout[10];
-    private int[] agentLetterTopOffset = new int[10];
-    private int[] agentLetterLeftOffset = new int[10];
-    // Agent colors.
-    private Color[] agentOutlineColor = new Color[10];
-    private Color[] agentArmColor = new Color[10];
-     */
+
     // For drawing arms on agents.
     private Polygon agentArmMove = new Polygon();
     private Polygon agentArmPushPull = new Polygon();
@@ -86,6 +81,7 @@ public final class HospitalDomain
     // In an interpolation between two states, we track the static and dynamic elements when possible to draw less.
     private boolean staticElementsRendered = false;
     private int numDynamicBoxes;
+
     private int[] dynamicBoxes = new int[10];
     private int numDynamicAgents;
     private byte[] dynamicAgents = new byte[10];
@@ -109,246 +105,11 @@ public final class HospitalDomain
         for (byte i = 0; i < this.stateSequence.numAgents; ++i) {
             agents.add(new Agent(i, this.stateSequence.agentColors[i]));
         }
+
+        //Initiate Boxes!?
     }
 
-    @Override
-    public void runProtocol(Timeout timeout,
-                            long timeoutNS,
-                            BufferedInputStream clientIn,
-                            BufferedOutputStream clientOut,
-                            OutputStream logOut
-    ) {
-        Client.printDebug("Protocol begun.");
 
-        BufferedReader clientReader
-                = new BufferedReader(new InputStreamReader(clientIn, StandardCharsets.US_ASCII.newDecoder()));
-        BufferedWriter clientWriter
-                = new BufferedWriter(new OutputStreamWriter(clientOut, StandardCharsets.US_ASCII.newEncoder()));
-        BufferedWriter logWriter
-                = new BufferedWriter(new OutputStreamWriter(logOut, StandardCharsets.US_ASCII.newEncoder()));
-
-        // Read client name. 10 seconds timeout.
-        timeout.reset(System.nanoTime(), TimeUnit.SECONDS.toNanos(10));
-        String clientMsg;
-        try {
-            Client.printDebug("Waiting for client name.");
-            clientMsg = clientReader.readLine();
-        } catch (CharacterCodingException e) {
-            Client.printError("Client message not valid ASCII.");
-            return;
-        } catch (IOException e) {
-            // FIXME: What may even cause this? Closing the stream causes readLine to return null rather than throw.
-            synchronized (System.out) {
-                Client.printError("Unexpected exception while reading client name:");
-                e.printStackTrace(System.out);
-            }
-            return;
-        }
-
-        // Check and reset timeout.
-        long startNS = System.nanoTime();
-        if (!timeout.reset(startNS, timeoutNS)) {
-            Client.printError("Timed out while waiting for client name.");
-            return;
-        }
-
-        // Store client name.
-        if (clientMsg != null) {
-            Client.printDebug("Received client name: " + clientMsg);
-            this.clientName = clientMsg;
-        } else {
-            Client.printError("Client closed its output stream before sending its name.");
-            return;
-        }
-
-        // Send level to client and log.
-        Client.printDebug("Opening level file: " + this.levelFile);
-        try (InputStream levelStream = Files.newInputStream(this.levelFile)) {
-            Client.printDebug("Writing level to client and log.");
-            try {
-                byte[] buffer = new byte[4096];
-                int len;
-                boolean endNewline = false;
-                while ((len = levelStream.readNBytes(buffer, 0, buffer.length)) != 0) {
-                    clientOut.write(buffer, 0, len);
-                    logOut.write(buffer, 0, len);
-                    endNewline = buffer[len - 1] == '\n';
-                }
-                clientOut.flush();
-                logOut.flush();
-                if (!endNewline) {
-                    clientWriter.newLine();
-                    clientWriter.flush();
-                    logWriter.newLine();
-                    logWriter.flush();
-                }
-            } catch (IOException e) {
-                if (timeout.isExpired()) {
-                    Client.printError("Timeout expired while sending level to client.");
-                } else {
-                    Client.printError("Could not send level to client and/or log.");
-                    Client.printError(e.getMessage());
-                }
-                return;
-            }
-        } catch (IOException e) {
-            Client.printError("Could not open level file.");
-            Client.printError(e.getMessage());
-            return;
-        }
-
-        // Log client name.
-        // Has to be logged after level file contents have been logged (first log lines must be domain).
-        try {
-            Client.printDebug("Logging client name.");
-            logWriter.write("#clientname");
-            logWriter.newLine();
-            logWriter.write(this.clientName);
-            logWriter.newLine();
-            logWriter.flush();
-        } catch (IOException e) {
-            Client.printError("Could not write client name to log file.");
-            Client.printError(e.getMessage());
-            return;
-        }
-
-        Client.printDebug("Beginning action/comment message exchanges.");
-        long numMessages = 0;
-        Action[] jointAction = new Action[this.stateSequence.numAgents];
-
-        try {
-            logWriter.write("#actions");
-            logWriter.newLine();
-            logWriter.flush();
-        } catch (IOException e) {
-            Client.printError("Could not write to log file.");
-            Client.printError(e.getMessage());
-            return;
-        }
-
-        protocolLoop:
-        while (true) {
-            if (timeout.isExpired()) {
-                Client.printDebug("Client timed out in protocol loop.");
-                break;
-            }
-
-            // Read client message.
-            try {
-                clientMsg = clientReader.readLine();
-            } catch (CharacterCodingException e) {
-                Client.printError("Client message not valid ASCII.");
-                return;
-            } catch (IOException e) {
-                Client.printError("Unexpected exception while reading from client.");
-                Client.printError(e.getMessage());
-                e.printStackTrace();
-                return;
-            }
-            if (clientMsg == null) {
-                if (timeout.isExpired()) {
-                    Client.printDebug("Client stream closed after timeout.");
-                } else {
-                    Client.printDebug("Client closed its output stream.");
-                }
-                break;
-            }
-
-            if (timeout.isExpired()) {
-                Client.printDebug("Client timed out in protocol loop.");
-                break;
-            }
-
-            // Process message.
-            ++numMessages;
-            if (clientMsg.startsWith("#")) {
-                Client.printMessage(clientMsg.substring(1));
-            } else {
-                // Parse action string.
-                String[] actionMsg = clientMsg.split(";");
-                if (actionMsg.length != this.stateSequence.numAgents) {
-                    Client.printError("Invalid number of agents in joint action:");
-                    Client.printError(clientMsg);
-                    continue;
-                }
-                for (int i = 0; i < jointAction.length; ++i) {
-                    jointAction[i] = Action.parse(actionMsg[i]);
-                    if (jointAction[i] == null) {
-                        Client.printError("Invalid joint action:");
-                        Client.printError(clientMsg);
-                        continue protocolLoop;
-                    }
-                }
-
-                // Execute action.
-                long actionTime = System.nanoTime() - startNS;
-                boolean[] result = this.stateSequence.execute(jointAction, actionTime);
-                ++this.numActions;
-
-                // Write response.
-                try {
-                    clientWriter.write(result[0] ? "true" : "false");
-                    for (int i = 1; i < result.length; ++i) {
-                        clientWriter.write(";");
-                        clientWriter.write(result[i] ? "true" : "false");
-                    }
-                    clientWriter.newLine();
-                    clientWriter.flush();
-                } catch (IOException e) {
-                    // TODO: Happens when client closes before reading responses, then server can't write to the
-                    //  client's input stream.
-                    Client.printError("Could not write response to client.");
-                    Client.printError(e.getMessage());
-                    return;
-                }
-
-                // Log action.
-                try {
-                    logWriter.write(Long.toString(actionTime));
-                    logWriter.write(":");
-                    logWriter.write(clientMsg);
-                    logWriter.newLine();
-                    logWriter.flush();
-                } catch (IOException e) {
-                    Client.printError("Could not write to log file.");
-                    Client.printError(e.getMessage());
-                    return;
-                }
-            }
-        }
-        Client.printDebug("Messages exchanged: " + numMessages + ".");
-
-        // Log summary.
-        try {
-            logWriter.write("#end");
-            logWriter.newLine();
-
-            logWriter.write("#solved");
-            logWriter.newLine();
-            logWriter.write(this.isGoalState(this.getNumStates() - 1) ? "true" : "false");
-            logWriter.newLine();
-
-            logWriter.write("#numactions");
-            logWriter.newLine();
-            logWriter.write(Long.toString(this.numActions));
-            logWriter.newLine();
-
-            logWriter.write("#time");
-            logWriter.newLine();
-            logWriter.write(Long.toString(this.getStateTime(this.getNumStates() - 1)));
-            logWriter.newLine();
-
-            logWriter.write("#end");
-            logWriter.newLine();
-            logWriter.flush();
-        } catch (IOException e) {
-            Client.printError("Could not write to log file.");
-            Client.printError(e.getMessage());
-            return;
-        }
-
-        Client.printDebug("Protocol finished.");
-    }
 
     @Override
     public void allowDiscardingPastStates() {
@@ -914,5 +675,244 @@ public final class HospitalDomain
         double cos = Math.cos(rotation);
         double sin = Math.sin(rotation);
         this.agentArmTransform.setTransform(cos, sin, -sin, cos, left, top);
+    }
+
+    @Override
+    public void runProtocol(Timeout timeout,
+                            long timeoutNS,
+                            BufferedInputStream clientIn,
+                            BufferedOutputStream clientOut,
+                            OutputStream logOut
+    ) {
+        Client.printDebug("Protocol begun.");
+
+        BufferedReader clientReader
+                = new BufferedReader(new InputStreamReader(clientIn, StandardCharsets.US_ASCII.newDecoder()));
+        BufferedWriter clientWriter
+                = new BufferedWriter(new OutputStreamWriter(clientOut, StandardCharsets.US_ASCII.newEncoder()));
+        BufferedWriter logWriter
+                = new BufferedWriter(new OutputStreamWriter(logOut, StandardCharsets.US_ASCII.newEncoder()));
+
+        // Read client name. 10 seconds timeout.
+        timeout.reset(System.nanoTime(), TimeUnit.SECONDS.toNanos(10));
+        String clientMsg;
+        try {
+            Client.printDebug("Waiting for client name.");
+            clientMsg = clientReader.readLine();
+        } catch (CharacterCodingException e) {
+            Client.printError("Client message not valid ASCII.");
+            return;
+        } catch (IOException e) {
+            // FIXME: What may even cause this? Closing the stream causes readLine to return null rather than throw.
+            synchronized (System.out) {
+                Client.printError("Unexpected exception while reading client name:");
+                e.printStackTrace(System.out);
+            }
+            return;
+        }
+
+        // Check and reset timeout.
+        long startNS = System.nanoTime();
+        if (!timeout.reset(startNS, timeoutNS)) {
+            Client.printError("Timed out while waiting for client name.");
+            return;
+        }
+
+        // Store client name.
+        if (clientMsg != null) {
+            Client.printDebug("Received client name: " + clientMsg);
+            this.clientName = clientMsg;
+        } else {
+            Client.printError("Client closed its output stream before sending its name.");
+            return;
+        }
+
+        // Send level to client and log.
+        Client.printDebug("Opening level file: " + this.levelFile);
+        try (InputStream levelStream = Files.newInputStream(this.levelFile)) {
+            Client.printDebug("Writing level to client and log.");
+            try {
+                byte[] buffer = new byte[4096];
+                int len;
+                boolean endNewline = false;
+                while ((len = levelStream.readNBytes(buffer, 0, buffer.length)) != 0) {
+                    clientOut.write(buffer, 0, len);
+                    logOut.write(buffer, 0, len);
+                    endNewline = buffer[len - 1] == '\n';
+                }
+                clientOut.flush();
+                logOut.flush();
+                if (!endNewline) {
+                    clientWriter.newLine();
+                    clientWriter.flush();
+                    logWriter.newLine();
+                    logWriter.flush();
+                }
+            } catch (IOException e) {
+                if (timeout.isExpired()) {
+                    Client.printError("Timeout expired while sending level to client.");
+                } else {
+                    Client.printError("Could not send level to client and/or log.");
+                    Client.printError(e.getMessage());
+                }
+                return;
+            }
+        } catch (IOException e) {
+            Client.printError("Could not open level file.");
+            Client.printError(e.getMessage());
+            return;
+        }
+
+        // Log client name.
+        // Has to be logged after level file contents have been logged (first log lines must be domain).
+        try {
+            Client.printDebug("Logging client name.");
+            logWriter.write("#clientname");
+            logWriter.newLine();
+            logWriter.write(this.clientName);
+            logWriter.newLine();
+            logWriter.flush();
+        } catch (IOException e) {
+            Client.printError("Could not write client name to log file.");
+            Client.printError(e.getMessage());
+            return;
+        }
+
+        Client.printDebug("Beginning action/comment message exchanges.");
+        long numMessages = 0;
+        Action[] jointAction = new Action[this.stateSequence.numAgents];
+
+        try {
+            logWriter.write("#actions");
+            logWriter.newLine();
+            logWriter.flush();
+        } catch (IOException e) {
+            Client.printError("Could not write to log file.");
+            Client.printError(e.getMessage());
+            return;
+        }
+
+        protocolLoop:
+        while (true) {
+            if (timeout.isExpired()) {
+                Client.printDebug("Client timed out in protocol loop.");
+                break;
+            }
+
+            // Read client message.
+            try {
+                clientMsg = clientReader.readLine();
+            } catch (CharacterCodingException e) {
+                Client.printError("Client message not valid ASCII.");
+                return;
+            } catch (IOException e) {
+                Client.printError("Unexpected exception while reading from client.");
+                Client.printError(e.getMessage());
+                e.printStackTrace();
+                return;
+            }
+            if (clientMsg == null) {
+                if (timeout.isExpired()) {
+                    Client.printDebug("Client stream closed after timeout.");
+                } else {
+                    Client.printDebug("Client closed its output stream.");
+                }
+                break;
+            }
+
+            if (timeout.isExpired()) {
+                Client.printDebug("Client timed out in protocol loop.");
+                break;
+            }
+
+            // Process message.
+            ++numMessages;
+            if (clientMsg.startsWith("#")) {
+                Client.printMessage(clientMsg.substring(1));
+            } else {
+                // Parse action string.
+                String[] actionMsg = clientMsg.split(";");
+                if (actionMsg.length != this.stateSequence.numAgents) {
+                    Client.printError("Invalid number of agents in joint action:");
+                    Client.printError(clientMsg);
+                    continue;
+                }
+                for (int i = 0; i < jointAction.length; ++i) {
+                    jointAction[i] = Action.parse(actionMsg[i]);
+                    if (jointAction[i] == null) {
+                        Client.printError("Invalid joint action:");
+                        Client.printError(clientMsg);
+                        continue protocolLoop;
+                    }
+                }
+
+                // Execute action.
+                long actionTime = System.nanoTime() - startNS;
+                boolean[] result = this.stateSequence.execute(jointAction, actionTime);
+                ++this.numActions;
+
+                // Write response.
+                try {
+                    clientWriter.write(result[0] ? "true" : "false");
+                    for (int i = 1; i < result.length; ++i) {
+                        clientWriter.write(";");
+                        clientWriter.write(result[i] ? "true" : "false");
+                    }
+                    clientWriter.newLine();
+                    clientWriter.flush();
+                } catch (IOException e) {
+                    // TODO: Happens when client closes before reading responses, then server can't write to the
+                    //  client's input stream.
+                    Client.printError("Could not write response to client.");
+                    Client.printError(e.getMessage());
+                    return;
+                }
+
+                // Log action.
+                try {
+                    logWriter.write(Long.toString(actionTime));
+                    logWriter.write(":");
+                    logWriter.write(clientMsg);
+                    logWriter.newLine();
+                    logWriter.flush();
+                } catch (IOException e) {
+                    Client.printError("Could not write to log file.");
+                    Client.printError(e.getMessage());
+                    return;
+                }
+            }
+        }
+        Client.printDebug("Messages exchanged: " + numMessages + ".");
+
+        // Log summary.
+        try {
+            logWriter.write("#end");
+            logWriter.newLine();
+
+            logWriter.write("#solved");
+            logWriter.newLine();
+            logWriter.write(this.isGoalState(this.getNumStates() - 1) ? "true" : "false");
+            logWriter.newLine();
+
+            logWriter.write("#numactions");
+            logWriter.newLine();
+            logWriter.write(Long.toString(this.numActions));
+            logWriter.newLine();
+
+            logWriter.write("#time");
+            logWriter.newLine();
+            logWriter.write(Long.toString(this.getStateTime(this.getNumStates() - 1)));
+            logWriter.newLine();
+
+            logWriter.write("#end");
+            logWriter.newLine();
+            logWriter.flush();
+        } catch (IOException e) {
+            Client.printError("Could not write to log file.");
+            Client.printError(e.getMessage());
+            return;
+        }
+
+        Client.printDebug("Protocol finished.");
     }
 }
