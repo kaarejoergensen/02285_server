@@ -170,6 +170,10 @@ public final class HospitalDomain
         return this.stateSequence.getStateTime(stateID);
     }
 
+    /*
+    Fredrik
+    Tegner vegg og bakke, samt mål og agenter
+     */
     @Override
     public void renderDomainBackground(Graphics2D g, int width, int height) {
         int numRows = this.stateSequence.numRows;
@@ -208,6 +212,7 @@ public final class HospitalDomain
             byte boxGoalLetter = this.stateSequence.boxGoalLetters[boxGoal];
             this.drawBoxGoalCell(g, row, col, (char) ('A' + boxGoalLetter), false);
         }
+        //Agents
         for (byte agent = 0; agent < this.stateSequence.numAgents; ++agent) {
             short row = this.stateSequence.agentGoalRows[agent];
             short col = this.stateSequence.agentGoalCols[agent];
@@ -232,6 +237,7 @@ public final class HospitalDomain
                 this.drawBoxGoalCell(g, row, col, (char) ('A' + boxGoalLetter), true);
             }
         }
+        //Agents again
         for (byte agent = 0; agent < this.stateSequence.numAgents; ++agent) {
             short row = this.stateSequence.agentGoalRows[agent];
             short col = this.stateSequence.agentGoalCols[agent];
@@ -496,6 +502,7 @@ public final class HospitalDomain
 
         long t1 = System.nanoTime();
         // Layout box and agent letters.
+
         for (int letter = 0; letter < 26; ++letter) {
             // FIXME: Holy shit, creating a TextLayout object is SLOW!
             this.boxLetterText[letter] = new TextLayout(Character.toString('A' + letter), curFont, fontRenderContext);
@@ -507,11 +514,7 @@ public final class HospitalDomain
 
         for(Agent agent : agents) {
             // FIXME: Holy shit, creating a TextLayout object is SLOW!
-            agent.setLetterText(new TextLayout(Character.toString('0' + agent.id), curFont, fontRenderContext));
-            Rectangle bound = agent.getLetterText().getPixelBounds(fontRenderContext, 0, 0);
-            int size = canvas.cellSize - 2 * canvas.cellTextMargin;
-            agent.setLetterTopOffset(canvas.cellTextMargin + size - (size - bound.height) / 2);
-            agent.setLetterLeftOffset(canvas.cellTextMargin + (size - bound.width) / 2 - bound.x);
+            agent.letterTextUpdate(curFont, fontRenderContext, canvas);
         }
         Server.printDebug(String.format("layoutLetters: %d ms.", (System.nanoTime() - t1) / 1000000));
 
