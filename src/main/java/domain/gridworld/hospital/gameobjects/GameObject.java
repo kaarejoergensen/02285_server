@@ -22,6 +22,11 @@ public abstract class GameObject {
         outlineColor = color.darker().darker();
     }
 
+    public void draw(Graphics2D g, short row, short col){
+
+
+    }
+
     public TextLayout getLetterText() {
         return letterText;
     }

@@ -11,4 +11,6 @@ public interface IGameObject {
     public void setX();
     public int getY();
     public void setY();
+
+    public void draw();
 }
