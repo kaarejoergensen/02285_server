@@ -1,6 +1,8 @@
 package domain.gridworld.hospital;
 
 import domain.ParseException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import server.Server;
 
 import java.awt.*;
@@ -33,6 +35,8 @@ import java.util.BitSet;
  * from any number threads (e.g. the GUI threads). The state is up-to-date with calls to getNumStates().
  */
 class StateSequence {
+    private Logger serverLogger = LogManager.getLogger("server");
+
     /**
      * Bookkeeping for writing/reading logs.
      */
@@ -228,7 +232,7 @@ class StateSequence {
         }
 
         var tEnd = System.nanoTime();
-        Server.printDebug(String.format("Parsing time: %.3f ms.", (tEnd - tStart) / 1_000_000_000.0));
+        serverLogger.debug(String.format("Parsing time: %.3f ms.", (tEnd - tStart) / 1_000_000_000.0));
 
         // IMPORTANT: Done to ensure memory visibility of non-volatile variables on other threads after they've read
         //            numStates.
