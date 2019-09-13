@@ -67,10 +67,11 @@ public final class HospitalDomain
     private ArrayList<Agent> agents;
     private ArrayList<Box> boxes;
 
+    /*
     private TextLayout[] boxLetterText = new TextLayout[26];
     private int[] boxLetterTopOffset = new int[26];
     private int[] boxLetterLeftOffset = new int[26];
-
+    */
     // For drawing arms on agents.
     private Polygon agentArmMove = new Polygon();
     private Polygon agentArmPushPull = new Polygon();
@@ -108,6 +109,11 @@ public final class HospitalDomain
         }
 
         //Initiate Boxes!?
+        boxes = new ArrayList<Box>();
+        for( byte i = 0; i < this.stateSequence.numBoxes; ++i){
+                
+        }
+
     }
 
 
