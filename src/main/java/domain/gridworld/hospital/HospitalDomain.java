@@ -65,7 +65,12 @@ public final class HospitalDomain
     // Agent and box letters.
     // FIXME: TextLayout performance sucks. Replace.
     private ArrayList<Agent> agents;
+
+    //Contains all bxes
     private ArrayList<Box> boxes;
+    //Referances of boxes which is in goal state
+    //TODO Eller bruke variabel i 'Box'?
+    private ArrayList<Box> boxesOnGoal;
 
     /*
     private TextLayout[] boxLetterText = new TextLayout[26];
@@ -111,7 +116,7 @@ public final class HospitalDomain
         //Initiate Boxes!?
         boxes = new ArrayList<Box>();
         for( byte i = 0; i < this.stateSequence.numBoxes; ++i){
-                
+            boxes.add(new Box(i, this.stateSequence.boxColors[i]));
         }
 
     }
@@ -509,13 +514,8 @@ public final class HospitalDomain
         long t1 = System.nanoTime();
         // Layout box and agent letters.
 
-        for (int letter = 0; letter < 26; ++letter) {
-            // FIXME: Holy shit, creating a TextLayout object is SLOW!
-            this.boxLetterText[letter] = new TextLayout(Character.toString('A' + letter), curFont, fontRenderContext);
-            Rectangle bound = this.boxLetterText[letter].getPixelBounds(fontRenderContext, 0, 0);
-            int size = canvas.cellSize - 2 * canvas.cellTextMargin;
-            this.boxLetterTopOffset[letter] = canvas.cellTextMargin + size - (size - bound.height) / 2;
-            this.boxLetterLeftOffset[letter] = canvas.cellTextMargin + (size - bound.width) / 2 - bound.x;
+        for (Box box : boxes) {
+            box.letterTextUpdate(curFont, fontRenderContext, canvas);
         }
 
         for(Agent agent : agents) {
@@ -587,11 +587,11 @@ public final class HospitalDomain
 
         // No need to draw text if cell is solved, since box will be drawn on top of text anyway.
         if (!solved) {
-            TextLayout letterText = this.boxLetterText[letter - 'A'];
-            int letterTopOffet = this.boxLetterTopOffset[letter - 'A'];
-            int letterLeftOffet = this.boxLetterLeftOffset[letter - 'A'];
+            TextLayout letterText = boxes.get(letter - 'A').getLetterText();
+            int letterTopOffset = boxes.get(letter - 'A').getLetterTopOffset();
+            int letterLeftOffset = boxes.get(letter - 'A').getLetterLeftOffset();
             g.setColor(GOAL_FONT_COLOR);
-            letterText.draw(g, left + letterLeftOffet, top + letterTopOffet);
+            letterText.draw(g, left + letterLeftOffset, top + letterTopOffset);
         }
     }
 
@@ -620,9 +620,9 @@ public final class HospitalDomain
         g.setColor(color);
         g.fillRect(left + canvas.cellBoxMargin, top + canvas.cellBoxMargin, size, size);
 
-        TextLayout letterText = this.boxLetterText[letter - 'A'];
-        int letterTopOffet = this.boxLetterTopOffset[letter - 'A'];
-        int letterLeftOffet = this.boxLetterLeftOffset[letter - 'A'];
+        TextLayout letterText = boxes.get(letter - 'A').getLetterText();
+        int letterTopOffet = boxes.get(letter - 'A').getLetterTopOffset();
+        int letterLeftOffet = boxes.get(letter - 'A').getLetterLeftOffset();
         g.setColor(BOX_AGENT_FONT_COLOR);
         letterText.draw(g, left + letterLeftOffet, top + letterTopOffet);
     }
