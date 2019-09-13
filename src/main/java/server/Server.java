@@ -70,7 +70,7 @@ public class Server {
             arguments = new ArgumentParser(args);
         } catch (ArgumentException e) {
             serverLogger.error(e.getMessage());
-            return;
+            System.exit(-1);
         }
 
         if (arguments.helpPrinted()) {
