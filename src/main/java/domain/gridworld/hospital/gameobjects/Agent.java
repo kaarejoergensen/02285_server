@@ -12,7 +12,14 @@ public class Agent extends GameObject {
         super(id, color);
     }
 
-    public void letterTextUpdate(Font curFont, FontRenderContext fontRenderContext, CanvasDetails canvas) {
-        super.letterTextUpdate(Character.toString('0' + this.id), curFont, fontRenderContext, canvas);
+    public void letterTextUpdate(Font curFont, FontRenderContext fontRenderContext) {
+        super.letterTextUpdate(Character.toString('0' + this.id), curFont, fontRenderContext);
+    }
+
+    @Override
+    public void drawLetter(Graphics2D g, int top, int left) {
+        super.drawLetter(g,  top, left);
+        g.drawString("W", 0, 0);
+
     }
 }

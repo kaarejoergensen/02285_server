@@ -515,12 +515,12 @@ public final class HospitalDomain
         // Layout box and agent letters.
 
         for (Box box : boxes) {
-            box.letterTextUpdate(curFont, fontRenderContext, canvas);
+            box.letterTextUpdate(curFont, fontRenderContext);
         }
 
         for(Agent agent : agents) {
             // FIXME: Holy shit, creating a TextLayout object is SLOW!
-            agent.letterTextUpdate(curFont, fontRenderContext, canvas);
+            agent.letterTextUpdate(curFont, fontRenderContext);
         }
         Server.printDebug(String.format("layoutLetters: %d ms.", (System.nanoTime() - t1) / 1000000));
 
@@ -643,13 +643,8 @@ public final class HospitalDomain
 
         // Agent letter.
         Agent agent = agents.get(letter - '0');
-        //
-        TextLayout letterText = agent.getLetterText();
-        int letterTopOffet = agent.getLetterTopOffset();
-        int letterLeftOffet = agent.getLetterLeftOffset();
-        g.setColor(BOX_AGENT_FONT_COLOR);
-        letterText.draw(g, left + letterLeftOffet, top + letterTopOffet);
-        g.drawString("W", 0, 0);
+        agent.drawLetter(g, top,left);
+
     }
 
     private void drawAgentArm(Graphics2D g, Polygon armShape, int top, int left, double rotation, byte agentid) {

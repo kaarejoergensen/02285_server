@@ -1,5 +1,6 @@
 package domain.gridworld.hospital.gameobjects;
 
+import domain.gridworld.hospital.HospitalDomain;
 import domain.gridworld.hospital.components.CanvasDetails;
 
 import java.awt.*;
@@ -8,6 +9,9 @@ import java.awt.font.TextLayout;
 
 public abstract class GameObject {
 
+    private static final Color BOX_AGENT_FONT_COLOR = Color.BLACK;
+
+
     public byte id;
 
     private TextLayout letterText;
@@ -15,22 +19,33 @@ public abstract class GameObject {
     private int letterTopOffset;
     private int letterLeftOffset;
 
+    private Color color;
     private Color outlineColor;
     private Color armColor;
 
+    //Method Variables
+    protected int size;
 
     public GameObject(byte id, Color color){
         this.id = id;
+        this.color = color;
         armColor = color.darker();
         outlineColor = color.darker().darker();
     }
 
-    public void draw(Graphics2D g, short row, short col){
-
-
+    public void draw(Graphics2D g, int top, int left){
+        var canvas = HospitalDomain.canvas;
+        size = canvas.cellSize - 2 * canvas.cellBoxMargin;
+        g.setColor(color);
     }
 
-    public void letterTextUpdate(String codePoint, Font curFont, FontRenderContext fontRenderContext, CanvasDetails canvas){
+    public void drawLetter(Graphics2D g, int top, int left){
+        g.setColor(BOX_AGENT_FONT_COLOR);
+        getLetterText().draw(g, left + getLetterLeftOffset(), getLetterTopOffset() + top);
+    }
+
+    public void letterTextUpdate(String codePoint, Font curFont, FontRenderContext fontRenderContext){
+        var canvas = HospitalDomain.canvas;
         setLetterText(new TextLayout(codePoint, curFont, fontRenderContext));
         Rectangle bound = getLetterText().getPixelBounds(fontRenderContext, 0, 0);
 
