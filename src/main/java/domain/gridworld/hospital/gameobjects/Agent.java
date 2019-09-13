@@ -17,9 +17,15 @@ public class Agent extends GameObject {
     }
 
     @Override
+    public void draw(Graphics2D g, int top, int left) {
+        super.draw(g, top, left);
+        g.fillOval(left + cellBoxMargin, top + cellBoxMargin, size,size);
+        drawLetter(g,top,left);
+    }
+
+    @Override
     public void drawLetter(Graphics2D g, int top, int left) {
         super.drawLetter(g,  top, left);
         g.drawString("W", 0, 0);
-
     }
 }

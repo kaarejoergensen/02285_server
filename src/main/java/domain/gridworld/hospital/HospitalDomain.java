@@ -266,13 +266,14 @@ public final class HospitalDomain
             this.numDynamicAgents = 0;
 
             // Find dynamic boxes and draw static ones.
+            //TODO FIKSE DET HER DRITTET
             for (int box = 0; box < this.stateSequence.numBoxes; ++box) {
                 if (currentState.boxRows[box] == nextState.boxRows[box] &&
                         currentState.boxCols[box] == nextState.boxCols[box]) {
                     byte letter = this.stateSequence.boxLetters[box];
                     int top = canvas.originTop + currentState.boxRows[box] * canvas.cellSize;
                     int left = canvas.originLeft + currentState.boxCols[box] * canvas.cellSize;
-                    this.drawBox(g, top, left, (char) ('A' + letter), this.stateSequence.boxColors[letter]);
+                    boxes.get((char) ('A' + letter)).draw(g,top,left);
                 } else {
                     this.dynamicBoxes[this.numDynamicBoxes] = box;
                     ++this.numDynamicBoxes;
@@ -285,7 +286,7 @@ public final class HospitalDomain
                         currentState.agentCols[agent] == nextState.agentCols[agent]) {
                     int top = canvas.originTop + currentState.agentRows[agent] * canvas.cellSize;
                     int left = canvas.originLeft + currentState.agentCols[agent] * canvas.cellSize;
-                    this.drawAgent(g, top, left, (char) ('0' + agent), agent);
+                    agents.get((char) ('0' + agent)).draw(g,top,left);
                 } else {
                     this.dynamicAgents[this.numDynamicAgents] = agent;
 
@@ -431,7 +432,7 @@ public final class HospitalDomain
                 }
             }
         }
-
+        //TODO: Fy faen spar meg, fiks det drittet her
         if (this.staticElementsRendered) {
             // Draw dynamic boxes.
             for (int dynamicBox = 0; dynamicBox < this.numDynamicBoxes; ++dynamicBox) {
@@ -443,7 +444,7 @@ public final class HospitalDomain
                 int nLeft = canvas.originLeft + nextState.boxCols[box] * canvas.cellSize;
                 int iTop = (int) (cTop + (nTop - cTop) * interpolation);
                 int iLeft = (int) (cLeft + (nLeft - cLeft) * interpolation);
-                this.drawBox(g, iTop, iLeft, (char) ('A' + letter), this.stateSequence.boxColors[letter]);
+                boxes.get( (char) ('A' + letter)).draw(g,iTop,iLeft);
             }
 
             // Draw dynamic agents.
@@ -455,7 +456,7 @@ public final class HospitalDomain
                 int nLeft = canvas.originLeft + nextState.agentCols[agent] * canvas.cellSize;
                 int iTop = (int) (cTop + (nTop - cTop) * interpolation);
                 int iLeft = (int) (cLeft + (nLeft - cLeft) * interpolation);
-                this.drawAgent(g, iTop, iLeft, (char) ('0' + agent), agent);
+                agents.get((char) ('0' + agent)).draw(g,iTop,iLeft);
             }
         } else {
             // Draw all boxes.
@@ -467,7 +468,7 @@ public final class HospitalDomain
                 int nLeft = canvas.originLeft + nextState.boxCols[box] * canvas.cellSize;
                 int iTop = (int) (cTop + (nTop - cTop) * interpolation);
                 int iLeft = (int) (cLeft + (nLeft - cLeft) * interpolation);
-                this.drawBox(g, iTop, iLeft, (char) ('A' + letter), this.stateSequence.boxColors[letter]);
+                boxes.get( (char) ('A' + letter)).draw(g,iTop,iLeft);
             }
 
             // Draw all agents.
@@ -478,7 +479,7 @@ public final class HospitalDomain
                 int nLeft = canvas.originLeft + nextState.agentCols[agent] * canvas.cellSize;
                 int iTop = (int) (cTop + (nTop - cTop) * interpolation);
                 int iLeft = (int) (cLeft + (nLeft - cLeft) * interpolation);
-                this.drawAgent(g, iTop, iLeft, (char) ('0' + agent), agent);
+                agents.get((char) ('0' + agent)).draw(g,iTop,iLeft);
             }
         }
     }
@@ -613,38 +614,6 @@ public final class HospitalDomain
             letterText.draw(g, left + letterLeftOffset, top + letterTopOffset);
             g.drawString("", 0, 0);
         }
-    }
-
-    private void drawBox(Graphics2D g, int top, int left, char letter, Color color) {
-        int size = canvas.cellSize - 2 * canvas.cellBoxMargin;
-        g.setColor(color);
-        g.fillRect(left + canvas.cellBoxMargin, top + canvas.cellBoxMargin, size, size);
-
-        TextLayout letterText = boxes.get(letter - 'A').getLetterText();
-        int letterTopOffet = boxes.get(letter - 'A').getLetterTopOffset();
-        int letterLeftOffet = boxes.get(letter - 'A').getLetterLeftOffset();
-        g.setColor(BOX_AGENT_FONT_COLOR);
-        letterText.draw(g, left + letterLeftOffet, top + letterTopOffet);
-    }
-
-    private void drawAgent(Graphics2D g, int top, int left, char letter, byte agentid) {
-        int size = canvas.cellSize - 2 * canvas.cellBoxMargin;
-
-        // Agent fill.
-        g.setColor(this.stateSequence.agentColors[agentid]);
-        g.fillOval(left + canvas.cellBoxMargin, top + canvas.cellBoxMargin, size, size);
-
-        // Agent outline.
-//        g.setColor(this.agentOutlineColor[agent]);
-//        Stroke stroke = g.getStroke();
-//        g.setStroke(OUTLINE_STROKE);
-//        g.drawOval(left + BOX_MARGIN, top + BOX_MARGIN, size, size);
-//        g.setStroke(stroke);
-
-        // Agent letter.
-        Agent agent = agents.get(letter - '0');
-        agent.drawLetter(g, top,left);
-
     }
 
     private void drawAgentArm(Graphics2D g, Polygon armShape, int top, int left, double rotation, byte agentid) {
