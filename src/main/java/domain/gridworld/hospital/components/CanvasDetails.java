@@ -23,8 +23,8 @@ public class CanvasDetails {
     public void recalculateCanvas(int bufferWidth, int numCols, int bufferHeight, int numRows){
         cellSize = Math.min(bufferWidth / numCols, bufferHeight / numRows);
 
-        int excessWidth = width - numCols * cellSize;
-        int excessHeight = height - numRows * cellSize;
+        int excessWidth = bufferWidth - numCols * cellSize;
+        int excessHeight = bufferHeight - numRows * cellSize;
 
         originLeft = excessWidth / 2;
         originTop = excessHeight / 2;
