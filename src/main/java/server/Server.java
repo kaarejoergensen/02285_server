@@ -147,6 +147,15 @@ public class Server {
         }
     }
 
+    private void runReplays(ArgumentParser args) {
+        Domain[] domains = this.loadDomains(args.getReplayFilePaths());
+
+        if (args.hasGUIOutput()) {
+            PlaybackManager playbackManager = this.loadAndStartGUI(domains, args);
+            playbackManager.waitShutdown();
+        }
+    }
+
     private OutputStream createLogFileStream(boolean hasLogOutput, Path logFilePath) {
         if (hasLogOutput) {
             try {
@@ -218,6 +227,10 @@ public class Server {
     }
 
     private PlaybackManager loadAndStartGUI(Domain domain, ArgumentParser args) {
+        return this.loadAndStartGUI(new Domain[]{domain}, args);
+    }
+
+    private PlaybackManager loadAndStartGUI(Domain[] domains, ArgumentParser args) {
         serverLogger.debug("Loading GUI.");
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -226,7 +239,6 @@ public class Server {
             serverLogger.warn("Could not set system look and feel. " + e.getMessage(), e);
         }
         var gcs = getGraphicsConfigurations(1, args.getScreens());
-        var domains = new Domain[]{domain};
         PlaybackManager playbackManager = new PlaybackManager(domains, gcs);
         serverLogger.debug("Starting GUI.");
         playbackManager.startGUI(args.getStartFullscreen(), args.getStartHiddenInterface(),
@@ -275,9 +287,7 @@ public class Server {
         }
     }
 
-    private void runReplays(ArgumentParser args) {
-        // Load domains.
-        Path[] replayFilePaths = args.getReplayFilePaths();
+    private Domain[] loadDomains(Path[] replayFilePaths) {
         Domain[] domains = new Domain[replayFilePaths.length];
         for (int i = 0; i < replayFilePaths.length; i++) {
             try {
@@ -286,36 +296,13 @@ public class Server {
             } catch (ParseException e) {
                 // TODO: Better error message (level invalid, rather than "failing" to parse).
                 serverLogger.error("Could not load domain, failed to parse log file. " + e.getMessage(), e);
-                return;
+                System.exit(-1);
             } catch (IOException e) {
                 serverLogger.error("IOException while loading domain. " + e.getMessage(), e);
-                return;
+                System.exit(-1);
             }
         }
-
-        PlaybackManager playbackManager;
-        if (args.hasGUIOutput()) {
-            serverLogger.debug("Loading GUI.");
-            try {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            } catch (ClassNotFoundException |
-                    UnsupportedLookAndFeelException |
-                    IllegalAccessException |
-                    InstantiationException e) {
-                serverLogger.warn("Could not set system look and feel. " + e.getMessage(), e);
-            }
-            var gcs = getGraphicsConfigurations(domains.length, args.getScreens());
-            playbackManager = new PlaybackManager(domains, gcs);
-
-            serverLogger.debug("Starting GUI.");
-            playbackManager.startGUI(args.getStartFullscreen(),
-                    args.getStartHiddenInterface(),
-                    args.getMsPerAction(),
-                    args.getStartPlaying());
-            playbackManager.focusPlaybackFrame(0);
-
-            playbackManager.waitShutdown();
-        }
+        return domains;
     }
 
 //    private static void shutdownServer()
@@ -372,28 +359,28 @@ public class Server {
 
         // WARNING! getScreenDevices() gives a direct reference to underlying array.
         // Copy before sorting, so we don't mutate underlying array.
-        GraphicsDevice[] gds = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
-        gds = Arrays.copyOf(gds, gds.length);
+        GraphicsDevice[] graphicsDevices = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
+        graphicsDevices = Arrays.copyOf(graphicsDevices, graphicsDevices.length);
         // Attempt sorting for the logical enumeration. May not work, e.g. if bounds are not relative to each other.
-        Arrays.sort(gds,
+        Arrays.sort(graphicsDevices,
                 Comparator.comparingInt((GraphicsDevice gd) -> gd.getDefaultConfiguration().getBounds().x)
                         .thenComparingInt(gd -> gd.getDefaultConfiguration().getBounds().y));
 
-        var gcs = new GraphicsConfiguration[numScreens];
+        var graphicsConfigurations = new GraphicsConfiguration[numScreens];
         for (int i = 0; i < numScreens; ++i) {
             if (i >= screens.length) {
                 // Unspecified.
-                gcs[i] = defaultScreen;
-            } else if (screens[i] < 0 || screens[i] >= gds.length) {
+                graphicsConfigurations[i] = defaultScreen;
+            } else if (screens[i] < 0 || screens[i] >= graphicsDevices.length) {
                 // Out of range.
-                gcs[i] = defaultScreen;
+                graphicsConfigurations[i] = defaultScreen;
                 serverLogger.warn("No screen #" + screens[i] + "; using default screen.");
             } else {
                 // User-specified.
-                gcs[i] = gds[screens[i]].getDefaultConfiguration();
+                graphicsConfigurations[i] = graphicsDevices[screens[i]].getDefaultConfiguration();
             }
         }
 
-        return gcs;
+        return graphicsConfigurations;
     }
 }
