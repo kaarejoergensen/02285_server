@@ -4,9 +4,9 @@ import client.Client;
 import client.Timeout;
 import domain.Domain;
 import domain.ParseException;
-import domain.gridworld.hospital.components.CanvasDetails;
-import domain.gridworld.hospital.gameobjects.Agent;
-import domain.gridworld.hospital.gameobjects.Box;
+import domain.gridworld.hospital.ui_components.CanvasDetails;
+import domain.gridworld.hospital.ui_components.Agent;
+import domain.gridworld.hospital.ui_components.Box;
 import server.Server;
 
 import java.awt.*;
@@ -583,6 +583,8 @@ public final class HospitalDomain
         return solvedBoxGoals;
     }
 
+
+    //TODO Finne ut hvor ting blir satt til "Solved"
     private void drawBoxGoalCell(Graphics2D g, short row, short col, char letter, boolean solved) {
         int top = canvas.originTop + row * canvas.cellSize;
         int left = canvas.originLeft + col * canvas.cellSize;

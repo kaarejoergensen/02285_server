@@ -1,10 +1,7 @@
-package domain.gridworld.hospital.gameobjects;
-
-import domain.gridworld.hospital.components.CanvasDetails;
+package domain.gridworld.hospital.ui_components;
 
 import java.awt.*;
 import java.awt.font.FontRenderContext;
-import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
 
 import static domain.gridworld.hospital.HospitalDomain.canvas;

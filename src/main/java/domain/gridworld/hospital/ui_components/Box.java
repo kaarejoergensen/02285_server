@@ -1,7 +1,4 @@
-package domain.gridworld.hospital.gameobjects;
-
-import domain.gridworld.hospital.HospitalDomain;
-import domain.gridworld.hospital.components.CanvasDetails;
+package domain.gridworld.hospital.ui_components;
 
 import java.awt.*;
 import java.awt.font.FontRenderContext;

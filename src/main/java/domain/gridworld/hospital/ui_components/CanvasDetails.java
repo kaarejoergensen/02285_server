@@ -1,4 +1,4 @@
-package domain.gridworld.hospital.components;
+package domain.gridworld.hospital.ui_components;
 
 /*
     Fredrik Kloster

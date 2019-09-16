@@ -1169,6 +1169,7 @@ class StateSequence {
 
     /**
      * Applies the actions in jointAction which are applicable to the latest state and returns the resulting state.
+     * TODO: Legge til noe nytt?
      */
     private State apply(Action[] jointAction, boolean[] applicable) {
         State currentState = this.states[this.numStates - 1];

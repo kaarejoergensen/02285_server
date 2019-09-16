@@ -1,7 +1,6 @@
-package domain.gridworld.hospital.gameobjects;
+package domain.gridworld.hospital.ui_components;
 
 import domain.gridworld.hospital.HospitalDomain;
-import domain.gridworld.hospital.components.CanvasDetails;
 
 import java.awt.*;
 import java.awt.font.FontRenderContext;
@@ -55,6 +54,7 @@ public abstract class GameObject {
         g.setColor(BOX_AGENT_FONT_COLOR);
         getLetterText().draw(g, left + getLetterLeftOffset(), getLetterTopOffset() + top);
     }
+
 
     public void letterTextUpdate(String codePoint, Font curFont, FontRenderContext fontRenderContext){
         var canvas = HospitalDomain.canvas;
