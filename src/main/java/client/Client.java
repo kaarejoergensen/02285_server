@@ -1,7 +1,6 @@
 package client;
 
 import domain.Domain;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -174,8 +173,7 @@ public class Client {
                 this.logOut.close();
                 clientLogger.debug("Closed log stream.");
             } catch (IOException e) {
-                clientLogger.error("Could not flush and close log file.");
-                clientLogger.error(e.getMessage());
+                clientLogger.error("Could not flush and close log file. " + e.getMessage(), e);
                 // FIXME: Handle or flag error back to Server?
             }
         }

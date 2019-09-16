@@ -3,7 +3,6 @@ package domain.gridworld.hospital;
 import domain.ParseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import server.Server;
 
 import java.awt.*;
 import java.io.IOException;

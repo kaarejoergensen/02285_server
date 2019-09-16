@@ -10,7 +10,10 @@ import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -22,22 +25,6 @@ import java.util.Comparator;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-/**
- * TODO: Clean shutdown of server on Ctrl-C, SIGINT, or whatever mechanisms that cause the JVM to shut down nicely.
- * <p>
- * TODO NICE-HAVE:
- * - DOMAIN: More implementations.
- * - GUI: More speed presets?
- * - GUI: Help overlay.
- * - GUI: Reloading/navigating new client/domains without server restart?
- * <p>
- * <p>
- * <p>
- * TEST ARGUMENTS
- * -c "java src/TestClient.java" -l "./levels/MATest.lvl" -t 10 -o "./logs/MATest1.log"
- * -c "java src/TestClient.java" -l "./levels/MATest.lvl" -t 10 -o "./logs/MATest2.log"
- * -r "./logs/MATest1.log" "./logs/MATest2.log" -g 0 1
- */
 public class Server {
     private Logger serverLogger = LogManager.getLogger("server");
     private Logger clientLogger = LogManager.getLogger("client");
@@ -67,13 +54,13 @@ public class Server {
         //Runtime.getRuntime().addShutdownHook(Server.shutdownThread);
 
         try {
-            arguments = new ArgumentParser(args);
-        } catch (ArgumentException e) {
-            serverLogger.error(e.getMessage());
+            this.arguments = new ArgumentParser(args);
+        } catch (IllegalArgumentException e) {
+            serverLogger.error(e.getMessage(), e);
             System.exit(-1);
         }
 
-        if (arguments.helpPrinted()) {
+        if (this.arguments.helpPrinted()) {
             System.exit(0);
         }
     }
@@ -89,10 +76,10 @@ public class Server {
                         serverLogger.error("No level path given.");
                         return;
                     case FILE:
-                        runClientOnSingleLevel(arguments);
+                        this.runClientOnSingleLevel(arguments);
                         break;
                     case DIRECTORY:
-                        runClientOnLevelDirectory(arguments);
+                        this.runClientOnLevelDirectory(arguments);
                         break;
                     // TODO: Zip?
                 }
@@ -123,62 +110,40 @@ public class Server {
     }
 
     private void runClientOnSingleLevel(ArgumentParser args) {
-        OutputStream logFileStream = createLogFileStream(args.hasLogOutput(), args.getLogFilePath());
+        OutputStream logFileStream = this.createLogFileStream(args.hasLogOutput(), args.getLogFilePath());
 
-        runLevel(args.getLevelPath(), args, logFileStream, args.hasGUIOutput());
+        this.runLevel(args.getLevelPath(), args, logFileStream, args.hasGUIOutput());
     }
 
     private void runClientOnLevelDirectory(ArgumentParser args) {
-        var levelFileFilter = new DirectoryStream.Filter<Path>() {
-            @Override
-            public boolean accept(Path entry) {
-                return Files.isReadable(entry) &&
-                        Files.isRegularFile(entry) &&
-                        entry.getFileName().toString().endsWith(".lvl") &&
-                        entry.getFileName().toString().length() > 4;
-            }
-        };
-
-        try (var levelDirectory = Files.newDirectoryStream(args.getLevelPath(), levelFileFilter)) {
-            OutputStream logFileStream = createLogFileStream(args.hasLogOutput(), args.getLogFilePath());
+        try (var levelDirectory = Files.newDirectoryStream(args.getLevelPath(), createLevelFilter())) {
+            OutputStream logFileStream = this.createLogFileStream(args.hasLogOutput(), args.getLogFilePath());
             ZipOutputStream logZipStream = new ZipOutputStream(logFileStream);
 
             ArrayList<String> levelNames = new ArrayList<>();
             ArrayList<String[]> levelStatus = new ArrayList<>();
 
             for (Path levelPath : levelDirectory) {
-                // Prepare next log entry.
-                String levelFileName = levelPath.getFileName().toString();
-                String logEntryName = levelFileName.substring(0, levelFileName.length() - 4) + ".log";
-                try {
-                    logZipStream.putNextEntry(new ZipEntry(logEntryName));
-                } catch (IOException e) {
-                    serverLogger.error("Could not create log file entry for level.");
-                    serverLogger.error(e.getMessage());
-                    continue;
-                }
+                this.createZipEntry(levelPath, logZipStream);
 
-                Domain domain = runLevel(levelPath, args, logFileStream, false);
+                Domain domain = this.runLevel(levelPath, args, logFileStream, false);
                 if (domain == null) continue;
 
-                // Aggregate level summaries.
                 levelNames.add(domain.getLevelName());
                 levelStatus.add(domain.getStatus());
 
                 System.gc();
             }
 
-            writeSummary(logZipStream, logFileStream, levelNames, levelStatus);
+            this.writeSummary(logZipStream, logFileStream, levelNames, levelStatus);
 
             try {
                 logZipStream.close();
             } catch (IOException e) {
-                serverLogger.error("Could not close log file.");
-                serverLogger.error(e.getMessage());
+                serverLogger.error("Could not close log file. " + e.getMessage(), e);
             }
         } catch (IOException e) {
-            serverLogger.error("Could not open levels directory.");
-            serverLogger.error(e.getMessage());
+            serverLogger.error("Could not open levels directory. " + e.getMessage(), e);
         }
     }
 
@@ -187,8 +152,7 @@ public class Server {
             try {
                 return Files.newOutputStream(logFilePath, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
             } catch (IOException e) {
-                serverLogger.error("Could not create log file: " + logFilePath);
-                serverLogger.error(e.getMessage());
+                serverLogger.error("Could not create log file: " + logFilePath + " " + e.getMessage(), e);
                 System.exit(-1);
             }
         }
@@ -228,11 +192,9 @@ public class Server {
             domain = Domain.loadLevel(levelPath);
         } catch (ParseException e) {
             // TODO: Better error message (level invalid, rather than "failing" to parse).
-            serverLogger.error("Could not load domain, failed to parse level file.");
-            serverLogger.error(e.getMessage());
+            serverLogger.error("Could not load domain, failed to parse level file. " + e.getMessage(), e);
         } catch (IOException e) {
-            serverLogger.error("IOException while loading domain.");
-            serverLogger.error(e.getMessage());
+            serverLogger.error("IOException while loading domain. " + e.getMessage(), e);
         }
         return domain;
     }
@@ -245,13 +207,11 @@ public class Server {
             client.startProtocol();
         } catch (Exception e) {
             // TODO: Start writing errors to log file also? Will complicate/break parsing from domains though.
-            serverLogger.error("Could not start client process.");
-            serverLogger.error(e.getMessage());
+            serverLogger.error("Could not start client process. " + e.getMessage(), e);
             try {
                 logFileStream.close();
             } catch (IOException e1) {
-                clientLogger.error("Could not close log file.");
-                clientLogger.error(e1.getMessage());
+                clientLogger.error("Could not close log file. " + e1.getMessage(), e1);
             }
         }
         return client;
@@ -263,19 +223,33 @@ public class Server {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (ClassNotFoundException | UnsupportedLookAndFeelException |
                 IllegalAccessException | InstantiationException e) {
-            serverLogger.warn("Could not set system look and feel.");
-            serverLogger.warn(e.getMessage());
+            serverLogger.warn("Could not set system look and feel. " + e.getMessage(), e);
         }
         var gcs = getGraphicsConfigurations(1, args.getScreens());
         var domains = new Domain[]{domain};
         PlaybackManager playbackManager = new PlaybackManager(domains, gcs);
         serverLogger.debug("Starting GUI.");
-        playbackManager.startGUI(args.getStartFullscreen(),
-                args.getStartHiddenInterface(),
-                args.getMsPerAction(),
-                args.getStartPlaying());
+        playbackManager.startGUI(args.getStartFullscreen(), args.getStartHiddenInterface(),
+                args.getMsPerAction(), args.getStartPlaying());
         playbackManager.focusPlaybackFrame(0);
         return playbackManager;
+    }
+
+    private DirectoryStream.Filter<Path> createLevelFilter() {
+        return entry -> Files.isReadable(entry) &&
+                Files.isRegularFile(entry) &&
+                entry.getFileName().toString().endsWith(".lvl") &&
+                entry.getFileName().toString().length() > 4;
+    }
+
+    private void createZipEntry(Path levelPath, ZipOutputStream logZipStream) {
+        String levelFileName = levelPath.getFileName().toString();
+        String logEntryName = levelFileName.substring(0, levelFileName.length() - 4) + ".log";
+        try {
+            logZipStream.putNextEntry(new ZipEntry(logEntryName));
+        } catch (IOException e) {
+            serverLogger.error("Could not create log file entry for level. " + e.getMessage(), e);
+        }
     }
 
     private void writeSummary(ZipOutputStream logZipStream, OutputStream logFileStream,
@@ -297,8 +271,7 @@ public class Server {
                 logWriter.flush();
             }
         } catch (IOException e) {
-            serverLogger.error("Could not write summary to log file.");
-            serverLogger.error(e.getMessage());
+            serverLogger.error("Could not write summary to log file. " + e.getMessage(), e);
         }
     }
 
@@ -312,12 +285,10 @@ public class Server {
                 domains[i] = Domain.loadReplay(replayFilePaths[i]);
             } catch (ParseException e) {
                 // TODO: Better error message (level invalid, rather than "failing" to parse).
-                serverLogger.error("Could not load domain, failed to parse log file.");
-                serverLogger.error(e.getMessage());
+                serverLogger.error("Could not load domain, failed to parse log file. " + e.getMessage(), e);
                 return;
             } catch (IOException e) {
-                serverLogger.error("IOException while loading domain.");
-                serverLogger.error(e.getMessage());
+                serverLogger.error("IOException while loading domain. " + e.getMessage(), e);
                 return;
             }
         }
@@ -331,8 +302,7 @@ public class Server {
                     UnsupportedLookAndFeelException |
                     IllegalAccessException |
                     InstantiationException e) {
-                serverLogger.warn("Could not set system look and feel.");
-                serverLogger.warn(e.getMessage());
+                serverLogger.warn("Could not set system look and feel. " + e.getMessage(), e);
             }
             var gcs = getGraphicsConfigurations(domains.length, args.getScreens());
             playbackManager = new PlaybackManager(domains, gcs);

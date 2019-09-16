@@ -755,14 +755,12 @@ public final class HospitalDomain implements Domain {
                 if (timeout.isExpired()) {
                     clientLogger.error("Timeout expired while sending level to client.");
                 } else {
-                    clientLogger.error("Could not send level to client and/or log.");
-                    clientLogger.error(e.getMessage());
+                    clientLogger.error("Could not send level to client and/or log. " + e.getMessage(), e);
                 }
                 return;
             }
         } catch (IOException e) {
-            clientLogger.error("Could not open level file.");
-            clientLogger.error(e.getMessage());
+            clientLogger.error("Could not open level file. " + e.getMessage(), e);
             return;
         }
 
@@ -776,8 +774,7 @@ public final class HospitalDomain implements Domain {
             logWriter.newLine();
             logWriter.flush();
         } catch (IOException e) {
-            clientLogger.error("Could not write client name to log file.");
-            clientLogger.error(e.getMessage());
+            clientLogger.error("Could not write client name to log file. " + e.getMessage(), e);
             return;
         }
 
@@ -790,8 +787,7 @@ public final class HospitalDomain implements Domain {
             logWriter.newLine();
             logWriter.flush();
         } catch (IOException e) {
-            clientLogger.error("Could not write to log file.");
-            clientLogger.error(e.getMessage());
+            clientLogger.error("Could not write to log file. " + e.getMessage(), e);
             return;
         }
 
@@ -809,9 +805,7 @@ public final class HospitalDomain implements Domain {
                 clientLogger.error("Client message not valid ASCII.");
                 return;
             } catch (IOException e) {
-                clientLogger.error("Unexpected exception while reading from client.");
-                clientLogger.error(e.getMessage());
-                e.printStackTrace();
+                clientLogger.error("Unexpected exception while reading from client. " + e.getMessage(), e);
                 return;
             }
             if (clientMsg == null) {
@@ -866,8 +860,7 @@ public final class HospitalDomain implements Domain {
                 } catch (IOException e) {
                     // TODO: Happens when client closes before reading responses, then server can't write to the
                     //  client's input stream.
-                    clientLogger.error("Could not write response to client.");
-                    clientLogger.error(e.getMessage());
+                    clientLogger.error("Could not write response to client. " + e.getMessage(), e);
                     return;
                 }
 
@@ -879,8 +872,7 @@ public final class HospitalDomain implements Domain {
                     logWriter.newLine();
                     logWriter.flush();
                 } catch (IOException e) {
-                    clientLogger.error("Could not write to log file.");
-                    clientLogger.error(e.getMessage());
+                    clientLogger.error("Could not write to log file. " + e.getMessage(), e);
                     return;
                 }
             }
@@ -911,8 +903,7 @@ public final class HospitalDomain implements Domain {
             logWriter.newLine();
             logWriter.flush();
         } catch (IOException e) {
-            clientLogger.error("Could not write to log file.");
-            clientLogger.error(e.getMessage());
+            clientLogger.error("Could not write to log file. " + e.getMessage(), e);
             return;
         }
 

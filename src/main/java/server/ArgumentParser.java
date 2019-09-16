@@ -67,7 +67,7 @@ public class ArgumentParser {
     private boolean startHiddenInterface = false;
 
 
-    public ArgumentParser(String[] args) throws ArgumentException {
+    public ArgumentParser(String[] args) throws IllegalArgumentException {
         if (args.length == 0) {
             ArgumentParser.printShortHelp();
             this.helpPrinted = true;
@@ -115,15 +115,15 @@ public class ArgumentParser {
                 case "-s":
                     ++i;
                     if (i >= args.length) {
-                        throw new ArgumentException("Expected another argument after -s.");
+                        throw new IllegalArgumentException("Expected another argument after -s.");
                     }
                     try {
                         this.msPerAction = Integer.parseInt(args[i]);
                     } catch (NumberFormatException e) {
-                        throw new ArgumentException("The argument after -s must be an integer.");
+                        throw new IllegalArgumentException("The argument after -s must be an integer.");
                     }
                     if (this.msPerAction < 0) {
-                        throw new ArgumentException("The argument after -s can not be negative.");
+                        throw new IllegalArgumentException("The argument after -s can not be negative.");
                     }
                     break;
 
@@ -142,66 +142,66 @@ public class ArgumentParser {
                 // Client options.
                 case "-c":
                     if (this.serverInputMode == ServerInputMode.REPLAY) {
-                        throw new ArgumentException("Can not use -c argument with -r.");
+                        throw new IllegalArgumentException("Can not use -c argument with -r.");
                     }
                     this.serverInputMode = ServerInputMode.CLIENT;
 
                     ++i;
                     if (i >= args.length) {
-                        throw new ArgumentException("Expected another argument after -c.");
+                        throw new IllegalArgumentException("Expected another argument after -c.");
                     }
                     if (args[i].isBlank()) {
-                        throw new ArgumentException("The argument after -c can not be blank.");
+                        throw new IllegalArgumentException("The argument after -c can not be blank.");
                     }
                     this.clientCommand = args[i];
                     break;
 
                 case "-l":
                     if (this.serverInputMode == ServerInputMode.REPLAY) {
-                        throw new ArgumentException("Can not use -l argument with -r.");
+                        throw new IllegalArgumentException("Can not use -l argument with -r.");
                     }
                     this.serverInputMode = ServerInputMode.CLIENT;
 
                     ++i;
                     if (i >= args.length) {
-                        throw new ArgumentException("Expected another argument after -l.");
+                        throw new IllegalArgumentException("Expected another argument after -l.");
                     }
                     this.levelPath = Path.of(args[i]);
                     if (!Files.exists(this.levelPath) || !Files.isReadable(this.levelPath)) {
-                        throw new ArgumentException("The level path may not exist, or has insufficient access.");
+                        throw new IllegalArgumentException("The level path may not exist, or has insufficient access.");
                     }
                     if (Files.isRegularFile(this.levelPath)) {
                         this.clientInputMode = ClientInputMode.FILE;
                     } else if (Files.isDirectory(this.levelPath)) {
                         this.clientInputMode = ClientInputMode.DIRECTORY;
                     } else {
-                        throw new ArgumentException("Unknown level path type.");
+                        throw new IllegalArgumentException("Unknown level path type.");
                     }
                     break;
 
                 case "-t":
                     if (this.serverInputMode == ServerInputMode.REPLAY) {
-                        throw new ArgumentException("Can not use -t argument with -r.");
+                        throw new IllegalArgumentException("Can not use -t argument with -r.");
                     }
                     this.serverInputMode = ServerInputMode.CLIENT;
 
                     ++i;
                     if (i >= args.length) {
-                        throw new ArgumentException("Expected another argument after -t.");
+                        throw new IllegalArgumentException("Expected another argument after -t.");
                     }
                     try {
                         this.timeoutSeconds = Integer.parseInt(args[i]);
                     } catch (NumberFormatException e) {
-                        throw new ArgumentException("The argument after -t must be an integer.");
+                        throw new IllegalArgumentException("The argument after -t must be an integer.");
                     }
                     if (this.timeoutSeconds <= 0) {
-                        throw new ArgumentException("The argument after -t must be positive.");
+                        throw new IllegalArgumentException("The argument after -t must be positive.");
                     }
                     break;
 
                 case "-o":
                     if (this.serverInputMode == ServerInputMode.REPLAY) {
-                        throw new ArgumentException("Can not use -o argument with -r.");
+                        throw new IllegalArgumentException("Can not use -o argument with -r.");
                     }
                     this.serverInputMode = ServerInputMode.CLIENT;
 
@@ -213,22 +213,22 @@ public class ArgumentParser {
 
                     ++i;
                     if (i >= args.length) {
-                        throw new ArgumentException("Expected another argument after -o.");
+                        throw new IllegalArgumentException("Expected another argument after -o.");
                     }
                     this.logFilePath = Path.of(args[i]);
                     if (this.logFilePath.getParent() != null && !Files.exists(this.logFilePath.getParent())) {
-                        throw new ArgumentException(
+                        throw new IllegalArgumentException(
                                 "The parent directory of the log file must exist and have sufficient write access.");
                     }
                     if (!Files.notExists(this.logFilePath)) {
-                        throw new ArgumentException("The log file may already exist, or has insufficient access.");
+                        throw new IllegalArgumentException("The log file may already exist, or has insufficient access.");
                     }
                     break;
 
                 // Replay options.
                 case "-r":
                     if (this.serverInputMode == ServerInputMode.CLIENT) {
-                        throw new ArgumentException("Can not use -r argument with -c, -l, -t, or -o.");
+                        throw new IllegalArgumentException("Can not use -r argument with -c, -l, -t, or -o.");
                     }
                     this.serverInputMode = ServerInputMode.REPLAY;
 
@@ -247,7 +247,7 @@ public class ArgumentParser {
 
                 // Unknown argument.
                 default:
-                    throw new ArgumentException("Unknown argument: \"" + args[i] + "\".");
+                    throw new IllegalArgumentException("Unknown argument: \"" + args[i] + "\".");
             }
             ++i;
         }
@@ -255,7 +255,7 @@ public class ArgumentParser {
         // No GUI support for client with directory of levels.
         if (this.serverInputMode == ServerInputMode.CLIENT && this.clientInputMode == ClientInputMode.DIRECTORY &&
                 (this.serverOutputMode == ServerOutputMode.GUI || this.serverOutputMode == ServerOutputMode.BOTH)) {
-            throw new ArgumentException("GUI is not supported when running client on a directory of levels.");
+            throw new IllegalArgumentException("GUI is not supported when running client on a directory of levels.");
         }
     }
 
