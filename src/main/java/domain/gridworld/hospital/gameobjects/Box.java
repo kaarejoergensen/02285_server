@@ -18,7 +18,8 @@ public class Box extends GameObject{
     @Override
     public void draw(Graphics2D g, int top, int left) {
         super.draw(g, top, left);
-
+        g.fillRect(left + cellBoxMargin, top + cellBoxMargin, size,size);
+        drawLetter(g,top,left);
     }
 
     public void letterTextUpdate(Font curFont, FontRenderContext fontRenderContext) {

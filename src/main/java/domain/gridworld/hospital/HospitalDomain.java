@@ -519,6 +519,7 @@ public final class HospitalDomain
             box.letterTextUpdate(curFont, fontRenderContext);
         }
 
+
         for(Agent agent : agents) {
             // FIXME: Holy shit, creating a TextLayout object is SLOW!
             agent.letterTextUpdate(curFont, fontRenderContext);
@@ -617,15 +618,8 @@ public final class HospitalDomain
     }
 
     private void drawBox(Graphics2D g, int top, int left, char letter, Color color) {
-        int size = canvas.cellSize - 2 * canvas.cellBoxMargin;
-        g.setColor(color);
-        g.fillRect(left + canvas.cellBoxMargin, top + canvas.cellBoxMargin, size, size);
-
-        TextLayout letterText = boxes.get(letter - 'A').getLetterText();
-        int letterTopOffet = boxes.get(letter - 'A').getLetterTopOffset();
-        int letterLeftOffet = boxes.get(letter - 'A').getLetterLeftOffset();
-        g.setColor(BOX_AGENT_FONT_COLOR);
-        letterText.draw(g, left + letterLeftOffet, top + letterTopOffet);
+        Box box = boxes.get(letter - 'A');
+        box.draw(g, top, left);
     }
 
     //Todo Fjerne drawAgent og endre alle forekomster

@@ -44,8 +44,7 @@ public class Agent extends GameObject {
         setArmTransform(armTop, armLeft, rotation);
         g.setTransform(this.agentArmTransform);
 
-        //Get Agent
-        // Arm fill.
+        // Fill the arm
         g.setColor(getArmColor());
         g.fillPolygon(armShape);
 
