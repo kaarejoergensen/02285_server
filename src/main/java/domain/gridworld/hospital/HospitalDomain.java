@@ -592,11 +592,8 @@ public final class HospitalDomain
 
         // No need to draw text if cell is solved, since box will be drawn on top of text anyway.
         if (!solved) {
-            TextLayout letterText = boxes.get(letter - 'A').getLetterText();
-            int letterTopOffset = boxes.get(letter - 'A').getLetterTopOffset();
-            int letterLeftOffset = boxes.get(letter - 'A').getLetterLeftOffset();
-            g.setColor(GOAL_FONT_COLOR);
-            letterText.draw(g, left + letterLeftOffset, top + letterTopOffset);
+            var box =  boxes.get(letter - 'A');
+            box.draw(g,top,left,GOAL_FONT_COLOR);
         }
     }
 
