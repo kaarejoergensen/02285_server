@@ -7,7 +7,12 @@ import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
 
+import static domain.gridworld.hospital.HospitalDomain.canvas;
+
 public class Agent extends GameObject {
+
+    private AffineTransform agentArmTransform = new AffineTransform();
+
     public boolean solved;
 
     public Agent(byte id, Color color) {
@@ -31,6 +36,32 @@ public class Agent extends GameObject {
     public void drawLetter(Graphics2D g, int top, int left) {
         super.drawLetter(g,  top, left);
         g.drawString("W", 0, 0);
+    }
 
+    public void drawArm(Graphics2D g, Polygon armShape, int top, int left, double rotation){
+        int armTop = top + canvas.cellSize / 2;
+        int armLeft = left + canvas.cellSize / 2;
+        setArmTransform(armTop, armLeft, rotation);
+        g.setTransform(this.agentArmTransform);
+
+        //Get Agent
+        // Arm fill.
+        g.setColor(getArmColor());
+        g.fillPolygon(armShape);
+
+        // Arm outline.
+        g.setColor(getOutlineColor());
+        Stroke stroke = g.getStroke();
+        g.setStroke(OUTLINE_STROKE);
+        g.drawPolygon(armShape);
+        g.setStroke(stroke);
+
+        g.setTransform(IDENTITY_TRANSFORM);
+    }
+
+    private void setArmTransform(int top, int left, double rotation) {
+        double cos = Math.cos(rotation);
+        double sin = Math.sin(rotation);
+        this.agentArmTransform.setTransform(cos, sin, -sin, cos, left, top);
     }
 }

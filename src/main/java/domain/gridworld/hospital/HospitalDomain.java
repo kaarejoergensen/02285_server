@@ -46,8 +46,6 @@ public final class HospitalDomain
 
 
 
-    private static final Stroke OUTLINE_STROKE = new BasicStroke(2.0f);
-    private static final AffineTransform IDENTITY_TRANSFORM = new AffineTransform();
 
     @SuppressWarnings("SameParameterValue")
     private static Color blendColors(Color c1, Color c2, double ratio) {
@@ -397,7 +395,9 @@ public final class HospitalDomain
         // Draw arms on agents (under agent and box, so we can rely on overlap to form desired shapes).
         if (interpolation != 0.0) {
             for (byte dynamicAgent = 0; dynamicAgent < this.numDynamicAgents; ++dynamicAgent) {
+                //TODO Optimaliser det drittet her
                 byte agent = this.dynamicAgents[dynamicAgent];
+                Agent agent_obj = agents.get(agent);
                 int box = this.dynamicAgentsBox[dynamicAgent];
                 if (box != -1) {
                     // Push/Pull.
@@ -417,7 +417,7 @@ public final class HospitalDomain
                     int biLeft = (int) (bcLeft + (bnLeft - bcLeft) * interpolation);
 
                     double direction = Math.atan2(biTop - iTop, biLeft - iLeft);
-                    this.drawAgentArm(g, this.agentArmPushPull, iTop, iLeft, direction, agent);
+                    agent_obj.drawArm(g, this.agentArmPushPull, iTop, iLeft, direction);
                 } else {
                     // Move.
                     int cTop = canvas.originTop + currentState.agentRows[agent] * canvas.cellSize;
@@ -427,7 +427,8 @@ public final class HospitalDomain
                     int iTop = (int) (cTop + (nTop - cTop) * interpolation);
                     int iLeft = (int) (cLeft + (nLeft - cLeft) * interpolation);
                     double direction = Math.atan2(nTop - cTop, nLeft - cLeft);
-                    this.drawAgentArm(g, this.agentArmMove, iTop, iLeft, direction, agent);
+                    agent_obj.drawArm(g, this.agentArmMove, iTop, iLeft, direction);
+
                 }
             }
         }
@@ -627,40 +628,13 @@ public final class HospitalDomain
         letterText.draw(g, left + letterLeftOffet, top + letterTopOffet);
     }
 
+    //Todo Fjerne drawAgent og endre alle forekomster
     private void drawAgent(Graphics2D g, int top, int left, char letter, byte agentid) {
         Agent agent = agents.get(letter - '0');
-
         agent.draw(g, top, left);
-
     }
 
-    private void drawAgentArm(Graphics2D g, Polygon armShape, int top, int left, double rotation, byte agentid) {
-        int armTop = top + canvas.cellSize / 2;
-        int armLeft = left + canvas.cellSize / 2;
-        this.setArmTransform(armTop, armLeft, rotation);
-        g.setTransform(this.agentArmTransform);
 
-        //Get Agent
-        var agent = agents.get(agentid);
-        // Arm fill.
-        g.setColor(agent.getArmColor());
-        g.fillPolygon(armShape);
-
-        // Arm outline.
-        g.setColor(agent.getOutlineColor());
-        Stroke stroke = g.getStroke();
-        g.setStroke(OUTLINE_STROKE);
-        g.drawPolygon(armShape);
-        g.setStroke(stroke);
-
-        g.setTransform(IDENTITY_TRANSFORM);
-    }
-
-    private void setArmTransform(int top, int left, double rotation) {
-        double cos = Math.cos(rotation);
-        double sin = Math.sin(rotation);
-        this.agentArmTransform.setTransform(cos, sin, -sin, cos, left, top);
-    }
 
     @Override
     public void runProtocol(Timeout timeout,

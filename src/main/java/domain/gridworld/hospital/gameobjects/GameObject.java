@@ -6,10 +6,13 @@ import domain.gridworld.hospital.components.CanvasDetails;
 import java.awt.*;
 import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
+import java.awt.geom.AffineTransform;
 
 public abstract class GameObject {
 
-    private static final Color BOX_AGENT_FONT_COLOR = Color.BLACK;
+    protected static final Color BOX_AGENT_FONT_COLOR = Color.BLACK;
+    protected static final AffineTransform IDENTITY_TRANSFORM = new AffineTransform();
+    protected static final Stroke OUTLINE_STROKE = new BasicStroke(2.0f);
 
 
     public byte id;
