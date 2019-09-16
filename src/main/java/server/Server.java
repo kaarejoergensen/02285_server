@@ -60,7 +60,7 @@ public class Server {
             System.exit(-1);
         }
 
-        if (this.arguments.helpPrinted()) {
+        if (this.arguments.isHelpPrinted()) {
             System.exit(0);
         }
     }
@@ -112,30 +112,27 @@ public class Server {
     private void runClientOnSingleLevel(ArgumentParser args) {
         OutputStream logFileStream = this.createLogFileStream(args.hasLogOutput(), args.getLogFilePath());
 
-        this.runLevel(args.getLevelPath(), args, logFileStream, args.hasGUIOutput());
+        this.runLevel(args.getLevelPath(), args, logFileStream, args.hasGUIOutput(), true);
     }
 
     private void runClientOnLevelDirectory(ArgumentParser args) {
         try (var levelDirectory = Files.newDirectoryStream(args.getLevelPath(), createLevelFilter())) {
-            OutputStream logFileStream = this.createLogFileStream(args.hasLogOutput(), args.getLogFilePath());
-            ZipOutputStream logZipStream = new ZipOutputStream(logFileStream);
+            ZipOutputStream logZipStream = new ZipOutputStream(this.createLogFileStream(args.hasLogOutput(), args.getLogFilePath()));
 
-            ArrayList<String> levelNames = new ArrayList<>();
-            ArrayList<String[]> levelStatus = new ArrayList<>();
+            ArrayList<Domain> domains = new ArrayList<>();
 
             for (Path levelPath : levelDirectory) {
                 this.createZipEntry(levelPath, logZipStream);
 
-                Domain domain = this.runLevel(levelPath, args, logFileStream, false);
+                Domain domain = this.runLevel(levelPath, args, logZipStream, false, false);
                 if (domain == null) continue;
 
-                levelNames.add(domain.getLevelName());
-                levelStatus.add(domain.getStatus());
+                domains.add(domain);
 
                 System.gc();
             }
 
-            this.writeSummary(logZipStream, logFileStream, levelNames, levelStatus);
+            this.writeSummary(logZipStream, domains);
 
             try {
                 logZipStream.close();
@@ -148,7 +145,7 @@ public class Server {
     }
 
     private void runReplays(ArgumentParser args) {
-        Domain[] domains = this.loadDomains(args.getReplayFilePaths());
+        Domain[] domains = this.loadReplayDomains(args.getReplayFilePaths());
 
         if (args.hasGUIOutput()) {
             PlaybackManager playbackManager = this.loadAndStartGUI(domains, args);
@@ -168,10 +165,11 @@ public class Server {
         return OutputStream.nullOutputStream();
     }
 
-    private Domain runLevel(Path levelPath, ArgumentParser args, OutputStream logFileStream, boolean hasGUIOutput) {
+    private Domain runLevel(Path levelPath, ArgumentParser args, OutputStream logFileStream,
+                            boolean hasGUIOutput, boolean closeLogOnExit) {
         serverLogger.info(String.format("Running client on level file: %s", levelPath.toString()));
 
-        Domain domain = loadDomain(levelPath);
+        Domain domain = loadDomain(levelPath, false);
         if (domain == null) return null;
 
         PlaybackManager playbackManager = null;
@@ -182,7 +180,7 @@ public class Server {
             domain.allowDiscardingPastStates();
         }
 
-        Client client = loadAndStartClient(domain, args.getClientCommand(), args.getTimeoutSeconds(), logFileStream);
+        Client client = loadAndStartClient(domain, args.getClientCommand(), args.getTimeoutSeconds(), logFileStream, closeLogOnExit);
         if (client == null) return null;
 
         if (playbackManager != null) {
@@ -195,10 +193,11 @@ public class Server {
         return domain;
     }
 
-    private Domain loadDomain(Path levelPath) {
+    private Domain loadDomain(Path levelPath, boolean isReplay) {
+        serverLogger.info(String.format("Loading file : %s. Replay: %s", levelPath, isReplay));
         Domain domain = null;
         try {
-            domain = Domain.loadLevel(levelPath);
+            domain = Domain.loadLevel(levelPath, isReplay);
         } catch (ParseException e) {
             // TODO: Better error message (level invalid, rather than "failing" to parse).
             serverLogger.error("Could not load domain, failed to parse level file. " + e.getMessage(), e);
@@ -208,11 +207,12 @@ public class Server {
         return domain;
     }
 
-    private Client loadAndStartClient(Domain domain, String clientCommand, int timeoutArg, OutputStream logFileStream) {
+    private Client loadAndStartClient(Domain domain, String clientCommand, int timeoutArg,
+                                      OutputStream logFileStream, boolean closeLogOnExit) {
         Client client = null;
         try {
             long timeoutNS = timeoutArg * 1_000_000_000L;
-            client = new Client(domain, clientCommand, logFileStream, true, new Timeout(), timeoutNS);
+            client = new Client(domain, clientCommand, logFileStream, closeLogOnExit, new Timeout(), timeoutNS);
             client.startProtocol();
         } catch (Exception e) {
             // TODO: Start writing errors to log file also? Will complicate/break parsing from domains though.
@@ -238,11 +238,11 @@ public class Server {
                 IllegalAccessException | InstantiationException e) {
             serverLogger.warn("Could not set system look and feel. " + e.getMessage(), e);
         }
-        var gcs = getGraphicsConfigurations(1, args.getScreens());
+        var gcs = getGraphicsConfigurations(domains.length, args.getScreens());
         PlaybackManager playbackManager = new PlaybackManager(domains, gcs);
         serverLogger.debug("Starting GUI.");
-        playbackManager.startGUI(args.getStartFullscreen(), args.getStartHiddenInterface(),
-                args.getMsPerAction(), args.getStartPlaying());
+        playbackManager.startGUI(args.isStartFullscreen(), args.isStartHiddenInterface(),
+                args.getMsPerAction(), args.isStartPlaying());
         playbackManager.focusPlaybackFrame(0);
         return playbackManager;
     }
@@ -264,18 +264,16 @@ public class Server {
         }
     }
 
-    private void writeSummary(ZipOutputStream logZipStream, OutputStream logFileStream,
-                                     ArrayList<String> levelNames, ArrayList<String[]> levelStatus) {
+    private void writeSummary(ZipOutputStream logZipStream, ArrayList<Domain> domains) {
         try {
             logZipStream.putNextEntry(new ZipEntry("summary.txt"));
-            BufferedWriter logWriter
-                    = new BufferedWriter(new OutputStreamWriter(logFileStream,
-                    StandardCharsets.US_ASCII.newEncoder()));
-            for (int i = 0; i < levelNames.size(); ++i) {
+            BufferedWriter logWriter =
+                    new BufferedWriter(new OutputStreamWriter(logZipStream, StandardCharsets.US_ASCII.newEncoder()));
+            for (Domain domain : domains) {
                 logWriter.write("Level name: ");
-                logWriter.write(levelNames.get(i));
+                logWriter.write(domain.getLevelName());
                 logWriter.newLine();
-                for (String statusLine : levelStatus.get(i)) {
+                for (String statusLine : domain.getStatus()) {
                     logWriter.write(statusLine);
                     logWriter.newLine();
                 }
@@ -287,20 +285,11 @@ public class Server {
         }
     }
 
-    private Domain[] loadDomains(Path[] replayFilePaths) {
+    private Domain[] loadReplayDomains(Path[] replayFilePaths) {
         Domain[] domains = new Domain[replayFilePaths.length];
         for (int i = 0; i < replayFilePaths.length; i++) {
-            try {
-                serverLogger.info(String.format("Loading log file: %s", replayFilePaths[i]));
-                domains[i] = Domain.loadReplay(replayFilePaths[i]);
-            } catch (ParseException e) {
-                // TODO: Better error message (level invalid, rather than "failing" to parse).
-                serverLogger.error("Could not load domain, failed to parse log file. " + e.getMessage(), e);
-                System.exit(-1);
-            } catch (IOException e) {
-                serverLogger.error("IOException while loading domain. " + e.getMessage(), e);
-                System.exit(-1);
-            }
+            domains[i] = this.loadDomain(replayFilePaths[i], true);
+            if (domains[i] == null) System.exit(-1);
         }
         return domains;
     }

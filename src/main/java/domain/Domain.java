@@ -31,31 +31,13 @@ public interface Domain {
      * TODO: This function may be called from the Main thread as well as the EDT threads if we implement live
      * change of levels/clients/logs).
      */
-    static Domain loadLevel(Path levelFile) throws IOException, ParseException {
-        String domainType = Domain.getDomainType(levelFile);
+    static Domain loadLevel(Path path, boolean isLogFile) throws IOException, ParseException {
+        String domainType = Domain.getDomainType(path);
         Domain domain;
         //noinspection SwitchStatementWithTooFewBranches
         switch (domainType) {
             case "hospital":
-                domain = new HospitalDomain(levelFile, false);
-                break;
-            default:
-                throw new ParseException(String.format("Unsupported domain type: %s.", domainType));
-        }
-        return domain;
-    }
-
-    /**
-     * TODO: Documentation.
-     */
-    static Domain loadReplay(Path replayFile)
-            throws IOException, ParseException {
-        String domainType = Domain.getDomainType(replayFile);
-        Domain domain;
-        //noinspection SwitchStatementWithTooFewBranches
-        switch (domainType) {
-            case "hospital":
-                domain = new HospitalDomain(replayFile, true);
+                domain = new HospitalDomain(path, isLogFile);
                 break;
             default:
                 throw new ParseException(String.format("Unsupported domain type: %s.", domainType));

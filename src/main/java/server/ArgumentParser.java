@@ -1,6 +1,7 @@
 package server;
 
 import domain.Domain;
+import lombok.Getter;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -9,6 +10,7 @@ import java.util.ArrayList;
 /**
  * TODO: Documentation.
  */
+@Getter
 public class ArgumentParser {
     private boolean helpPrinted = false;
 
@@ -67,7 +69,7 @@ public class ArgumentParser {
     private boolean startHiddenInterface = false;
 
 
-    public ArgumentParser(String[] args) throws IllegalArgumentException {
+    ArgumentParser(String[] args) throws IllegalArgumentException {
         if (args.length == 0) {
             ArgumentParser.printShortHelp();
             this.helpPrinted = true;
@@ -259,91 +261,19 @@ public class ArgumentParser {
         }
     }
 
-    /**
-     * Indicates whether the ArgumentParser printed a help message.
-     * The server should exit if this returns true.
-     */
-    public boolean helpPrinted() {
-        return this.helpPrinted;
-    }
-
-    /**
-     * Server mode.
-     */
-    public ServerInputMode getServerInputMode() {
-        return this.serverInputMode;
-    }
-
-    public ClientInputMode getClientInputMode() {
-        return this.clientInputMode;
-    }
-
-    public ServerOutputMode getServerOutputMode() {
-        return this.serverOutputMode;
-    }
-
-    public boolean hasGUIOutput() {
+    boolean hasGUIOutput() {
         return this.serverOutputMode == ServerOutputMode.GUI || this.serverOutputMode == ServerOutputMode.BOTH;
     }
 
-    public boolean hasLogOutput() {
+    boolean hasLogOutput() {
         return this.serverOutputMode == ServerOutputMode.LOG || this.serverOutputMode == ServerOutputMode.BOTH;
-    }
-
-    /**
-     * Client options.
-     */
-    public String getClientCommand() {
-        return this.clientCommand;
-    }
-
-    public Path getLevelPath() {
-        return this.levelPath;
-    }
-
-    public int getTimeoutSeconds() {
-        return this.timeoutSeconds;
-    }
-
-    public Path getLogFilePath() {
-        return this.logFilePath;
-    }
-
-    /**
-     * Replay options.
-     */
-    public Path[] getReplayFilePaths() {
-        return this.replayFilePaths;
-    }
-
-    /**
-     * GUI options.
-     */
-    public int[] getScreens() {
-        return this.screens;
-    }
-
-    public int getMsPerAction() {
-        return this.msPerAction;
-    }
-
-    public boolean getStartPlaying() {
-        return this.startPlaying;
-    }
-
-    public boolean getStartFullscreen() {
-        return this.startFullscreen;
-    }
-
-    public boolean getStartHiddenInterface() {
-        return this.startHiddenInterface;
     }
 
     /**
      * Help messages.
      */
     @SuppressWarnings("LongLine")
-    public static void printShortHelp() {
+    private static void printShortHelp() {
         String shortHelp = "" +
                 "Show help message and exit:\n" +
                 "    java -jar server.jar [-h]\n" +
@@ -362,7 +292,7 @@ public class ArgumentParser {
     }
 
     @SuppressWarnings("LongLine")
-    public static void printLongHelp() {
+    private static void printLongHelp() {
         String longHelp = "" +
                 "The server modes are listed below.\n" +
                 "The order of arguments is irrelevant.\n" +
