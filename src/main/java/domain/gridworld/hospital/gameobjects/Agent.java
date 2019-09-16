@@ -13,11 +13,9 @@ public class Agent extends GameObject {
 
     private AffineTransform agentArmTransform = new AffineTransform();
 
-    public boolean solved;
 
     public Agent(byte id, Color color) {
         super(id, color);
-        solved = false;
 
     }
 
@@ -26,8 +24,8 @@ public class Agent extends GameObject {
     }
 
     @Override
-    public void draw(Graphics2D g, int top, int left) {
-        super.draw(g, top, left);
+    public void draw(Graphics2D g, int top, int left, Color color) {
+        super.draw(g, top, left, color);
         g.fillOval(left + cellBoxMargin, top + cellBoxMargin, size,size);
         drawLetter(g,top,left);
     }

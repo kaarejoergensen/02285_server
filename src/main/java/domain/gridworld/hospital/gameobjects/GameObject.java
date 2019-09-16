@@ -26,6 +26,8 @@ public abstract class GameObject {
     private Color outlineColor;
     private Color armColor;
 
+    public boolean solved;
+
     //Method Variables
     protected int size;
     protected int cellBoxMargin;
@@ -35,13 +37,18 @@ public abstract class GameObject {
         this.color = color;
         armColor = color.darker();
         outlineColor = color.darker().darker();
+        solved  = false;
     }
 
-    public void draw(Graphics2D g, int top, int left){
+    public void draw(Graphics2D g, int top, int left, Color alternativeColor){
         var canvas = HospitalDomain.canvas;
         size = canvas.cellSize - 2 * canvas.cellBoxMargin;
         cellBoxMargin = canvas.cellBoxMargin;
-        g.setColor(color);
+        g.setColor(alternativeColor == null ? color : alternativeColor);
+    }
+
+    public void draw(Graphics2D g, int top, int left) {
+        draw(g, top, left, null);
     }
 
     public void drawLetter(Graphics2D g, int top, int left){

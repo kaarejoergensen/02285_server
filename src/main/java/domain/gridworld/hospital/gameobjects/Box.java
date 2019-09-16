@@ -9,18 +9,18 @@ import java.awt.font.FontRenderContext;
 public class Box extends GameObject{
 
 
-    public boolean atGoal;
-
     public Box(byte id, Color color) {
         super(id, color);
     }
 
+
     @Override
-    public void draw(Graphics2D g, int top, int left) {
-        super.draw(g, top, left);
+    public void draw(Graphics2D g, int top, int left, Color color) {
+        super.draw(g, top, left, color);
         g.fillRect(left + cellBoxMargin, top + cellBoxMargin, size,size);
         drawLetter(g,top,left);
     }
+
 
     public void letterTextUpdate(Font curFont, FontRenderContext fontRenderContext) {
         super.letterTextUpdate(Character.toString('A' + id), curFont, fontRenderContext);

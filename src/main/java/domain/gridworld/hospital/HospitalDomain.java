@@ -565,6 +565,9 @@ public final class HospitalDomain
 
             // TODO: Fredrik, hvorfor ikke bare at boksene har en variabel som tickes når den treffer et mål, og sjekker de andre boksene samtidig istedet for hver tframe tenker jeg
             //
+            for(var box : boxes){
+
+            }
             for (int box = 0; box < this.stateSequence.numBoxes; ++box) {
                 short boxRow = state.boxRows[box];
                 short boxCol = state.boxCols[box];
@@ -597,6 +600,8 @@ public final class HospitalDomain
         }
     }
 
+
+    //Todo: Optimalisere Tiles?
     private void drawAgentGoalCell(Graphics2D g, short row, short col, char letter, boolean solved) {
         int top = canvas.originTop + row * canvas.cellSize;
         int left = canvas.originLeft + col * canvas.cellSize;
@@ -608,12 +613,7 @@ public final class HospitalDomain
         if (!solved) {
             //TODO: Make sure this works - Fredrik
             var agent = agents.get(letter - '0');
-            TextLayout letterText = agent.getLetterText();
-            int letterTopOffset = agent.getLetterTopOffset();
-            int letterLeftOffset = agent.getLetterLeftOffset();
-            g.setColor(GOAL_FONT_COLOR);
-            letterText.draw(g, left + letterLeftOffset, top + letterTopOffset);
-            g.drawString("", 0, 0);
+            agent.draw(g,top,left,GOAL_FONT_COLOR);
         }
     }
 
