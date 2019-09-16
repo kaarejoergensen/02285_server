@@ -628,22 +628,9 @@ public final class HospitalDomain
     }
 
     private void drawAgent(Graphics2D g, int top, int left, char letter, byte agentid) {
-        int size = canvas.cellSize - 2 * canvas.cellBoxMargin;
-
-        // Agent fill.
-        g.setColor(this.stateSequence.agentColors[agentid]);
-        g.fillOval(left + canvas.cellBoxMargin, top + canvas.cellBoxMargin, size, size);
-
-        // Agent outline.
-//        g.setColor(this.agentOutlineColor[agent]);
-//        Stroke stroke = g.getStroke();
-//        g.setStroke(OUTLINE_STROKE);
-//        g.drawOval(left + BOX_MARGIN, top + BOX_MARGIN, size, size);
-//        g.setStroke(stroke);
-
-        // Agent letter.
         Agent agent = agents.get(letter - '0');
-        agent.drawLetter(g, top,left);
+
+        agent.draw(g, top, left);
 
     }
 

@@ -25,6 +25,7 @@ public abstract class GameObject {
 
     //Method Variables
     protected int size;
+    protected int cellBoxMargin;
 
     public GameObject(byte id, Color color){
         this.id = id;
@@ -36,6 +37,7 @@ public abstract class GameObject {
     public void draw(Graphics2D g, int top, int left){
         var canvas = HospitalDomain.canvas;
         size = canvas.cellSize - 2 * canvas.cellBoxMargin;
+        cellBoxMargin = canvas.cellBoxMargin;
         g.setColor(color);
     }
 
