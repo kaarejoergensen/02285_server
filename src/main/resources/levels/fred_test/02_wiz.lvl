@@ -3,16 +3,16 @@ hospital
 #levelname
 01
 #colors
-blue:0,A,C
-Red:1,B
+blue:0
+grey:1,A
 #initial
 ++++++++
-+0A    +
-+1B    +
++0 A   +
++1     +
 ++++++++
 #goal
 ++++++++
-+0    B+
++0     +
 +1    A+
 ++++++++
 #end

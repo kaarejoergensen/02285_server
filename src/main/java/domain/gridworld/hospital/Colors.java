@@ -49,4 +49,34 @@ class Colors {
                 return null;
         }
     }
+
+    static Color nextFrom(Color current){
+        int RGB = current.getRGB();
+        if(RGB == Blue.getRGB()) return Red;
+        if(RGB ==)
+        switch(RGB){
+            case Blue.getRGB():
+                return Colors.Red;
+            case current.getRGB() == Red.getRGB():
+                return Colors.Cyan;
+            case current.getRGB() == Cyan.getRGB():
+                return Colors.Purple;
+            case current.getRGB() == Purple.getRGB():
+                return Colors.Green;
+            case current.getRGB() == Green.getRGB():
+                return Colors.Orange;
+            case current.getRGB() == Orange.getRGB():
+                return Colors.Pink;
+            case current.getRGB() == Pink.getRGB():
+                return Colors.Lightblue;
+            case current.getRGB() == Grey.getRGB():
+                return Colors.Grey;
+            case current.getRGB() == Lightblue.getRGB():
+                return Colors.Brown;
+            case current.getRGB() == Brown.getRGB():
+                return Colors.Blue;
+            default:
+                return null;
+        }
+    }
 }

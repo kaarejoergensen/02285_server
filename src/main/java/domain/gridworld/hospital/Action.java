@@ -5,7 +5,8 @@ class Action {
         NoOp,
         Move,
         Push,
-        Pull
+        Pull,
+        Paint
     }
 
     final Type type;
@@ -54,6 +55,18 @@ class Action {
     static final Action PullWN = new Action(Type.Pull, 0, -1, -1, 0);
     static final Action PullWS = new Action(Type.Pull, 0, -1, 1, 0);
     static final Action PullWE = new Action(Type.Pull, 0, -1, 0, 1);
+
+    static final Action Paint = new Action(Type.Paint, 0, 0, 0, 0);
+
+    static final Action PaintN = new Action(Type.Paint, 0, 0, 0, 0);
+    static final Action PaintS = new Action(Type.Paint, 0, 0, 0, 0);
+    static final Action PaintE = new Action(Type.Paint, 0, 0, 0, 0);
+    static final Action PaintW = new Action(Type.Paint, 0, 0, 0, 0);
+
+
+
+
+
 
     static Action parse(String action) {
         switch (action) {
@@ -118,6 +131,16 @@ class Action {
                 return PullWS;
             case "Pull(W,E)":
                 return PullWE;
+
+            case "Paint(N)":
+                return PaintN;
+            case "Paint(S)":
+                return PaintS;
+            case "Paint(E)":
+                return PaintE;
+            case "Paint(W)":
+                return PaintW;
+
 
             default:
                 return null;

@@ -1034,6 +1034,18 @@ class StateSequence {
         this.sortedBoxIds[sortedBoxIdx] = boxId;
     }
 
+
+    void repaintBox(State newState, short col, short row){
+        int sortedBoxIdx = this.findBox(newState, col, row);
+        int boxId = this.sortedBoxIds[sortedBoxIdx];
+
+
+        var newColor = boxColors[sortedBoxIdx - 'A'];
+        newColor.toString()
+        this.boxColors[sortedBoxIdx - 'A'] = color;
+
+    }
+
     /**
      * Search for an agent at the given (row, col) in the latest state.
      * Returns agent ID (0..9) if found, and -1 otherwise.
@@ -1132,6 +1144,7 @@ class StateSequence {
                             this.agentColors[agent] == this.boxColors[boxLetter] &&
                             this.freeAt(destRows[agent], destCols[agent]);
                     break;
+                 //TODO PAINT
             }
         }
 
@@ -1221,6 +1234,11 @@ class StateSequence {
                     this.moveAgent(newState, agent, newAgentRow, newAgentCol);
                     this.moveBox(newState, oldBoxRow, oldBoxCol, newBoxRow, newBoxCol);
                     break;
+
+                //TODO: Implement :)
+                case Paint:
+
+
             }
         }
 
