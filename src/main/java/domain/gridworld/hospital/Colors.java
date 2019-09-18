@@ -47,4 +47,18 @@ class Colors {
                 return null;
         }
     }
+
+    static Color nextFrom(Color current){
+        int RGB = current.getRGB();
+        if(RGB == Blue.getRGB()) return Red;
+        if(RGB == Red.getRGB()) return Cyan;
+        if(RGB == Cyan.getRGB()) return Purple;
+        if(RGB == Purple.getRGB()) return Green;
+        if(RGB == Green.getRGB()) return Orange;
+        if(RGB == Orange.getRGB()) return Pink;
+        if(RGB == Pink.getRGB()) return Lightblue;
+        if(RGB == Lightblue.getRGB()) return Brown;
+        if(RGB == Brown.getRGB()) return Blue;
+        return current;
+    }
 }
