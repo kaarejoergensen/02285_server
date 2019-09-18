@@ -103,6 +103,13 @@ public class State {
                     this.agentRows[agent] += action.agentRowDelta;
                     this.agentCols[agent] += action.agentColDelta;
                     break;
+
+                case Paint:
+                    var index = this.boxAt(this.agentRows[agent] + action.boxRowDelta,
+                            this.agentCols[agent] + action.boxColDelta);
+                    boxColors[index] = Color.next(boxColors[index]);
+                    break;
+
             }
         }
     }
@@ -218,6 +225,14 @@ public class State {
                 destinationRow = agentRow + action.agentRowDelta;
                 destinationCol = agentCol + action.agentColDelta;
                 return this.cellIsFree(destinationRow, destinationCol);
+            case Paint:
+                boxRow = agentRow + action.agentRowDelta;
+                boxCol = agentCol + action.agentColDelta;
+                box = this.boxAt(boxRow, boxCol);
+                if (box == 0 || agentColor != this.boxColors[box - 'A']) {
+                    return false;
+                }
+                return true;
         }
 
         // Unreachable:
@@ -241,9 +256,6 @@ public class State {
             int boxCol;
 
             switch (action.type) {
-                case NoOp:
-                    break;
-
                 case Move:
                     destinationRows[agent] = agentRow + action.agentRowDelta;
                     destinationCols[agent] = agentCol + action.agentColDelta;
@@ -267,6 +279,8 @@ public class State {
                     boxCols[agent] = boxCol;
                     destinationRows[agent] = agentRow + action.agentRowDelta;
                     destinationCols[agent] = agentCol + action.agentColDelta;
+                    break;
+                default:
                     break;
             }
         }
