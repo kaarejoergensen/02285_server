@@ -56,14 +56,10 @@ class Action {
     static final Action PullWS = new Action(Type.Pull, 0, -1, 1, 0);
     static final Action PullWE = new Action(Type.Pull, 0, -1, 0, 1);
 
-    static final Action Paint = new Action(Type.Paint, 0, 0, 0, 0);
-
-    static final Action PaintN = new Action(Type.Paint, 0, 0, 0, 0);
-    static final Action PaintS = new Action(Type.Paint, 0, 0, 0, 0);
-    static final Action PaintE = new Action(Type.Paint, 0, 0, 0, 0);
-    static final Action PaintW = new Action(Type.Paint, 0, 0, 0, 0);
-
-
+    static final Action PaintN = new Action(Type.Paint, -1, 0, 0, 0);
+    static final Action PaintS = new Action(Type.Paint, 1, 0, 0, 0);
+    static final Action PaintE = new Action(Type.Paint, 0, 1, 0, 0);
+    static final Action PaintW = new Action(Type.Paint, 0, -1, 0, 0);
 
 
 

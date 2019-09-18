@@ -169,7 +169,7 @@ public class Server {
                             boolean hasGUIOutput, boolean closeLogOnExit) {
         serverLogger.info(String.format("Running client on level file: %s", levelPath.toString()));
 
-        Domain domain = loadDomain(levelPath, false);
+        Domain domain = this.loadDomain(levelPath, false);
         if (domain == null) return null;
 
         PlaybackManager playbackManager = null;
