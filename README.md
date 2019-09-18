@@ -19,7 +19,7 @@
 * Can change colors of boxes
 * Is Grey
 
-![alt text](https://www.pixilart.com/art/wizard-sprite-1d891dc0dc174c0)
+![alt text](https://art.pixilart.com/1d891dc0dc174c0.png)
 
 
 # Domain Improvements 
