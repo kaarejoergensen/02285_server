@@ -14,6 +14,9 @@ public enum Color {
     Lightblue,
     Brown;
 
+
+    private static Color[] colors = values();
+
     public static Color fromString(String s) {
         switch (s.toLowerCase(Locale.ROOT)) {
             case "blue":
@@ -39,5 +42,11 @@ public enum Color {
             default:
                 return null;
         }
+    }
+
+    static Color next(Color current){
+        int nextIndex = current.ordinal() + 1;
+        nextIndex %= colors.length;
+        return colors[nextIndex];
     }
 }
