@@ -1,6 +1,8 @@
 package gui.widgets;
 
 import domain.Domain;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import server.Server;
 
 import javax.swing.*;
@@ -10,6 +12,8 @@ import java.awt.image.VolatileImage;
 import static java.awt.RenderingHints.*;
 
 public class DomainPanel extends JPanel {
+    private Logger serverLogger = LogManager.getLogger("server");
+
     /**
      * TODO: Benchmark this against BufferedImage version when domain actually does some real rendering.
      */
@@ -295,7 +299,7 @@ public class DomainPanel extends JPanel {
      * The thread is started in the constructur, and runs until shutdown is signaled.
      */
     private void renderLoop() {
-        Server.printDebug("Thread started.");
+        serverLogger.debug("Thread started.");
 
         while (true) {
             // The EDT's call to signalDomainRender() has a happens-before relationship with this thread's call below.
@@ -332,6 +336,6 @@ public class DomainPanel extends JPanel {
             this.signalRenderFinish();
         }
 
-        Server.printDebug("Thread shut down.");
+        serverLogger.debug("Thread shut down.");
     }
 }

@@ -1,13 +1,14 @@
 package domain.gridworld.hospital;
 
-import client.Client;
 import client.Timeout;
 import domain.Domain;
 import domain.ParseException;
 import domain.gridworld.hospital.ui_components.CanvasDetails;
 import domain.gridworld.hospital.ui_components.Agent;
 import domain.gridworld.hospital.ui_components.Box;
-import server.Server;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import server.CustomLoggerConfigFactory;
 
 import java.awt.*;
 import java.awt.font.TextLayout;
@@ -23,8 +24,10 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.concurrent.TimeUnit;
 
-public final class HospitalDomain
-        implements Domain {
+public final class HospitalDomain implements Domain {
+    private Logger clientLogger = LogManager.getLogger("client");
+    private Logger serverLogger = LogManager.getLogger("server");
+
     private Path levelFile;
     private StateSequence stateSequence;
 
@@ -320,7 +323,7 @@ public final class HospitalDomain
     @Override
     public void renderStateTransition(Graphics2D g, int stateID, double interpolation) {
         if (interpolation < 0.0 || interpolation >= 1.0) {
-            Server.printError("Bad interpolation: " + interpolation);
+            serverLogger.error("Bad interpolation: " + interpolation);
             return;
         }
 
@@ -502,7 +505,7 @@ public final class HospitalDomain
             // FIXME: Holy shit, creating a TextLayout object is SLOW!
             long t1 = System.nanoTime();
             var text = new TextLayout("W", nextFont, fontRenderContext); // Using W because it's wide.
-            Server.printDebug(String.format("fontSize: %d us.", (System.nanoTime() - t1) / 1000));
+            serverLogger.debug(String.format("fontSize: %d us.", (System.nanoTime() - t1) / 1000));
             bounds = text.getPixelBounds(fontRenderContext, 0, 0);
         } while (bounds.width < canvas.cellSize - 2 * canvas.cellTextMargin &&
                 bounds.height < canvas.cellSize - 2 * canvas.cellTextMargin);
@@ -524,7 +527,7 @@ public final class HospitalDomain
             // FIXME: Holy shit, creating a TextLayout object is SLOW!
             agent.letterTextUpdate(curFont, fontRenderContext);
         }
-        Server.printDebug(String.format("layoutLetters: %d ms.", (System.nanoTime() - t1) / 1000000));
+        serverLogger.debug(String.format("layoutLetters: %d ms.", (System.nanoTime() - t1) / 1000000));
 
 
         // Agent move arm shape.
@@ -636,7 +639,7 @@ public final class HospitalDomain
                             BufferedOutputStream clientOut,
                             OutputStream logOut
     ) {
-        Client.printDebug("Protocol begun.");
+        clientLogger.debug("Protocol begun.");
 
         BufferedReader clientReader
                 = new BufferedReader(new InputStreamReader(clientIn, StandardCharsets.US_ASCII.newDecoder()));
@@ -649,15 +652,15 @@ public final class HospitalDomain
         timeout.reset(System.nanoTime(), TimeUnit.SECONDS.toNanos(10));
         String clientMsg;
         try {
-            Client.printDebug("Waiting for client name.");
+            clientLogger.debug("Waiting for client name.");
             clientMsg = clientReader.readLine();
         } catch (CharacterCodingException e) {
-            Client.printError("Client message not valid ASCII.");
+            clientLogger.error("Client message not valid ASCII.");
             return;
         } catch (IOException e) {
             // FIXME: What may even cause this? Closing the stream causes readLine to return null rather than throw.
             synchronized (System.out) {
-                Client.printError("Unexpected exception while reading client name:");
+                clientLogger.error("Unexpected exception while reading client name:");
                 e.printStackTrace(System.out);
             }
             return;
@@ -666,23 +669,23 @@ public final class HospitalDomain
         // Check and reset timeout.
         long startNS = System.nanoTime();
         if (!timeout.reset(startNS, timeoutNS)) {
-            Client.printError("Timed out while waiting for client name.");
+            clientLogger.error("Timed out while waiting for client name.");
             return;
         }
 
         // Store client name.
         if (clientMsg != null) {
-            Client.printDebug("Received client name: " + clientMsg);
+            clientLogger.debug("Received client name: " + clientMsg);
             this.clientName = clientMsg;
         } else {
-            Client.printError("Client closed its output stream before sending its name.");
+            clientLogger.error("Client closed its output stream before sending its name.");
             return;
         }
 
         // Send level to client and log.
-        Client.printDebug("Opening level file: " + this.levelFile);
+        clientLogger.debug("Opening level file: " + this.levelFile);
         try (InputStream levelStream = Files.newInputStream(this.levelFile)) {
-            Client.printDebug("Writing level to client and log.");
+            clientLogger.debug("Writing level to client and log.");
             try {
                 byte[] buffer = new byte[4096];
                 int len;
@@ -702,35 +705,32 @@ public final class HospitalDomain
                 }
             } catch (IOException e) {
                 if (timeout.isExpired()) {
-                    Client.printError("Timeout expired while sending level to client.");
+                    clientLogger.error("Timeout expired while sending level to client.");
                 } else {
-                    Client.printError("Could not send level to client and/or log.");
-                    Client.printError(e.getMessage());
+                    clientLogger.error("Could not send level to client and/or log. " + e.getMessage(), e);
                 }
                 return;
             }
         } catch (IOException e) {
-            Client.printError("Could not open level file.");
-            Client.printError(e.getMessage());
+            clientLogger.error("Could not open level file. " + e.getMessage(), e);
             return;
         }
 
         // Log client name.
         // Has to be logged after level file contents have been logged (first log lines must be domain).
         try {
-            Client.printDebug("Logging client name.");
+            clientLogger.debug("Logging client name.");
             logWriter.write("#clientname");
             logWriter.newLine();
             logWriter.write(this.clientName);
             logWriter.newLine();
             logWriter.flush();
         } catch (IOException e) {
-            Client.printError("Could not write client name to log file.");
-            Client.printError(e.getMessage());
+            clientLogger.error("Could not write client name to log file. " + e.getMessage(), e);
             return;
         }
 
-        Client.printDebug("Beginning action/comment message exchanges.");
+        clientLogger.debug("Beginning action/comment message exchanges.");
         long numMessages = 0;
         Action[] jointAction = new Action[this.stateSequence.numAgents];
 
@@ -739,15 +739,14 @@ public final class HospitalDomain
             logWriter.newLine();
             logWriter.flush();
         } catch (IOException e) {
-            Client.printError("Could not write to log file.");
-            Client.printError(e.getMessage());
+            clientLogger.error("Could not write to log file. " + e.getMessage(), e);
             return;
         }
 
         protocolLoop:
         while (true) {
             if (timeout.isExpired()) {
-                Client.printDebug("Client timed out in protocol loop.");
+                clientLogger.debug("Client timed out in protocol loop.");
                 break;
             }
 
@@ -755,45 +754,43 @@ public final class HospitalDomain
             try {
                 clientMsg = clientReader.readLine();
             } catch (CharacterCodingException e) {
-                Client.printError("Client message not valid ASCII.");
+                clientLogger.error("Client message not valid ASCII.");
                 return;
             } catch (IOException e) {
-                Client.printError("Unexpected exception while reading from client.");
-                Client.printError(e.getMessage());
-                e.printStackTrace();
+                clientLogger.error("Unexpected exception while reading from client. " + e.getMessage(), e);
                 return;
             }
             if (clientMsg == null) {
                 if (timeout.isExpired()) {
-                    Client.printDebug("Client stream closed after timeout.");
+                    clientLogger.debug("Client stream closed after timeout.");
                 } else {
-                    Client.printDebug("Client closed its output stream.");
+                    clientLogger.debug("Client closed its output stream.");
                 }
                 break;
             }
 
             if (timeout.isExpired()) {
-                Client.printDebug("Client timed out in protocol loop.");
+                clientLogger.debug("Client timed out in protocol loop.");
                 break;
             }
 
             // Process message.
             ++numMessages;
             if (clientMsg.startsWith("#")) {
-                Client.printMessage(clientMsg.substring(1));
+                clientLogger.log(CustomLoggerConfigFactory.messageLevel, clientMsg.substring(1));
             } else {
                 // Parse action string.
                 String[] actionMsg = clientMsg.split(";");
                 if (actionMsg.length != this.stateSequence.numAgents) {
-                    Client.printError("Invalid number of agents in joint action:");
-                    Client.printError(clientMsg);
+                    clientLogger.error("Invalid number of agents in joint action:");
+                    clientLogger.error(clientMsg);
                     continue;
                 }
                 for (int i = 0; i < jointAction.length; ++i) {
                     jointAction[i] = Action.parse(actionMsg[i]);
                     if (jointAction[i] == null) {
-                        Client.printError("Invalid joint action:");
-                        Client.printError(clientMsg);
+                        clientLogger.error("Invalid joint action:");
+                        clientLogger.error(clientMsg);
                         continue protocolLoop;
                     }
                 }
@@ -815,8 +812,7 @@ public final class HospitalDomain
                 } catch (IOException e) {
                     // TODO: Happens when client closes before reading responses, then server can't write to the
                     //  client's input stream.
-                    Client.printError("Could not write response to client.");
-                    Client.printError(e.getMessage());
+                    clientLogger.error("Could not write response to client. " + e.getMessage(), e);
                     return;
                 }
 
@@ -828,13 +824,12 @@ public final class HospitalDomain
                     logWriter.newLine();
                     logWriter.flush();
                 } catch (IOException e) {
-                    Client.printError("Could not write to log file.");
-                    Client.printError(e.getMessage());
+                    clientLogger.error("Could not write to log file. " + e.getMessage(), e);
                     return;
                 }
             }
         }
-        Client.printDebug("Messages exchanged: " + numMessages + ".");
+        clientLogger.debug("Messages exchanged: " + numMessages + ".");
 
         // Log summary.
         try {
@@ -860,11 +855,10 @@ public final class HospitalDomain
             logWriter.newLine();
             logWriter.flush();
         } catch (IOException e) {
-            Client.printError("Could not write to log file.");
-            Client.printError(e.getMessage());
+            clientLogger.error("Could not write to log file. " + e.getMessage(), e);
             return;
         }
 
-        Client.printDebug("Protocol finished.");
+        clientLogger.debug("Protocol finished.");
     }
 }

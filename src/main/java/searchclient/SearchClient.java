@@ -143,14 +143,8 @@ public class SearchClient {
 
     public static void main(String[] args)
             throws IOException {
-        // Use stderr to print to the console.
-        System.err.println("SearchClient initializing. I am sending this using the error output stream.");
-
         // Send client name to server.
         System.out.println("SearchClient");
-
-        // We can also print comments to stdout by prefixing with a #.
-        System.out.println("#This is a comment.");
 
         // Parse the level.
         BufferedReader serverMessages = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.US_ASCII));

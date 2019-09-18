@@ -1,6 +1,8 @@
 package gui;
 
 import domain.Domain;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import server.Server;
 
 import javax.swing.*;
@@ -21,6 +23,8 @@ import java.util.Locale;
  * IMPORTANT: Unless otherwise specified, all functions on PlaybackManager objects MUST be called from the EDT!
  */
 public class PlaybackManager {
+    private Logger serverLogger = LogManager.getLogger("server");
+
     /**
      * Frames and Domains in a 1-1 correspondence.
      */
@@ -114,7 +118,7 @@ public class PlaybackManager {
         this.toolkit = Toolkit.getDefaultToolkit();
 
         int tickRate = PlaybackManager.getMinimumSupportedRefreshRate(gcs);
-        Server.printDebug("GUI tick rate: " + tickRate + " Hz.");
+        serverLogger.debug("GUI tick rate: " + tickRate + " Hz.");
         // Note that the actual tick rate may/will be a bit higher due to limited resolution of the tick timer.
 
         SwingUtilities.invokeLater(() ->
@@ -424,7 +428,7 @@ public class PlaybackManager {
 
         long elapsed = System.nanoTime() - start;
         if (elapsed / 1_000_000L > this.tickTimer.getDelay()) {
-            Server.printDebug(String.format(Locale.ROOT,
+            serverLogger.debug(String.format(Locale.ROOT,
                     "Tick time (%d ms) exceeded frame time (%d ms).",
                     elapsed / 1_000_000L,
                     this.tickTimer.getDelay()));

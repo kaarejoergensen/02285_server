@@ -5,10 +5,15 @@ import client.Timeout;
 import domain.Domain;
 import domain.ParseException;
 import gui.PlaybackManager;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -20,24 +25,11 @@ import java.util.Comparator;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-/**
- * TODO: Clean shutdown of server on Ctrl-C, SIGINT, or whatever mechanisms that cause the JVM to shut down nicely.
- * <p>
- * TODO NICE-HAVE:
- * - DOMAIN: More implementations.
- * - GUI: More speed presets?
- * - GUI: Help overlay.
- * - GUI: Reloading/navigating new client/domains without server restart?
- * <p>
- * <p>
- * <p>
- * TEST ARGUMENTS
- * -c "java src/TestClient.java" -l "./levels/MATest.lvl" -t 10 -o "./logs/MATest1.log"
- * -c "java src/TestClient.java" -l "./levels/MATest.lvl" -t 10 -o "./logs/MATest2.log"
- * -r "./logs/MATest1.log" "./logs/MATest2.log" -g 0 1
- */
 public class Server {
-    public static final boolean PRINT_DEBUG = "true".equalsIgnoreCase(System.getenv("AIMAS_SERVER_DEBUG"));
+    private Logger serverLogger = LogManager.getLogger("server");
+    private Logger clientLogger = LogManager.getLogger("client");
+
+    private ArgumentParser arguments;
 
     // FIXME: Context for clean shutdown on shutdown hook.
 //    private static final Thread shutdownThread = new Thread(Server::shutdownServer);
@@ -47,41 +39,47 @@ public class Server {
 //    private static volatile PlaybackManager currentPlaybackManager;
 
     public static void main(String[] args) {
+        Server server = new Server(args);
+        server.run();
+    }
+
+    private Server(String[] args) {
         Thread.currentThread().setName("MainThread");
-        Server.printDebug("Thread started.");
+        serverLogger.debug("Thread started.");
 
         // FIXME: Hotfix for UI scaling.
         System.setProperty("sun.java2d.uiScale.enabled", "false");
 
         // FIXME:
-//        Runtime.getRuntime().addShutdownHook(Server.shutdownThread);
+        //Runtime.getRuntime().addShutdownHook(Server.shutdownThread);
 
-        ArgumentParser arguments;
         try {
-            arguments = new ArgumentParser(args);
-        } catch (ArgumentException e) {
-            Server.printError(e.getMessage());
-            return;
+            this.arguments = new ArgumentParser(args);
+        } catch (IllegalArgumentException e) {
+            serverLogger.error(e.getMessage(), e);
+            System.exit(-1);
         }
 
-        if (arguments.helpPrinted()) {
-            return;
+        if (this.arguments.isHelpPrinted()) {
+            System.exit(0);
         }
+    }
 
+    public void run() {
         switch (arguments.getServerInputMode()) {
             case NONE:
-                Server.printError("No client or replay files specified.");
+                serverLogger.error("No client or replay files specified.");
                 return;
             case CLIENT:
                 switch (arguments.getClientInputMode()) {
                     case NONE:
-                        Server.printError("No level path given.");
+                        serverLogger.error("No level path given.");
                         return;
                     case FILE:
-                        runClientOnSingleLevel(arguments);
+                        this.runClientOnSingleLevel(arguments);
                         break;
                     case DIRECTORY:
-                        runClientOnLevelDirectory(arguments);
+                        this.runClientOnLevelDirectory(arguments);
                         break;
                     // TODO: Zip?
                 }
@@ -97,7 +95,7 @@ public class Server {
         //       reasonable when we mostly don't reallocate the buffers. We could also compound that .gc() if we
         //       expect we may have several times when there are multiple windows reallocating buffers at the same time.
 
-        Server.printDebug("Thread shut down.");
+        serverLogger.debug("Thread shut down.");
 
         // FIXME:
 //        synchronized (Server.class)
@@ -111,285 +109,189 @@ public class Server {
 //        }
     }
 
-    private static void runClientOnSingleLevel(ArgumentParser args) {
-        Server.printInfo(String.format("Running client on level: %s", args.getLevelPath()));
+    private void runClientOnSingleLevel(ArgumentParser args) {
+        OutputStream logFileStream = this.createLogFileStream(args.hasLogOutput(), args.getLogFilePath());
 
-        // Load domain.
-        Domain domain;
-        try {
-            domain = Domain.loadLevel(args.getLevelPath());
-        } catch (ParseException e) {
-            // TODO: Better error message (level invalid, rather than "failing" to parse).
-            Server.printError("Could not load domain, failed to parse level file.");
-            Server.printError(e.getMessage());
-            return;
-        } catch (IOException e) {
-            Server.printError("IOException while loading domain.");
-            Server.printError(e.getMessage());
-            return;
-        }
+        this.runLevel(args.getLevelPath(), args, logFileStream, args.hasGUIOutput(), true);
+    }
 
-        // Load GUI.
-        PlaybackManager playbackManager = null;
-        if (args.hasGUIOutput()) {
-            Server.printDebug("Loading GUI.");
-            try {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            } catch (ClassNotFoundException |
-                    UnsupportedLookAndFeelException |
-                    IllegalAccessException |
-                    InstantiationException e) {
-                Server.printWarning("Could not set system look and feel.");
-                Server.printWarning(e.getMessage());
+    private void runClientOnLevelDirectory(ArgumentParser args) {
+        try (var levelDirectory = Files.newDirectoryStream(args.getLevelPath(), createLevelFilter())) {
+            ZipOutputStream logZipStream = new ZipOutputStream(this.createLogFileStream(args.hasLogOutput(), args.getLogFilePath()));
+
+            ArrayList<Domain> domains = new ArrayList<>();
+
+            for (Path levelPath : levelDirectory) {
+                this.createZipEntry(levelPath, logZipStream);
+
+                Domain domain = this.runLevel(levelPath, args, logZipStream, false, false);
+                if (domain == null) continue;
+
+                domains.add(domain);
+
+                System.gc();
             }
-            var gcs = getGraphicsConfigurations(1, args.getScreens());
-            var domains = new Domain[]{domain};
-            playbackManager = new PlaybackManager(domains, gcs);
+
+            this.writeSummary(logZipStream, domains);
+
+            try {
+                logZipStream.close();
+            } catch (IOException e) {
+                serverLogger.error("Could not close log file. " + e.getMessage(), e);
+            }
+        } catch (IOException e) {
+            serverLogger.error("Could not open levels directory. " + e.getMessage(), e);
+        }
+    }
+
+    private void runReplays(ArgumentParser args) {
+        Domain[] domains = this.loadReplayDomains(args.getReplayFilePaths());
+
+        if (args.hasGUIOutput()) {
+            PlaybackManager playbackManager = this.loadAndStartGUI(domains, args);
+            playbackManager.waitShutdown();
+        }
+    }
+
+    private OutputStream createLogFileStream(boolean hasLogOutput, Path logFilePath) {
+        if (hasLogOutput) {
+            try {
+                return Files.newOutputStream(logFilePath, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+            } catch (IOException e) {
+                serverLogger.error("Could not create log file: " + logFilePath + " " + e.getMessage(), e);
+                System.exit(-1);
+            }
+        }
+        return OutputStream.nullOutputStream();
+    }
+
+    private Domain runLevel(Path levelPath, ArgumentParser args, OutputStream logFileStream,
+                            boolean hasGUIOutput, boolean closeLogOnExit) {
+        serverLogger.info(String.format("Running client on level file: %s", levelPath.toString()));
+
+        Domain domain = loadDomain(levelPath, false);
+        if (domain == null) return null;
+
+        PlaybackManager playbackManager = null;
+        if (hasGUIOutput) {
+            playbackManager = loadAndStartGUI(domain, args);
         } else {
             // The domain can discard past states if we don't need to be able to seek states in the GUI.
             domain.allowDiscardingPastStates();
         }
 
-        // Open log file.
-        OutputStream logFileStream;
-        if (args.hasLogOutput()) {
-            try {
-                logFileStream = Files.newOutputStream(args.getLogFilePath(),
-                        StandardOpenOption.CREATE_NEW,
-                        StandardOpenOption.WRITE);
-            } catch (IOException e) {
-                Server.printError("Could not create log file: " + args.getLogFilePath());
-                Server.printError(e.getMessage());
-                return;
-            }
-        } else {
-            logFileStream = OutputStream.nullOutputStream();
+        Client client = loadAndStartClient(domain, args.getClientCommand(), args.getTimeoutSeconds(), logFileStream, closeLogOnExit);
+        if (client == null) return null;
+
+        if (playbackManager != null) {
+            // FIXME: Holding class sync lock will not allow shutdown hook to signal GUI shutdown, deadlocking.
+            playbackManager.waitShutdown();
+            client.expireTimeout(); // Does nothing if timeout already expired or stopped.
         }
 
-        // Load and start client.
-        Client client;
-        Timeout timeout = new Timeout();
+        client.waitShutdown();
+        return domain;
+    }
+
+    private Domain loadDomain(Path levelPath, boolean isReplay) {
+        serverLogger.info(String.format("Loading file : %s. Replay: %s", levelPath, isReplay));
+        Domain domain = null;
         try {
-            long timeoutNS = args.getTimeoutSeconds() * 1_000_000_000L;
-            client = new Client(domain, args.getClientCommand(), logFileStream, true, timeout, timeoutNS);
+            domain = Domain.loadLevel(levelPath, isReplay);
+        } catch (ParseException e) {
+            // TODO: Better error message (level invalid, rather than "failing" to parse).
+            serverLogger.error("Could not load domain, failed to parse level file. " + e.getMessage(), e);
+        } catch (IOException e) {
+            serverLogger.error("IOException while loading domain. " + e.getMessage(), e);
+        }
+        return domain;
+    }
+
+    private Client loadAndStartClient(Domain domain, String clientCommand, int timeoutArg,
+                                      OutputStream logFileStream, boolean closeLogOnExit) {
+        Client client = null;
+        try {
+            long timeoutNS = timeoutArg * 1_000_000_000L;
+            client = new Client(domain, clientCommand, logFileStream, closeLogOnExit, new Timeout(), timeoutNS);
+            client.startProtocol();
         } catch (Exception e) {
             // TODO: Start writing errors to log file also? Will complicate/break parsing from domains though.
-            Server.printError("Could not start client process.");
-            Server.printError(e.getMessage());
+            serverLogger.error("Could not start client process. " + e.getMessage(), e);
             try {
                 logFileStream.close();
             } catch (IOException e1) {
-                Client.printError("Could not close log file.");
-                Client.printError(e1.getMessage());
+                clientLogger.error("Could not close log file. " + e1.getMessage(), e1);
             }
-            return;
         }
-
-        // Start GUI.
-        if (args.hasGUIOutput()) {
-            assert playbackManager != null;
-            // FIXME: This may hang if the EDT crashed after the constructor (or during this call)?
-            Server.printDebug("Starting GUI.");
-            playbackManager.startGUI(args.getStartFullscreen(),
-                    args.getStartHiddenInterface(),
-                    args.getMsPerAction(),
-                    args.getStartPlaying());
-            playbackManager.focusPlaybackFrame(0);
-        }
-
-        // Start client protocol.
-        client.startProtocol();
-
-        // Wait for GUI to shut down.
-        if (args.hasGUIOutput()) {
-            assert playbackManager != null;
-            // FIXME: Holding class sync lock will not allow shutdown hook to signal GUI shutdown, deadlocking.
-            playbackManager.waitShutdown();
-            timeout.expire(); // Does nothing if timeout already expired or stopped.
-        }
-
-        // Wait for client to shut down (if it hasn't already while GUI ran).
-        // FIXME: Join not interruptible for clean shutdown.
-        client.waitShutdown();
+        return client;
     }
 
-    private static void runClientOnLevelDirectory(ArgumentParser args) {
-        var levelFileFilter = new DirectoryStream.Filter<Path>() {
-            @Override
-            public boolean accept(Path entry) {
-                return Files.isReadable(entry) &&
-                        Files.isRegularFile(entry) &&
-                        entry.getFileName().toString().endsWith(".lvl") &&
-                        entry.getFileName().toString().length() > 4;
-            }
-        };
+    private PlaybackManager loadAndStartGUI(Domain domain, ArgumentParser args) {
+        return this.loadAndStartGUI(new Domain[]{domain}, args);
+    }
 
-        try (var levelDirectory = Files.newDirectoryStream(args.getLevelPath(), levelFileFilter)) {
-            // Open log file.
-            OutputStream logFileStream;
-            ZipOutputStream logZipStream;
-            if (args.hasLogOutput()) {
-                try {
-                    logZipStream = new ZipOutputStream(new BufferedOutputStream(Files.newOutputStream(
-                            args.getLogFilePath(),
-                            StandardOpenOption.CREATE_NEW,
-                            StandardOpenOption.WRITE)));
-                    logFileStream = logZipStream;
-                } catch (IOException e) {
-                    Server.printError("Could not create log file: " + args.getLogFilePath());
-                    Server.printError(e.getMessage());
-                    return;
-                }
-            } else {
-                logFileStream = OutputStream.nullOutputStream();
-                logZipStream = new ZipOutputStream(logFileStream);
-            }
+    private PlaybackManager loadAndStartGUI(Domain[] domains, ArgumentParser args) {
+        serverLogger.debug("Loading GUI.");
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (ClassNotFoundException | UnsupportedLookAndFeelException |
+                IllegalAccessException | InstantiationException e) {
+            serverLogger.warn("Could not set system look and feel. " + e.getMessage(), e);
+        }
+        var gcs = getGraphicsConfigurations(domains.length, args.getScreens());
+        PlaybackManager playbackManager = new PlaybackManager(domains, gcs);
+        serverLogger.debug("Starting GUI.");
+        playbackManager.startGUI(args.isStartFullscreen(), args.isStartHiddenInterface(),
+                args.getMsPerAction(), args.isStartPlaying());
+        playbackManager.focusPlaybackFrame(0);
+        return playbackManager;
+    }
 
-            ArrayList<String> levelNames = new ArrayList<>();
-            ArrayList<String[]> levelStatus = new ArrayList<>();
+    private DirectoryStream.Filter<Path> createLevelFilter() {
+        return entry -> Files.isReadable(entry) &&
+                Files.isRegularFile(entry) &&
+                entry.getFileName().toString().endsWith(".lvl") &&
+                entry.getFileName().toString().length() > 4;
+    }
 
-            for (Path levelPath : levelDirectory) {
-                Server.printInfo(String.format("Running client on level file: %s", levelPath.toString()));
+    private void createZipEntry(Path levelPath, ZipOutputStream logZipStream) {
+        String levelFileName = levelPath.getFileName().toString();
+        String logEntryName = levelFileName.substring(0, levelFileName.length() - 4) + ".log";
+        try {
+            logZipStream.putNextEntry(new ZipEntry(logEntryName));
+        } catch (IOException e) {
+            serverLogger.error("Could not create log file entry for level. " + e.getMessage(), e);
+        }
+    }
 
-                // Load domain.
-                Domain domain;
-                try {
-                    domain = Domain.loadLevel(levelPath);
-                } catch (ParseException e) {
-                    Server.printError("Could not load domain, failed to parse level file.");
-                    Server.printError(e.getMessage());
-                    continue;
-                } catch (IOException e) {
-                    Server.printError("IOException while loading domain.");
-                    e.printStackTrace();
-                    continue;
-                }
-
-                // Never run with GUI, always discard states.
-                domain.allowDiscardingPastStates();
-
-                // Prepare next log entry.
-                String levelFileName = levelPath.getFileName().toString();
-                String logEntryName = levelFileName.substring(0, levelFileName.length() - 4) + ".log";
-                try {
-                    logZipStream.putNextEntry(new ZipEntry(logEntryName));
-                } catch (IOException e) {
-                    Server.printError("Could not create log file entry for level.");
-                    Server.printError(e.getMessage());
-                    continue;
-                }
-
-                // Load and start client.
-                Client client;
-                Timeout timeout = new Timeout();
-                try {
-                    long timeoutNS = args.getTimeoutSeconds() * 1_000_000_000L;
-                    client = new Client(domain, args.getClientCommand(), logFileStream, false, timeout, timeoutNS);
-                } catch (Exception e) {
-                    // TODO: Start writing errors to log file also? Will complicate/break parsing from domains though.
-                    Server.printError("Could not start client process.");
-                    Server.printError(e.getMessage());
-                    continue;
-                }
-
-                // Start client protocol.
-                client.startProtocol();
-
-                // Wait for client to shut down.
-                client.waitShutdown();
-
-                // Aggregate level summaries.
-                levelNames.add(domain.getLevelName());
-                levelStatus.add(domain.getStatus());
-
-                // Clear up resources and wait a moment before we proceed to next level.
-                domain = null;
-                timeout = null;
-                client = null;
-                System.gc();
-            }
-
-            // Write summary to log file.
-            try {
-                logZipStream.putNextEntry(new ZipEntry("summary.txt"));
-                BufferedWriter logWriter
-                        = new BufferedWriter(new OutputStreamWriter(logFileStream,
-                        StandardCharsets.US_ASCII.newEncoder()));
-                for (int i = 0; i < levelNames.size(); ++i) {
-                    logWriter.write("Level name: ");
-                    logWriter.write(levelNames.get(i));
+    private void writeSummary(ZipOutputStream logZipStream, ArrayList<Domain> domains) {
+        try {
+            logZipStream.putNextEntry(new ZipEntry("summary.txt"));
+            BufferedWriter logWriter =
+                    new BufferedWriter(new OutputStreamWriter(logZipStream, StandardCharsets.US_ASCII.newEncoder()));
+            for (Domain domain : domains) {
+                logWriter.write("Level name: ");
+                logWriter.write(domain.getLevelName());
+                logWriter.newLine();
+                for (String statusLine : domain.getStatus()) {
+                    logWriter.write(statusLine);
                     logWriter.newLine();
-                    for (String statusLine : levelStatus.get(i)) {
-                        logWriter.write(statusLine);
-                        logWriter.newLine();
-                    }
-                    logWriter.newLine();
-                    logWriter.flush();
                 }
-            } catch (IOException e) {
-                Server.printError("Could not write summary to log file.");
-                Server.printError(e.getMessage());
-            }
-
-            // Close log file.
-            try {
-                logZipStream.close();
-            } catch (IOException e) {
-                Server.printError("Could not close log file.");
-                Server.printError(e.getMessage());
-                return;
+                logWriter.newLine();
+                logWriter.flush();
             }
         } catch (IOException e) {
-            Server.printError("Could not open levels directory.");
-            Server.printError(e.getMessage());
-            return;
+            serverLogger.error("Could not write summary to log file. " + e.getMessage(), e);
         }
     }
 
-    private static void runReplays(ArgumentParser args) {
-        // Load domains.
-        Path[] replayFilePaths = args.getReplayFilePaths();
+    private Domain[] loadReplayDomains(Path[] replayFilePaths) {
         Domain[] domains = new Domain[replayFilePaths.length];
         for (int i = 0; i < replayFilePaths.length; i++) {
-            try {
-                Server.printInfo(String.format("Loading log file: %s", replayFilePaths[i]));
-                domains[i] = Domain.loadReplay(replayFilePaths[i]);
-            } catch (ParseException e) {
-                // TODO: Better error message (level invalid, rather than "failing" to parse).
-                Server.printError("Could not load domain, failed to parse log file.");
-                Server.printError(e.getMessage());
-                return;
-            } catch (IOException e) {
-                Server.printError("IOException while loading domain.");
-                Server.printError(e.getMessage());
-                return;
-            }
+            domains[i] = this.loadDomain(replayFilePaths[i], true);
+            if (domains[i] == null) System.exit(-1);
         }
-
-        PlaybackManager playbackManager = null;
-        if (args.hasGUIOutput()) {
-            Server.printDebug("Loading GUI.");
-            try {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            } catch (ClassNotFoundException |
-                    UnsupportedLookAndFeelException |
-                    IllegalAccessException |
-                    InstantiationException e) {
-                Server.printWarning("Could not set system look and feel.");
-                Server.printWarning(e.getMessage());
-            }
-            var gcs = getGraphicsConfigurations(domains.length, args.getScreens());
-            playbackManager = new PlaybackManager(domains, gcs);
-
-            Server.printDebug("Starting GUI.");
-            playbackManager.startGUI(args.getStartFullscreen(),
-                    args.getStartHiddenInterface(),
-                    args.getMsPerAction(),
-                    args.getStartPlaying());
-            playbackManager.focusPlaybackFrame(0);
-
-            playbackManager.waitShutdown();
-        }
+        return domains;
     }
 
 //    private static void shutdownServer()
@@ -406,7 +308,7 @@ public class Server {
 //                  we're sure that non-daemon threads are still executing. Otherwise,
 //                  we can't join on main, etc.
 //         */
-//        Server.printDebug("Shutdown begin");
+//        logger.debug("Shutdown begin");
 //
 //        // Signal shutdown.
 //        Server.currentTimeout.expire();
@@ -430,7 +332,7 @@ public class Server {
 //            }
 //        }
 //
-//        Server.printDebug("Shutdown end");
+//        logger.debug("Shutdown end");
 //    }
 
     /**
@@ -438,8 +340,7 @@ public class Server {
      * screen numbers (if provided) to the GraphicsDevices corresponding to a logical
      * left-to-right, top-to-bottom enumeration. See the screen notes in ArgumentParser.
      */
-    @SuppressWarnings("SameParameterValue")
-    private static GraphicsConfiguration[] getGraphicsConfigurations(int numScreens, int[] screens) {
+    private GraphicsConfiguration[] getGraphicsConfigurations(int numScreens, int[] screens) {
         final GraphicsConfiguration defaultScreen = GraphicsEnvironment
                 .getLocalGraphicsEnvironment()
                 .getDefaultScreenDevice()
@@ -447,70 +348,28 @@ public class Server {
 
         // WARNING! getScreenDevices() gives a direct reference to underlying array.
         // Copy before sorting, so we don't mutate underlying array.
-        GraphicsDevice[] gds = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
-        gds = Arrays.copyOf(gds, gds.length);
+        GraphicsDevice[] graphicsDevices = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
+        graphicsDevices = Arrays.copyOf(graphicsDevices, graphicsDevices.length);
         // Attempt sorting for the logical enumeration. May not work, e.g. if bounds are not relative to each other.
-        Arrays.sort(gds,
+        Arrays.sort(graphicsDevices,
                 Comparator.comparingInt((GraphicsDevice gd) -> gd.getDefaultConfiguration().getBounds().x)
                         .thenComparingInt(gd -> gd.getDefaultConfiguration().getBounds().y));
 
-        var gcs = new GraphicsConfiguration[numScreens];
+        var graphicsConfigurations = new GraphicsConfiguration[numScreens];
         for (int i = 0; i < numScreens; ++i) {
             if (i >= screens.length) {
                 // Unspecified.
-                gcs[i] = defaultScreen;
-            } else if (screens[i] < 0 || screens[i] >= gds.length) {
+                graphicsConfigurations[i] = defaultScreen;
+            } else if (screens[i] < 0 || screens[i] >= graphicsDevices.length) {
                 // Out of range.
-                gcs[i] = defaultScreen;
-                Server.printWarning("No screen #" + screens[i] + "; using default screen.");
+                graphicsConfigurations[i] = defaultScreen;
+                serverLogger.warn("No screen #" + screens[i] + "; using default screen.");
             } else {
                 // User-specified.
-                gcs[i] = gds[screens[i]].getDefaultConfiguration();
+                graphicsConfigurations[i] = graphicsDevices[screens[i]].getDefaultConfiguration();
             }
         }
 
-        return gcs;
-    }
-
-    public static void printTodo(String msg) {
-        if (!Server.PRINT_DEBUG) {
-            return;
-        }
-        synchronized (System.out) {
-            System.out.print("[server][todo] ");
-            System.out.println(msg);
-        }
-    }
-
-    public static void printDebug(String msg) {
-        if (!Server.PRINT_DEBUG) {
-            return;
-        }
-        synchronized (System.out) {
-            System.out.print("[server][debug]");
-            System.out.print("[" + Thread.currentThread().getName() + "] ");
-            System.out.println(msg);
-        }
-    }
-
-    public static void printInfo(String msg) {
-        synchronized (System.out) {
-            System.out.print("[server][info] ");
-            System.out.println(msg);
-        }
-    }
-
-    public static void printWarning(String msg) {
-        synchronized (System.out) {
-            System.out.print("[server][warning] ");
-            System.out.println(msg);
-        }
-    }
-
-    public static void printError(String msg) {
-        synchronized (System.out) {
-            System.out.print("[server][error] ");
-            System.out.println(msg);
-        }
+        return graphicsConfigurations;
     }
 }
