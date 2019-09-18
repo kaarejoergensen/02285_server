@@ -1037,6 +1037,14 @@ class StateSequence {
         this.sortedBoxIds[sortedBoxIdx] = boxId;
     }
 
+    //TODO Does this work? IDK
+    void repaintBox(State newState, short col, short row){
+        int sortedBoxIdx = this.findBox(newState, col, row);
+        int boxId = this.sortedBoxIds[sortedBoxIdx];
+
+        this.boxColors[sortedBoxIdx - 'A'] = Colors.nextFrom(boxColors[sortedBoxIdx - 'A']);
+    }
+
     /**
      * Search for an agent at the given (row, col) in the latest state.
      * Returns agent ID (0..9) if found, and -1 otherwise.
@@ -1135,6 +1143,7 @@ class StateSequence {
                             this.agentColors[agent] == this.boxColors[boxLetter] &&
                             this.freeAt(destRows[agent], destCols[agent]);
                     break;
+                 //TODO PAINT
             }
         }
 
@@ -1172,6 +1181,7 @@ class StateSequence {
 
     /**
      * Applies the actions in jointAction which are applicable to the latest state and returns the resulting state.
+     * TODO: Legge til noe nytt?
      */
     private State apply(Action[] jointAction, boolean[] applicable) {
         State currentState = this.states[this.numStates - 1];
@@ -1223,6 +1233,11 @@ class StateSequence {
                     this.moveAgent(newState, agent, newAgentRow, newAgentCol);
                     this.moveBox(newState, oldBoxRow, oldBoxCol, newBoxRow, newBoxCol);
                     break;
+
+                //TODO: Implement :)
+                case Paint:
+
+
             }
         }
 

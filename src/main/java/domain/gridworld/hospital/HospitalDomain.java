@@ -3,8 +3,9 @@ package domain.gridworld.hospital;
 import client.Timeout;
 import domain.Domain;
 import domain.ParseException;
-import domain.gridworld.hospital.gameobjects.Agent;
-import domain.gridworld.hospital.gameobjects.Box;
+import domain.gridworld.hospital.ui_components.CanvasDetails;
+import domain.gridworld.hospital.ui_components.Agent;
+import domain.gridworld.hospital.ui_components.Box;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import server.CustomLoggerConfigFactory;
@@ -26,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 public final class HospitalDomain implements Domain {
     private Logger clientLogger = LogManager.getLogger("client");
     private Logger serverLogger = LogManager.getLogger("server");
-    
+
     private Path levelFile;
     private StateSequence stateSequence;
 
@@ -46,11 +47,8 @@ public final class HospitalDomain implements Domain {
     private static final Color GOAL_FONT_COLOR = blendColors(GOAL_COLOR, Color.BLACK, 0.7);
     private static final Color GOAL_SOLVED_COLOR = Colors.SolvedGoal;
 
-    private static final double BOX_MARGIN_PERCENT = 0.1;
-    private static final double TEXT_MARGIN_PERCENT = 0.2;
 
-    private static final Stroke OUTLINE_STROKE = new BasicStroke(2.0f);
-    private static final AffineTransform IDENTITY_TRANSFORM = new AffineTransform();
+
 
     @SuppressWarnings("SameParameterValue")
     private static Color blendColors(Color c1, Color c2, double ratio) {
@@ -63,19 +61,23 @@ public final class HospitalDomain implements Domain {
     /**
      * Rendering context.
      */
-    private int originLeft, originTop;
-    private int width, height;
-    private int cellSize;
-    private int cellBoxMargin;
+    public static CanvasDetails canvas;
+
     // Agent and box letters.
     // FIXME: TextLayout performance sucks. Replace.
     private ArrayList<Agent> agents;
-    private ArrayList<Box> boxes;
 
+    //Contains all bxes
+    private ArrayList<Box> boxes;
+    //Referances of boxes which is in goal state
+    //TODO Eller bruke variabel i 'Box'?
+    private ArrayList<Box> boxesOnGoal;
+
+    /*
     private TextLayout[] boxLetterText = new TextLayout[26];
     private int[] boxLetterTopOffset = new int[26];
     private int[] boxLetterLeftOffset = new int[26];
-
+    */
     // For drawing arms on agents.
     private Polygon agentArmMove = new Polygon();
     private Polygon agentArmPushPull = new Polygon();
@@ -98,6 +100,9 @@ public final class HospitalDomain implements Domain {
         this.levelFile = domainFile;
         this.stateSequence = new StateSequence(domainFile, isLogFile);
 
+        //Help Variables describing the canvas details
+        canvas = new CanvasDetails();
+
         if (isLogFile) {
             this.clientName = this.stateSequence.clientName;
             this.numActions = this.stateSequence.getNumStates() - 1;
@@ -110,6 +115,11 @@ public final class HospitalDomain implements Domain {
         }
 
         //Initiate Boxes!?
+        boxes = new ArrayList<Box>();
+        for( byte i = 0; i < this.stateSequence.numBoxes; ++i){
+            boxes.add(new Box(i, this.stateSequence.boxColors[i]));
+        }
+
     }
 
 
@@ -172,6 +182,10 @@ public final class HospitalDomain implements Domain {
         return this.stateSequence.getStateTime(stateID);
     }
 
+    /*
+    Fredrik
+    Tegner vegg og bakke, samt mål og agenter
+     */
     @Override
     public void renderDomainBackground(Graphics2D g, int width, int height) {
         int numRows = this.stateSequence.numRows;
@@ -186,19 +200,19 @@ public final class HospitalDomain implements Domain {
 
         // Cell background.
         g.setColor(CELL_COLOR);
-        g.fillRect(this.originLeft, this.originTop, this.width, this.height);
+        g.fillRect(canvas.originLeft, canvas.originTop, canvas.width, canvas.height);
 
         // Grid and walls.
         for (short row = 0; row < numRows; ++row) {
-            int top = this.originTop + row * this.cellSize;
+            int top = canvas.originTop + row * canvas.cellSize;
             for (short col = 0; col < numCols; ++col) {
-                int left = this.originLeft + col * this.cellSize;
+                int left = canvas.originLeft + col * canvas.cellSize;
                 if (this.stateSequence.wallAt(row, col)) {
                     g.setColor(WALL_COLOR);
-                    g.fillRect(left, top, this.cellSize, this.cellSize);
+                    g.fillRect(left, top, canvas.cellSize, canvas.cellSize);
                 } else {
                     g.setColor(GRID_COLOR);
-                    g.drawRect(left, top, this.cellSize - 1, this.cellSize - 1);
+                    g.drawRect(left, top, canvas.cellSize - 1, canvas.cellSize - 1);
                 }
             }
         }
@@ -210,6 +224,7 @@ public final class HospitalDomain implements Domain {
             byte boxGoalLetter = this.stateSequence.boxGoalLetters[boxGoal];
             this.drawBoxGoalCell(g, row, col, (char) ('A' + boxGoalLetter), false);
         }
+        //Agents
         for (byte agent = 0; agent < this.stateSequence.numAgents; ++agent) {
             short row = this.stateSequence.agentGoalRows[agent];
             short col = this.stateSequence.agentGoalCols[agent];
@@ -234,6 +249,7 @@ public final class HospitalDomain implements Domain {
                 this.drawBoxGoalCell(g, row, col, (char) ('A' + boxGoalLetter), true);
             }
         }
+        //Agents again
         for (byte agent = 0; agent < this.stateSequence.numAgents; ++agent) {
             short row = this.stateSequence.agentGoalRows[agent];
             short col = this.stateSequence.agentGoalCols[agent];
@@ -255,8 +271,8 @@ public final class HospitalDomain implements Domain {
                 if (currentState.boxRows[box] == nextState.boxRows[box] &&
                         currentState.boxCols[box] == nextState.boxCols[box]) {
                     byte letter = this.stateSequence.boxLetters[box];
-                    int top = this.originTop + currentState.boxRows[box] * this.cellSize;
-                    int left = this.originLeft + currentState.boxCols[box] * this.cellSize;
+                    int top = canvas.originTop + currentState.boxRows[box] * canvas.cellSize;
+                    int left = canvas.originLeft + currentState.boxCols[box] * canvas.cellSize;
                     this.drawBox(g, top, left, (char) ('A' + letter), this.stateSequence.boxColors[letter]);
                 } else {
                     this.dynamicBoxes[this.numDynamicBoxes] = box;
@@ -268,8 +284,8 @@ public final class HospitalDomain implements Domain {
             for (byte agent = 0; agent < this.stateSequence.numAgents; ++agent) {
                 if (currentState.agentRows[agent] == nextState.agentRows[agent] &&
                         currentState.agentCols[agent] == nextState.agentCols[agent]) {
-                    int top = this.originTop + currentState.agentRows[agent] * this.cellSize;
-                    int left = this.originLeft + currentState.agentCols[agent] * this.cellSize;
+                    int top = canvas.originTop + currentState.agentRows[agent] * canvas.cellSize;
+                    int left = canvas.originLeft + currentState.agentCols[agent] * canvas.cellSize;
                     this.drawAgent(g, top, left, (char) ('0' + agent), agent);
                 } else {
                     this.dynamicAgents[this.numDynamicAgents] = agent;
@@ -382,37 +398,40 @@ public final class HospitalDomain implements Domain {
         // Draw arms on agents (under agent and box, so we can rely on overlap to form desired shapes).
         if (interpolation != 0.0) {
             for (byte dynamicAgent = 0; dynamicAgent < this.numDynamicAgents; ++dynamicAgent) {
+                //TODO Optimaliser det drittet her
                 byte agent = this.dynamicAgents[dynamicAgent];
+                Agent agent_obj = agents.get(agent);
                 int box = this.dynamicAgentsBox[dynamicAgent];
                 if (box != -1) {
                     // Push/Pull.
                     // Agent position.
-                    int cTop = this.originTop + currentState.agentRows[agent] * this.cellSize;
-                    int cLeft = this.originLeft + currentState.agentCols[agent] * this.cellSize;
-                    int nTop = this.originTop + nextState.agentRows[agent] * this.cellSize;
-                    int nLeft = this.originLeft + nextState.agentCols[agent] * this.cellSize;
+                    int cTop = canvas.originTop + currentState.agentRows[agent] * canvas.cellSize;
+                    int cLeft = canvas.originLeft + currentState.agentCols[agent] * canvas.cellSize;
+                    int nTop = canvas.originTop + nextState.agentRows[agent] * canvas.cellSize;
+                    int nLeft = canvas.originLeft + nextState.agentCols[agent] * canvas.cellSize;
                     int iTop = (int) (cTop + (nTop - cTop) * interpolation);
                     int iLeft = (int) (cLeft + (nLeft - cLeft) * interpolation);
                     // Box position.
-                    int bcTop = this.originTop + currentState.boxRows[box] * this.cellSize;
-                    int bcLeft = this.originLeft + currentState.boxCols[box] * this.cellSize;
-                    int bnTop = this.originTop + nextState.boxRows[box] * this.cellSize;
-                    int bnLeft = this.originLeft + nextState.boxCols[box] * this.cellSize;
+                    int bcTop = canvas.originTop + currentState.boxRows[box] * canvas.cellSize;
+                    int bcLeft = canvas.originLeft + currentState.boxCols[box] * canvas.cellSize;
+                    int bnTop = canvas.originTop + nextState.boxRows[box] * canvas.cellSize;
+                    int bnLeft = canvas.originLeft + nextState.boxCols[box] * canvas.cellSize;
                     int biTop = (int) (bcTop + (bnTop - bcTop) * interpolation);
                     int biLeft = (int) (bcLeft + (bnLeft - bcLeft) * interpolation);
 
                     double direction = Math.atan2(biTop - iTop, biLeft - iLeft);
-                    this.drawAgentArm(g, this.agentArmPushPull, iTop, iLeft, direction, agent);
+                    agent_obj.drawArm(g, this.agentArmPushPull, iTop, iLeft, direction);
                 } else {
                     // Move.
-                    int cTop = this.originTop + currentState.agentRows[agent] * this.cellSize;
-                    int cLeft = this.originLeft + currentState.agentCols[agent] * this.cellSize;
-                    int nTop = this.originTop + nextState.agentRows[agent] * this.cellSize;
-                    int nLeft = this.originLeft + nextState.agentCols[agent] * this.cellSize;
+                    int cTop = canvas.originTop + currentState.agentRows[agent] * canvas.cellSize;
+                    int cLeft = canvas.originLeft + currentState.agentCols[agent] * canvas.cellSize;
+                    int nTop = canvas.originTop + nextState.agentRows[agent] * canvas.cellSize;
+                    int nLeft = canvas.originLeft + nextState.agentCols[agent] * canvas.cellSize;
                     int iTop = (int) (cTop + (nTop - cTop) * interpolation);
                     int iLeft = (int) (cLeft + (nLeft - cLeft) * interpolation);
                     double direction = Math.atan2(nTop - cTop, nLeft - cLeft);
-                    this.drawAgentArm(g, this.agentArmMove, iTop, iLeft, direction, agent);
+                    agent_obj.drawArm(g, this.agentArmMove, iTop, iLeft, direction);
+
                 }
             }
         }
@@ -422,10 +441,10 @@ public final class HospitalDomain implements Domain {
             for (int dynamicBox = 0; dynamicBox < this.numDynamicBoxes; ++dynamicBox) {
                 int box = this.dynamicBoxes[dynamicBox];
                 byte letter = this.stateSequence.boxLetters[box];
-                int cTop = this.originTop + currentState.boxRows[box] * this.cellSize;
-                int cLeft = this.originLeft + currentState.boxCols[box] * this.cellSize;
-                int nTop = this.originTop + nextState.boxRows[box] * this.cellSize;
-                int nLeft = this.originLeft + nextState.boxCols[box] * this.cellSize;
+                int cTop = canvas.originTop + currentState.boxRows[box] * canvas.cellSize;
+                int cLeft = canvas.originLeft + currentState.boxCols[box] * canvas.cellSize;
+                int nTop = canvas.originTop + nextState.boxRows[box] * canvas.cellSize;
+                int nLeft = canvas.originLeft + nextState.boxCols[box] * canvas.cellSize;
                 int iTop = (int) (cTop + (nTop - cTop) * interpolation);
                 int iLeft = (int) (cLeft + (nLeft - cLeft) * interpolation);
                 this.drawBox(g, iTop, iLeft, (char) ('A' + letter), this.stateSequence.boxColors[letter]);
@@ -434,10 +453,10 @@ public final class HospitalDomain implements Domain {
             // Draw dynamic agents.
             for (byte dynamicAgent = 0; dynamicAgent < this.numDynamicAgents; ++dynamicAgent) {
                 byte agent = this.dynamicAgents[dynamicAgent];
-                int cTop = this.originTop + currentState.agentRows[agent] * this.cellSize;
-                int cLeft = this.originLeft + currentState.agentCols[agent] * this.cellSize;
-                int nTop = this.originTop + nextState.agentRows[agent] * this.cellSize;
-                int nLeft = this.originLeft + nextState.agentCols[agent] * this.cellSize;
+                int cTop = canvas.originTop + currentState.agentRows[agent] * canvas.cellSize;
+                int cLeft = canvas.originLeft + currentState.agentCols[agent] * canvas.cellSize;
+                int nTop = canvas.originTop + nextState.agentRows[agent] * canvas.cellSize;
+                int nLeft = canvas.originLeft + nextState.agentCols[agent] * canvas.cellSize;
                 int iTop = (int) (cTop + (nTop - cTop) * interpolation);
                 int iLeft = (int) (cLeft + (nLeft - cLeft) * interpolation);
                 this.drawAgent(g, iTop, iLeft, (char) ('0' + agent), agent);
@@ -446,10 +465,10 @@ public final class HospitalDomain implements Domain {
             // Draw all boxes.
             for (int box = 0; box < this.stateSequence.numBoxes; ++box) {
                 byte letter = this.stateSequence.boxLetters[box];
-                int cTop = this.originTop + currentState.boxRows[box] * this.cellSize;
-                int cLeft = this.originLeft + currentState.boxCols[box] * this.cellSize;
-                int nTop = this.originTop + nextState.boxRows[box] * this.cellSize;
-                int nLeft = this.originLeft + nextState.boxCols[box] * this.cellSize;
+                int cTop = canvas.originTop + currentState.boxRows[box] * canvas.cellSize;
+                int cLeft = canvas.originLeft + currentState.boxCols[box] * canvas.cellSize;
+                int nTop = canvas.originTop + nextState.boxRows[box] * canvas.cellSize;
+                int nLeft = canvas.originLeft + nextState.boxCols[box] * canvas.cellSize;
                 int iTop = (int) (cTop + (nTop - cTop) * interpolation);
                 int iLeft = (int) (cLeft + (nLeft - cLeft) * interpolation);
                 this.drawBox(g, iTop, iLeft, (char) ('A' + letter), this.stateSequence.boxColors[letter]);
@@ -457,10 +476,10 @@ public final class HospitalDomain implements Domain {
 
             // Draw all agents.
             for (byte agent = 0; agent < this.stateSequence.numAgents; ++agent) {
-                int cTop = this.originTop + currentState.agentRows[agent] * this.cellSize;
-                int cLeft = this.originLeft + currentState.agentCols[agent] * this.cellSize;
-                int nTop = this.originTop + nextState.agentRows[agent] * this.cellSize;
-                int nLeft = this.originLeft + nextState.agentCols[agent] * this.cellSize;
+                int cTop = canvas.originTop + currentState.agentRows[agent] * canvas.cellSize;
+                int cLeft = canvas.originLeft + currentState.agentCols[agent] * canvas.cellSize;
+                int nTop = canvas.originTop + nextState.agentRows[agent] * canvas.cellSize;
+                int nLeft = canvas.originLeft + nextState.agentCols[agent] * canvas.cellSize;
                 int iTop = (int) (cTop + (nTop - cTop) * interpolation);
                 int iLeft = (int) (cLeft + (nLeft - cLeft) * interpolation);
                 this.drawAgent(g, iTop, iLeft, (char) ('0' + agent), agent);
@@ -469,17 +488,7 @@ public final class HospitalDomain implements Domain {
     }
 
     private void calculateRenderSizes(Graphics2D g, int width, int height, int numRows, int numCols) {
-        this.cellSize = Math.min(width / numCols, height / numRows);
-
-        int excessWidth = width - numCols * this.cellSize;
-        int excessHeight = height - numRows * this.cellSize;
-        this.originLeft = excessWidth / 2;
-        this.originTop = excessHeight / 2;
-        this.width = width - excessWidth;
-        this.height = height - excessHeight;
-
-        this.cellBoxMargin = (int) (this.cellSize * BOX_MARGIN_PERCENT);
-        int cellTextMargin = (int) (this.cellSize * TEXT_MARGIN_PERCENT);
+        canvas.recalculateCanvas(width, numCols, height, numRows);
 
         // Determine font size.
         var fontRenderContext = g.getFontRenderContext();
@@ -498,8 +507,8 @@ public final class HospitalDomain implements Domain {
             var text = new TextLayout("W", nextFont, fontRenderContext); // Using W because it's wide.
             serverLogger.debug(String.format("fontSize: %d us.", (System.nanoTime() - t1) / 1000));
             bounds = text.getPixelBounds(fontRenderContext, 0, 0);
-        } while (bounds.width < this.cellSize - 2 * cellTextMargin &&
-                bounds.height < this.cellSize - 2 * cellTextMargin);
+        } while (bounds.width < canvas.cellSize - 2 * canvas.cellTextMargin &&
+                bounds.height < canvas.cellSize - 2 * canvas.cellTextMargin);
 
 //        System.err.println(this.cellSize - 2 * cellTextMargin);
 //        System.err.println(bounds);
@@ -508,30 +517,23 @@ public final class HospitalDomain implements Domain {
 
         long t1 = System.nanoTime();
         // Layout box and agent letters.
-        for (int letter = 0; letter < 26; ++letter) {
-            // FIXME: Holy shit, creating a TextLayout object is SLOW!
-            this.boxLetterText[letter] = new TextLayout(Character.toString('A' + letter), curFont, fontRenderContext);
-            Rectangle bound = this.boxLetterText[letter].getPixelBounds(fontRenderContext, 0, 0);
-            int size = this.cellSize - 2 * cellTextMargin;
-            this.boxLetterTopOffset[letter] = cellTextMargin + size - (size - bound.height) / 2;
-            this.boxLetterLeftOffset[letter] = cellTextMargin + (size - bound.width) / 2 - bound.x;
+
+        for (Box box : boxes) {
+            box.letterTextUpdate(curFont, fontRenderContext);
         }
+
 
         for(Agent agent : agents) {
             // FIXME: Holy shit, creating a TextLayout object is SLOW!
-            agent.setLetterText(new TextLayout(Character.toString('0' + agent.id), curFont, fontRenderContext));
-            Rectangle bound = agent.getLetterText().getPixelBounds(fontRenderContext, 0, 0);
-            int size = this.cellSize - 2 * cellTextMargin;
-            agent.setLetterTopOffset(cellTextMargin + size - (size - bound.height) / 2);
-            agent.setLetterLeftOffset(cellTextMargin + (size - bound.width) / 2 - bound.x);
+            agent.letterTextUpdate(curFont, fontRenderContext);
         }
         serverLogger.debug(String.format("layoutLetters: %d ms.", (System.nanoTime() - t1) / 1000000));
 
 
         // Agent move arm shape.
         // A triangle "pointing" left and with one point on (0,0) and two other points on either side of the x-axis.
-        int armLength = this.cellSize / 2 - 1;
-        int armHeight = (int) (this.cellSize * 0.60);
+        int armLength = canvas.cellSize / 2 - 1;
+        int armHeight = (int) (canvas.cellSize * 0.60);
         this.agentArmMove.reset();
         this.agentArmMove.addPoint(0, 0);
         this.agentArmMove.addPoint(armLength, -armHeight / 2);
@@ -540,8 +542,8 @@ public final class HospitalDomain implements Domain {
 
         // Agent push/pull arm shape.
         // A triangle "pointing" left and with one point on (0,0) and two other points on either side of the x-axis.
-        armLength = (int) (this.cellSize / Math.sqrt(2.0));
-        armHeight = (int) ((this.cellSize - 2 * this.cellBoxMargin) / Math.sqrt(2.0));
+        armLength = (int) (canvas.cellSize / Math.sqrt(2.0));
+        armHeight = (int) ((canvas.cellSize - 2 * canvas.cellBoxMargin) / Math.sqrt(2.0));
         this.agentArmPushPull.reset();
         this.agentArmPushPull.addPoint(0, 0);
         this.agentArmPushPull.addPoint(armLength, -armHeight / 2);
@@ -563,6 +565,12 @@ public final class HospitalDomain implements Domain {
             //       With N boxes and M box goal cells, where 0 <= M <= N, the complexity is O(N*log(M)).
             //       If boxes were sorted, we could have O(M*log(N)), but the sorting itself
             //       eclipses that (unless maintained in each state).
+
+            // TODO: Fredrik, hvorfor ikke bare at boksene har en variabel som tickes når den treffer et mål, og sjekker de andre boksene samtidig istedet for hver tframe tenker jeg
+            //
+            for(var box : boxes){
+
+            }
             for (int box = 0; box < this.stateSequence.numBoxes; ++box) {
                 short boxRow = state.boxRows[box];
                 short boxCol = state.boxCols[box];
@@ -578,27 +586,28 @@ public final class HospitalDomain implements Domain {
         return solvedBoxGoals;
     }
 
+
+    //TODO Finne ut hvor ting blir satt til "Solved"
     private void drawBoxGoalCell(Graphics2D g, short row, short col, char letter, boolean solved) {
-        int top = this.originTop + row * this.cellSize;
-        int left = this.originLeft + col * this.cellSize;
-        int size = this.cellSize - 2;
+        int top = canvas.originTop + row * canvas.cellSize;
+        int left = canvas.originLeft + col * canvas.cellSize;
+        int size = canvas.cellSize - 2;
         g.setColor(solved ? GOAL_SOLVED_COLOR : GOAL_COLOR);
         g.fillRect(left + 1, top + 1, size, size);
 
         // No need to draw text if cell is solved, since box will be drawn on top of text anyway.
         if (!solved) {
-            TextLayout letterText = this.boxLetterText[letter - 'A'];
-            int letterTopOffet = this.boxLetterTopOffset[letter - 'A'];
-            int letterLeftOffet = this.boxLetterLeftOffset[letter - 'A'];
-            g.setColor(GOAL_FONT_COLOR);
-            letterText.draw(g, left + letterLeftOffet, top + letterTopOffet);
+            var box =  boxes.get(letter - 'A');
+            box.draw(g,top,left,GOAL_FONT_COLOR);
         }
     }
 
+
+    //Todo: Optimalisere Tiles?
     private void drawAgentGoalCell(Graphics2D g, short row, short col, char letter, boolean solved) {
-        int top = this.originTop + row * this.cellSize;
-        int left = this.originLeft + col * this.cellSize;
-        int size = this.cellSize - 2;
+        int top = canvas.originTop + row * canvas.cellSize;
+        int left = canvas.originLeft + col * canvas.cellSize;
+        int size = canvas.cellSize - 2;
         g.setColor(solved ? GOAL_SOLVED_COLOR : GOAL_COLOR);
         g.fillOval(left + 1, top + 1, size, size);
 
@@ -606,79 +615,22 @@ public final class HospitalDomain implements Domain {
         if (!solved) {
             //TODO: Make sure this works - Fredrik
             var agent = agents.get(letter - '0');
-            TextLayout letterText = agent.getLetterText();
-            int letterTopOffset = agent.getLetterTopOffset();
-            int letterLeftOffset = agent.getLetterLeftOffset();
-            g.setColor(GOAL_FONT_COLOR);
-            letterText.draw(g, left + letterLeftOffset, top + letterTopOffset);
-            g.drawString("", 0, 0);
+            agent.draw(g,top,left,GOAL_FONT_COLOR);
         }
     }
 
     private void drawBox(Graphics2D g, int top, int left, char letter, Color color) {
-        int size = this.cellSize - 2 * this.cellBoxMargin;
-        g.setColor(color);
-        g.fillRect(left + this.cellBoxMargin, top + this.cellBoxMargin, size, size);
-
-        TextLayout letterText = this.boxLetterText[letter - 'A'];
-        int letterTopOffet = this.boxLetterTopOffset[letter - 'A'];
-        int letterLeftOffet = this.boxLetterLeftOffset[letter - 'A'];
-        g.setColor(BOX_AGENT_FONT_COLOR);
-        letterText.draw(g, left + letterLeftOffet, top + letterTopOffet);
+        Box box = boxes.get(letter - 'A');
+        box.draw(g, top, left);
     }
 
+    //Todo Fjerne drawAgent og endre alle forekomster
     private void drawAgent(Graphics2D g, int top, int left, char letter, byte agentid) {
-        int size = this.cellSize - 2 * this.cellBoxMargin;
-
-        // Agent fill.
-        g.setColor(this.stateSequence.agentColors[agentid]);
-        g.fillOval(left + this.cellBoxMargin, top + this.cellBoxMargin, size, size);
-
-        // Agent outline.
-//        g.setColor(this.agentOutlineColor[agent]);
-//        Stroke stroke = g.getStroke();
-//        g.setStroke(OUTLINE_STROKE);
-//        g.drawOval(left + BOX_MARGIN, top + BOX_MARGIN, size, size);
-//        g.setStroke(stroke);
-
-        // Agent letter.
         Agent agent = agents.get(letter - '0');
-        //
-        TextLayout letterText = agent.getLetterText();
-        int letterTopOffet = agent.getLetterTopOffset();
-        int letterLeftOffet = agent.getLetterLeftOffset();
-        g.setColor(BOX_AGENT_FONT_COLOR);
-        letterText.draw(g, left + letterLeftOffet, top + letterTopOffet);
-        g.drawString("W", 0, 0);
+        agent.draw(g, top, left);
     }
 
-    private void drawAgentArm(Graphics2D g, Polygon armShape, int top, int left, double rotation, byte agentid) {
-        int armTop = top + this.cellSize / 2;
-        int armLeft = left + this.cellSize / 2;
-        this.setArmTransform(armTop, armLeft, rotation);
-        g.setTransform(this.agentArmTransform);
 
-        //Get Agent
-        var agent = agents.get(agentid);
-        // Arm fill.
-        g.setColor(agent.getArmColor());
-        g.fillPolygon(armShape);
-
-        // Arm outline.
-        g.setColor(agent.getOutlineColor());
-        Stroke stroke = g.getStroke();
-        g.setStroke(OUTLINE_STROKE);
-        g.drawPolygon(armShape);
-        g.setStroke(stroke);
-
-        g.setTransform(IDENTITY_TRANSFORM);
-    }
-
-    private void setArmTransform(int top, int left, double rotation) {
-        double cos = Math.cos(rotation);
-        double sin = Math.sin(rotation);
-        this.agentArmTransform.setTransform(cos, sin, -sin, cos, left, top);
-    }
 
     @Override
     public void runProtocol(Timeout timeout,
