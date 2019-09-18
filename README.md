@@ -12,7 +12,17 @@
 `
 
 
-## Remastered features 
+## Remastered Features
+
+# Wizzy Boii
+
+* Can change colors of boxes
+* Is Grey
+
+![alt text](https://www.pixilart.com/art/wizard-sprite-1d891dc0dc174c0)
+
+
+# Domain Improvements 
 
 * GameObjects: Parent class to all objects in scene. Boxes and Agents are separated into two child classes
 * Canvas is a new class describing variables and methods regards to the relativity of the program window.
