@@ -1,7 +1,8 @@
 package client;
 
 import domain.Domain;
-import server.Server;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.util.Arrays;
@@ -9,6 +10,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class Client {
+    private Logger clientLogger = LogManager.getLogger("client");
+    private Logger serverLogger = LogManager.getLogger("server");
+    
     private Process clientProcess;
     private Thread clientThread;
 
@@ -92,8 +96,12 @@ public class Client {
         }
     }
 
+    public void expireTimeout() {
+        this.timeout.expire();
+    }
+
     private void runClient() {
-        Client.printDebug("Thread started.");
+        clientLogger.debug("Thread started.");
 
         // Wait until startProtocol() called by Main Thread.
         synchronized (this) {
@@ -105,7 +113,7 @@ public class Client {
             }
         }
 
-        Client.printDebug(String.format("Client process supports normal termination: %s.",
+        clientLogger.debug(String.format("Client process supports normal termination: %s.",
                 this.clientProcess.supportsNormalTermination()));
 
         // Start Protocol Thread.
@@ -116,7 +124,7 @@ public class Client {
         boolean timeoutExpired = this.timeout.waitTimeout();
 
         if (!timeoutExpired) {
-            Client.printDebug("ProtocolThread stopped timeout, waiting for client to terminate.");
+            clientLogger.debug("ProtocolThread stopped timeout, waiting for client to terminate.");
 
             while (true) {
                 try {
@@ -126,7 +134,7 @@ public class Client {
                 }
             }
 
-            Client.printInfo("Waiting for client process to terminate by itself.");
+            clientLogger.info("Waiting for client process to terminate by itself.");
             try {
                 this.clientProcess.waitFor(500, TimeUnit.MILLISECONDS);
             } catch (InterruptedException ignored) {
@@ -139,7 +147,7 @@ public class Client {
             //  thread?
             this.closeClientStreams();
         } else {
-            Client.printInfo("Client timed out.");
+            clientLogger.info("Client timed out.");
 
             this.terminateClient();
 
@@ -163,10 +171,9 @@ public class Client {
             try {
                 this.logOut.flush();
                 this.logOut.close();
-                Client.printDebug("Closed log stream.");
+                clientLogger.debug("Closed log stream.");
             } catch (IOException e) {
-                Client.printError("Could not flush and close log file.");
-                Client.printError(e.getMessage());
+                clientLogger.error("Could not flush and close log file. " + e.getMessage(), e);
                 // FIXME: Handle or flag error back to Server?
             }
         }
@@ -174,7 +181,7 @@ public class Client {
         // Print status of run.
         synchronized (System.out) {
             for (String s : domain.getStatus()) {
-                Server.printInfo(s);
+                serverLogger.info(s);
             }
         }
 
@@ -183,11 +190,11 @@ public class Client {
             this.notifyAll();
         }
 
-        Client.printDebug("Thread shut down.");
+        clientLogger.debug("Thread shut down.");
     }
 
     private void runProtocol() {
-        Client.printDebug("Thread started.");
+        clientLogger.debug("Thread started.");
 
         this.domain.runProtocol(this.timeout, this.timeoutNS, this.clientIn, this.clientOut, this.logOut);
 
@@ -195,12 +202,12 @@ public class Client {
         // expired).
         this.timeout.stop();
 
-        Client.printDebug("Thread shut down.");
+        clientLogger.debug("Thread shut down.");
     }
 
     private void terminateClient() {
         if (this.clientProcess.isAlive() && this.clientProcess.supportsNormalTermination()) {
-            Client.printInfo("Sending termination signal to client process (PID = " + this.clientProcess.pid() + ").");
+            clientLogger.info("Sending termination signal to client process (PID = " + this.clientProcess.pid() + ").");
             this.clientProcess.destroy();
             try {
                 boolean terminated = this.clientProcess.waitFor(1000, TimeUnit.MILLISECONDS);
@@ -212,7 +219,7 @@ public class Client {
         }
 
         if (this.clientProcess.isAlive()) {
-            Client.printInfo("Forcibly terminating client process.");
+            clientLogger.info("Forcibly terminating client process.");
             this.clientProcess.destroyForcibly();
             try {
                 boolean terminated = this.clientProcess.waitFor(200, TimeUnit.MILLISECONDS);
@@ -227,17 +234,17 @@ public class Client {
                 .filter(ProcessHandle::isAlive)
                 .collect(Collectors.toSet());
         if (this.clientProcess.isAlive()) {
-            Client.printWarning("Client process not terminated. PID = " + this.clientProcess.pid() + ".");
+            clientLogger.warn("Client process not terminated. PID = " + this.clientProcess.pid() + ".");
         } else if (!clientChildProcesses.isEmpty()) {
             synchronized (System.out) {
-                Client.printWarning("Client spawned subprocesses which haven't terminated.");
+                clientLogger.warn("Client spawned subprocesses which haven't terminated.");
                 String leakedPIDs = clientChildProcesses.stream()
                         .map(ph -> Long.toString(ph.pid()))
                         .collect(Collectors.joining(", "));
-                Client.printWarning("PIDs: " + leakedPIDs + ".");
+                clientLogger.warn("PIDs: " + leakedPIDs + ".");
             }
         } else {
-            Client.printInfo("Client terminated.");
+            clientLogger.info("Client terminated.");
         }
     }
 
@@ -253,45 +260,6 @@ public class Client {
         try {
             this.clientProcess.getErrorStream().close();
         } catch (IOException ignored) {
-        }
-    }
-
-    public static void printDebug(String msg) {
-        if (!Server.PRINT_DEBUG) {
-            return;
-        }
-        synchronized (System.out) {
-            System.out.print("[client][debug]");
-            System.out.print("[" + Thread.currentThread().getName() + "] ");
-            System.out.println(msg);
-        }
-    }
-
-    public static void printMessage(String msg) {
-        synchronized (System.out) {
-            System.out.print("[client][message] ");
-            System.out.println(msg);
-        }
-    }
-
-    public static void printInfo(String msg) {
-        synchronized (System.out) {
-            System.out.print("[client][info] ");
-            System.out.println(msg);
-        }
-    }
-
-    public static void printWarning(String msg) {
-        synchronized (System.out) {
-            System.out.print("[client][warning] ");
-            System.out.println(msg);
-        }
-    }
-
-    public static void printError(String msg) {
-        synchronized (System.out) {
-            System.out.print("[client][error] ");
-            System.out.println(msg);
         }
     }
 }
