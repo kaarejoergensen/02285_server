@@ -1034,16 +1034,12 @@ class StateSequence {
         this.sortedBoxIds[sortedBoxIdx] = boxId;
     }
 
-
+    //TODO Does this work? IDK
     void repaintBox(State newState, short col, short row){
         int sortedBoxIdx = this.findBox(newState, col, row);
         int boxId = this.sortedBoxIds[sortedBoxIdx];
 
-
-        var newColor = boxColors[sortedBoxIdx - 'A'];
-        newColor.toString()
-        this.boxColors[sortedBoxIdx - 'A'] = color;
-
+        this.boxColors[sortedBoxIdx - 'A'] = Colors.nextFrom(boxColors[sortedBoxIdx - 'A']);
     }
 
     /**

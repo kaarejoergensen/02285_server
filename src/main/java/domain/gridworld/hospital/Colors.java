@@ -53,30 +53,14 @@ class Colors {
     static Color nextFrom(Color current){
         int RGB = current.getRGB();
         if(RGB == Blue.getRGB()) return Red;
-        if(RGB ==)
-        switch(RGB){
-            case Blue.getRGB():
-                return Colors.Red;
-            case current.getRGB() == Red.getRGB():
-                return Colors.Cyan;
-            case current.getRGB() == Cyan.getRGB():
-                return Colors.Purple;
-            case current.getRGB() == Purple.getRGB():
-                return Colors.Green;
-            case current.getRGB() == Green.getRGB():
-                return Colors.Orange;
-            case current.getRGB() == Orange.getRGB():
-                return Colors.Pink;
-            case current.getRGB() == Pink.getRGB():
-                return Colors.Lightblue;
-            case current.getRGB() == Grey.getRGB():
-                return Colors.Grey;
-            case current.getRGB() == Lightblue.getRGB():
-                return Colors.Brown;
-            case current.getRGB() == Brown.getRGB():
-                return Colors.Blue;
-            default:
-                return null;
-        }
+        if(RGB == Red.getRGB()) return Cyan;
+        if(RGB == Cyan.getRGB()) return Purple;
+        if(RGB == Purple.getRGB()) return Green;
+        if(RGB == Green.getRGB()) return Orange;
+        if(RGB == Orange.getRGB()) return Pink;
+        if(RGB == Pink.getRGB()) return Lightblue;
+        if(RGB == Lightblue.getRGB()) return Brown;
+        if(RGB == Brown.getRGB()) return Blue;
+        return current;
     }
 }
