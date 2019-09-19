@@ -4,7 +4,8 @@ enum ActionType {
     NoOp,
     Move,
     Push,
-    Pull
+    Pull,
+    Paint
 }
 
 public enum Action {
@@ -39,7 +40,12 @@ public enum Action {
     PullEW("Pull(E,W)", ActionType.Pull, 0, 1, 0, -1),
     PullWN("Pull(W,N)", ActionType.Pull, 0, -1, -1, 0),
     PullWS("Pull(W,S)", ActionType.Pull, 0, -1, 1, 0),
-    PullWE("Pull(W,E)", ActionType.Pull, 0, -1, 0, 1);
+    PullWE("Pull(W,E)", ActionType.Pull, 0, -1, 0, 1),
+
+    PaintN("Paint(N)", ActionType.Paint, -1, 0, 0, 0),
+    PaintS("Paint(S)", ActionType.Move, 1, 0, 0, 0),
+    PaintE("Paint(E)", ActionType.Move, 0, 1, 0, 0),
+    PaintW("Paint(W)", ActionType.Move, 0, -1, 0, 0);
 
     public final String name;
     public final ActionType type;

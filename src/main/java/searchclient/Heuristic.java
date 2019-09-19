@@ -28,6 +28,9 @@ public abstract class Heuristic implements Comparator<State> {
         int result = 0;
 
         List<Location> boxes = new LinkedList<>();
+
+
+
         for (int row = 1; row < n.boxes.length - 1; row ++) {
             for (int col = 1; col < n.boxes[row].length - 1; col++) {
                 char b = n.boxes[row][col];
