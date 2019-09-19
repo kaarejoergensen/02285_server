@@ -28,8 +28,8 @@ public class CanvasDetails {
 
         originLeft = excessWidth / 2;
         originTop = excessHeight / 2;
-        width = width - excessWidth;
-        height = height - excessHeight;
+        width = bufferWidth - excessWidth;
+        height = bufferHeight - excessHeight;
 
         cellBoxMargin = (int) (this.cellSize * BOX_MARGIN_PERCENT);
         cellTextMargin = (int) (this.cellSize * TEXT_MARGIN_PERCENT);

@@ -58,6 +58,7 @@ public abstract class GameObject {
 
     public void letterTextUpdate(String codePoint, Font curFont, FontRenderContext fontRenderContext){
         var canvas = HospitalDomain.canvas;
+        // FIXME: Holy shit, creating a TextLayout object is SLOW!
         setLetterText(new TextLayout(codePoint, curFont, fontRenderContext));
         Rectangle bound = getLetterText().getPixelBounds(fontRenderContext, 0, 0);
 

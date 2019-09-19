@@ -153,23 +153,20 @@ public final class HospitalDomain implements Domain {
     }
 
     private boolean isGoalState(int stateID) {
-        boolean isSolved = true;
         State state = this.stateSequence.getState(stateID);
-        var solvedBoxGoals = this.getSolvedBoxGoals(stateID);
+        BitSet solvedBoxGoals = this.getSolvedBoxGoals(stateID);
         if (solvedBoxGoals.nextClearBit(0) != this.stateSequence.numBoxGoals) {
-            isSolved = false;
+            return false;
         } else {
             for (byte agent = 0; agent < this.stateSequence.numAgents; ++agent) {
                 if (this.stateSequence.agentGoalRows[agent] != -1 &&
                         (this.stateSequence.agentGoalRows[agent] != state.agentRows[agent] ||
-                                this.stateSequence.agentGoalCols[agent] != state.agentCols[agent])
-                ) {
-                    isSolved = false;
-                    break;
+                                this.stateSequence.agentGoalCols[agent] != state.agentCols[agent])) {
+                    return false;
                 }
             }
         }
-        return isSolved;
+        return true;
     }
 
     @Override
@@ -522,9 +519,7 @@ public final class HospitalDomain implements Domain {
             box.letterTextUpdate(curFont, fontRenderContext);
         }
 
-
         for(Agent agent : agents) {
-            // FIXME: Holy shit, creating a TextLayout object is SLOW!
             agent.letterTextUpdate(curFont, fontRenderContext);
         }
         serverLogger.debug(String.format("layoutLetters: %d ms.", (System.nanoTime() - t1) / 1000000));
@@ -598,7 +593,11 @@ public final class HospitalDomain implements Domain {
         // No need to draw text if cell is solved, since box will be drawn on top of text anyway.
         if (!solved) {
             var box =  boxes.get(letter - 'A');
-            box.draw(g,top,left,GOAL_FONT_COLOR);
+            TextLayout letterText = box.getLetterText();
+            int letterTopOffet = box.getLetterTopOffset();
+            int letterLeftOffet = box.getLetterLeftOffset();
+            g.setColor(GOAL_FONT_COLOR);
+            letterText.draw(g, left + letterLeftOffet, top + letterTopOffet);
         }
     }
 
@@ -613,9 +612,14 @@ public final class HospitalDomain implements Domain {
 
         // No need to draw text if cell is solved, since agent will be drawn on top of text anyway.
         if (!solved) {
-            //TODO: Make sure this works - Fredrik
             var agent = agents.get(letter - '0');
-            agent.draw(g,top,left,GOAL_FONT_COLOR);
+            //TODO: Make sure this works - Fredrik
+            TextLayout letterText = agent.getLetterText();
+            int letterTopOffet = agent.getLetterTopOffset();
+            int letterLeftOffet = agent.getLetterLeftOffset();
+            g.setColor(GOAL_FONT_COLOR);
+            letterText.draw(g, left + letterLeftOffet, top + letterTopOffet);
+            g.drawString("", 0, 0);
         }
     }
 
@@ -633,12 +637,8 @@ public final class HospitalDomain implements Domain {
 
 
     @Override
-    public void runProtocol(Timeout timeout,
-                            long timeoutNS,
-                            BufferedInputStream clientIn,
-                            BufferedOutputStream clientOut,
-                            OutputStream logOut
-    ) {
+    public void runProtocol(Timeout timeout, long timeoutNS, BufferedInputStream clientIn,
+                            BufferedOutputStream clientOut, OutputStream logOut) {
         clientLogger.debug("Protocol begun.");
 
         BufferedReader clientReader
