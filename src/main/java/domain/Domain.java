@@ -2,6 +2,7 @@ package domain;
 
 import client.Timeout;
 import domain.gridworld.hospital.HospitalDomain;
+import domain.gridworld.hospital2.Hospital2Domain;
 
 import java.awt.*;
 import java.io.BufferedInputStream;
@@ -34,10 +35,12 @@ public interface Domain {
     static Domain loadLevel(Path path, boolean isLogFile) throws IOException, ParseException {
         String domainType = Domain.getDomainType(path);
         Domain domain;
-        //noinspection SwitchStatementWithTooFewBranches
         switch (domainType) {
             case "hospital":
                 domain = new HospitalDomain(path, isLogFile);
+                break;
+            case "hospital2":
+                domain = new Hospital2Domain(path, isLogFile);
                 break;
             default:
                 throw new ParseException(String.format("Unsupported domain type: %s.", domainType));
@@ -46,7 +49,7 @@ public interface Domain {
     }
 
     static String[] getSupportedDomains() {
-        return new String[]{"hospital"};
+        return new String[]{"hospital", "hospital2"};
     }
 
     /**
