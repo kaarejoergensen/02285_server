@@ -225,14 +225,15 @@ public class State {
                 destinationRow = agentRow + action.agentRowDelta;
                 destinationCol = agentCol + action.agentColDelta;
                 return this.cellIsFree(destinationRow, destinationCol);
+            //TODO: PAINT
             case Paint:
-                boxRow = agentRow + action.agentRowDelta;
-                boxCol = agentCol + action.agentColDelta;
-                box = this.boxAt(boxRow, boxCol);
-                if (box == 0 || agentColor != this.boxColors[box - 'A']) {
-                    return false;
+                if(agentColor == Color.Grey){
+                    boxRow = agentRow + action.agentRowDelta;
+                    boxCol = agentCol + action.agentColDelta;
+                    box = this.boxAt(boxRow, boxCol);
+                    return box != 0;
                 }
-                return true;
+                return false;
         }
 
         // Unreachable:
