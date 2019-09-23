@@ -1,5 +1,9 @@
 package searchclient;
 
+import shared.Action;
+import shared.ActionType;
+import shared.Farge;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -11,7 +15,7 @@ public class State {
     // Contains the (row, col) pair and color for each agent indexed by agent number.
     public int[] agentRows;
     public int[] agentCols;
-    public Color[] agentColors;
+    public Farge[] agentColors;
 
     // Arrays are indexed from the top-left of the level, with first index being row and second being column.
     // Row 0: (0,0) (0,1) (0,2) (0,3) ...
@@ -23,7 +27,7 @@ public class State {
     // this.walls[row][col] is true if there's a wall at (row, col).
     public boolean[][] walls;
     public char[][] boxes;
-    public Color[] boxColors;
+    public Farge[] boxColors;
     public char[][] goals;
 
     public final State parent;
@@ -36,8 +40,8 @@ public class State {
      * Constructs an initial state.
      * Arguments are not copied, and therefore should not be modified after being passed in.
      */
-    public State(int[] agentRows, int[] agentCols, Color[] agentColors, boolean[][] walls,
-                 char[][] boxes, Color[] boxColors, char[][] goals) {
+    public State(int[] agentRows, int[] agentCols, Farge[] agentColors, boolean[][] walls,
+                 char[][] boxes, Farge[] boxColors, char[][] goals) {
         this.agentRows = agentRows;
         this.agentCols = agentCols;
         this.agentColors = agentColors;
@@ -105,10 +109,12 @@ public class State {
                     break;
 
                 case Paint:
-                    System.err.println("One painter boii: " + jointAction.toString());
                     var index = this.boxAt(this.agentRows[agent] + action.boxRowDelta,
                             this.agentCols[agent] + action.boxColDelta);
-                    boxColors[index] = Color.next(boxColors[index]);
+
+                    System.err.println("Painting from " + boxColors[index] + " to " + Farge.next(boxColors[index]));
+
+                    boxColors[index] = Farge.next(boxColors[index]);
                     break;
 
             }
@@ -190,7 +196,7 @@ public class State {
     private boolean isApplicable(int agent, Action action) {
         int agentRow = this.agentRows[agent];
         int agentCol = this.agentCols[agent];
-        Color agentColor = this.agentColors[agent];
+        Farge agentColors = this.agentColors[agent];
         int boxRow;
         int boxCol;
         char box;
@@ -209,7 +215,7 @@ public class State {
                 boxRow = agentRow + action.agentRowDelta;
                 boxCol = agentCol + action.agentColDelta;
                 box = this.boxAt(boxRow, boxCol);
-                if (box == 0 || agentColor != this.boxColors[box - 'A']) {
+                if (box == 0 || agentColors != this.boxColors[box - 'A']) {
                     return false;
                 }
                 destinationRow = boxRow + action.boxRowDelta;
@@ -220,7 +226,7 @@ public class State {
                 boxRow = agentRow + action.boxRowDelta;
                 boxCol = agentCol + action.boxColDelta;
                 box = this.boxAt(boxRow, boxCol);
-                if (box == 0 || agentColor != this.boxColors[box - 'A']) {
+                if (box == 0 || agentColors != this.boxColors[box - 'A']) {
                     return false;
                 }
                 destinationRow = agentRow + action.agentRowDelta;
@@ -228,11 +234,13 @@ public class State {
                 return this.cellIsFree(destinationRow, destinationCol);
             //TODO: PAINT
             case Paint:
-                if(agentColor.equals(Color.Grey)){
-                    System.err.println("Painter Boi intitated: " + agent + " - Action" + action.toString());
+                if(agentColors.equals(Farge.Grey)){
+
                     boxRow = agentRow + action.agentRowDelta;
                     boxCol = agentCol + action.agentColDelta;
                     box = this.boxAt(boxRow, boxCol);
+                    System.err.println("Applicable: " + agent + " " + action.toString()  + " Box: " + box);
+
 
                     return box != 0;
                 }
@@ -285,7 +293,6 @@ public class State {
                     destinationCols[agent] = agentCol + action.agentColDelta;
                     break;
                 default:
-                    System.err.println("CONFLICTING: " + action.toString());
                     break;
             }
         }

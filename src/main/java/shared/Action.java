@@ -1,12 +1,6 @@
-package searchclient;
+package shared;
 
-enum ActionType {
-    NoOp,
-    Move,
-    Push,
-    Pull,
-    Paint
-}
+import lombok.Getter;
 
 public enum Action {
     NoOp("NoOp", ActionType.NoOp, 0, 0, 0, 0),
@@ -48,6 +42,7 @@ public enum Action {
     PaintW("Paint(W)", ActionType.Paint, 0, -1, 0, 0);
 
     public final String name;
+    @Getter
     public final ActionType type;
     public final int agentRowDelta;
     public final int agentColDelta;
@@ -61,5 +56,10 @@ public enum Action {
         this.agentColDelta = acd;
         this.boxRowDelta = brd;
         this.boxColDelta = bcd;
+    }
+
+    @Override
+    public String toString() {
+        return "Action: " + name + " (" + type + ") ";
     }
 }

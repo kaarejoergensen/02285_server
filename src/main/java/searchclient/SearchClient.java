@@ -1,5 +1,8 @@
 package searchclient;
 
+import shared.Action;
+import shared.Farge;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -21,19 +24,19 @@ public class SearchClient {
 
         // Read colors.
         serverMessages.readLine(); // #colors
-        Color[] agentColors = new Color[10];
-        Color[] boxColors = new Color[26];
+        Farge[] agentColors = new Farge[10];
+        Farge[] boxColors = new Farge[26];
         String line = serverMessages.readLine();
         while (!line.startsWith("#")) {
             String[] split = line.split(":");
-            Color color = Color.fromString(split[0].strip());
+            Farge colors = Farge.fromString(split[0].strip());
             String[] entities = split[1].split(",");
             for (String entity : entities) {
                 char c = entity.strip().charAt(0);
                 if ('0' <= c && c <= '9') {
-                    agentColors[c - '0'] = color;
+                    agentColors[c - '0'] = colors;
                 } else if ('A' <= c && c <= 'Z') {
-                    boxColors[c - 'A'] = color;
+                    boxColors[c - 'A'] = colors;
                 }
             }
             line = serverMessages.readLine();
