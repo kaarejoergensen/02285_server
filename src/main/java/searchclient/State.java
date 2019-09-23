@@ -105,6 +105,7 @@ public class State {
                     break;
 
                 case Paint:
+                    System.err.println("One painter boii: " + jointAction.toString());
                     var index = this.boxAt(this.agentRows[agent] + action.boxRowDelta,
                             this.agentCols[agent] + action.boxColDelta);
                     boxColors[index] = Color.next(boxColors[index]);
@@ -227,10 +228,12 @@ public class State {
                 return this.cellIsFree(destinationRow, destinationCol);
             //TODO: PAINT
             case Paint:
-                if(agentColor == Color.Grey){
+                if(agentColor.equals(Color.Grey)){
+                    System.err.println("Painter Boi intitated: " + agent + " - Action" + action.toString());
                     boxRow = agentRow + action.agentRowDelta;
                     boxCol = agentCol + action.agentColDelta;
                     box = this.boxAt(boxRow, boxCol);
+
                     return box != 0;
                 }
                 return false;
@@ -282,6 +285,7 @@ public class State {
                     destinationCols[agent] = agentCol + action.agentColDelta;
                     break;
                 default:
+                    System.err.println("CONFLICTING: " + action.toString());
                     break;
             }
         }

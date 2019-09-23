@@ -43,9 +43,9 @@ public enum Action {
     PullWE("Pull(W,E)", ActionType.Pull, 0, -1, 0, 1),
 
     PaintN("Paint(N)", ActionType.Paint, -1, 0, 0, 0),
-    PaintS("Paint(S)", ActionType.Move, 1, 0, 0, 0),
-    PaintE("Paint(E)", ActionType.Move, 0, 1, 0, 0),
-    PaintW("Paint(W)", ActionType.Move, 0, -1, 0, 0);
+    PaintS("Paint(S)", ActionType.Paint, 1, 0, 0, 0),
+    PaintE("Paint(E)", ActionType.Paint, 0, 1, 0, 0),
+    PaintW("Paint(W)", ActionType.Paint, 0, -1, 0, 0);
 
     public final String name;
     public final ActionType type;
