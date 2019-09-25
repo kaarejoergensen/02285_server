@@ -1,4 +1,4 @@
-package domain.gridworld.hospital2;
+package domain.gridworld.hospital2.state;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

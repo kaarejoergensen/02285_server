@@ -1,8 +1,7 @@
 package domain.gridworld.hospital2.state;
 
-import domain.gridworld.hospital2.Object;
-import lombok.AllArgsConstructor;
 import lombok.Data;
+import searchclient.NotImplementedException;
 
 import java.util.List;
 
@@ -13,6 +12,7 @@ public class StaticState {
 
     short numRows;
     short numCols;
+    byte numAgents;
 
     private List<List<Boolean>> map;
     private List<Object> agentGoals;
@@ -28,5 +28,9 @@ public class StaticState {
 
     private boolean isPartOfMap(int row, int col) {
         return row < map.size() && col < map.get(row).size();
+    }
+
+    public boolean isSolved(State state) {
+        throw new NotImplementedException();
     }
 }

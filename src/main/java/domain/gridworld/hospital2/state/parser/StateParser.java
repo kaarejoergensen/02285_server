@@ -1,8 +1,8 @@
 package domain.gridworld.hospital2.state.parser;
 
 import domain.ParseException;
-import domain.gridworld.hospital2.Colors;
-import domain.gridworld.hospital2.Object;
+import domain.gridworld.hospital2.state.Colors;
+import domain.gridworld.hospital2.state.Object;
 import domain.gridworld.hospital2.state.State;
 import domain.gridworld.hospital2.state.StaticState;
 import lombok.Getter;
@@ -11,10 +11,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.awt.*;
 import java.io.IOException;
-import java.io.LineNumberReader;
 import java.nio.charset.MalformedInputException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -32,6 +29,8 @@ public class StateParser {
     @Getter private StaticState staticState;
     @Getter private State state;
 
+    @Getter String level;
+
     public StateParser(Path domainFile, boolean isReplay) {
         this.domainFile = domainFile;
         this.isReplay = isReplay;
@@ -45,8 +44,7 @@ public class StateParser {
 
     public void parse() throws IOException, ParseException {
         var tStart = System.nanoTime();
-        try (LineNumberReader levelReader = new LineNumberReader(Files.newBufferedReader(domainFile,
-                StandardCharsets.US_ASCII))) {
+        try (LevelReader levelReader = new LevelReader(domainFile)) {
             try {
                 // Skip the domain type lines.
                 levelReader.readLine();
@@ -131,6 +129,7 @@ public class StateParser {
                     throw new ParseException("Expected no more content after end section.",
                             levelReader.getLineNumber());
                 }
+                this.level = levelReader.getLevel();
             } catch (MalformedInputException e) {
                 throw new ParseException("Level file content not valid ASCII.", levelReader.getLineNumber());
             }
@@ -139,7 +138,7 @@ public class StateParser {
         serverLogger.debug(String.format("Parsing time: %.3f ms.", (tEnd - tStart) / 1_000_000_000.0));
     }
 
-    private String parseNameSection(LineNumberReader levelReader)
+    private String parseNameSection(LevelReader levelReader)
             throws IOException, ParseException {
         String line = levelReader.readLine();
         if (line == null) {
@@ -153,7 +152,7 @@ public class StateParser {
         return line;
     }
 
-    private String parseColorsSection(LineNumberReader levelReader)
+    private String parseColorsSection(LevelReader levelReader)
             throws IOException, ParseException {
         while (true) {
             String line = levelReader.readLine();
@@ -213,7 +212,7 @@ public class StateParser {
         }
     }
 
-    private String parseInitialSection(LineNumberReader levelReader)
+    private String parseInitialSection(LevelReader levelReader)
             throws IOException, ParseException {
         short numRows = 0;
         List<List<Boolean>> map = new ArrayList<>();
@@ -293,6 +292,7 @@ public class StateParser {
         }
         this.staticState.setNumRows(numRows);
         this.staticState.setMap(map);
+        this.staticState.setNumAgents((byte) agents.size());
 
         this.state.setBoxes(boxes.stream().sorted(Comparator.comparingInt(Object::getId)).collect(Collectors.toList()));
         this.state.setAgents(agents.stream().sorted(Comparator.comparingInt(Object::getId)).collect(Collectors.toList()));
@@ -304,7 +304,7 @@ public class StateParser {
         return line;
     }
 
-    private String parseGoalSection(LineNumberReader levelReader)
+    private String parseGoalSection(LevelReader levelReader)
             throws IOException, ParseException {
         short row = 0;
 
@@ -410,7 +410,7 @@ public class StateParser {
         return line;
     }
 
-    private String parseClientNameSection(LineNumberReader levelReader)
+    private String parseClientNameSection(LevelReader levelReader)
             throws IOException, ParseException {
         String line = levelReader.readLine();
         if (line == null) {
@@ -424,7 +424,7 @@ public class StateParser {
         return line;
     }
 
-    /*private String parseActionsSection(LineNumberReader levelReader)
+    /*private String parseActionsSection(LevelReader levelReader)
             throws IOException, ParseException {
         Action[] jointAction = new Action[this.numAgents];
 
@@ -474,7 +474,7 @@ public class StateParser {
         }
     }
 
-    private String parseSolvedSection(LineNumberReader levelReader)
+    private String parseSolvedSection(LevelReader levelReader)
             throws IOException, ParseException {
         String line = levelReader.readLine();
         if (line == null) {
@@ -522,7 +522,7 @@ public class StateParser {
         return line;
     }
 
-    private String parseNumActionsSection(LineNumberReader levelReader)
+    private String parseNumActionsSection(LevelReader levelReader)
             throws IOException, ParseException {
         String line = levelReader.readLine();
         if (line == null) {
@@ -545,7 +545,7 @@ public class StateParser {
         return line;
     }
 
-    private String parseTimeSection(LineNumberReader levelReader)
+    private String parseTimeSection(LevelReader levelReader)
             throws IOException, ParseException {
         String line = levelReader.readLine();
         if (line == null) {
@@ -568,7 +568,7 @@ public class StateParser {
         return line;
     }*/
 
-    private String parseEndSection(LineNumberReader levelReader)
+    private String parseEndSection(LevelReader levelReader)
             throws IOException, ParseException {
         return levelReader.readLine();
     }
