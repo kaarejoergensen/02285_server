@@ -86,6 +86,8 @@ public class Hospital2Runner {
         try {
             clientWriter.write(level);
             logWriter.write(level);
+            clientWriter.flush();
+            logWriter.flush();
         } catch (IOException e) {
             if (timeout.isExpired()) {
                 clientLogger.error("Timeout expired while sending level to client.");

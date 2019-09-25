@@ -59,7 +59,7 @@ public class Hospital2Domain implements Domain {
         }
         this.states.add(newState);
 
-        return newState.getApplicable();
+        return state.getApplicable();
     }
     @Override
     public void runProtocol(Timeout timeout, long timeoutNS, BufferedInputStream clientIn, BufferedOutputStream clientOut, OutputStream logOut) {

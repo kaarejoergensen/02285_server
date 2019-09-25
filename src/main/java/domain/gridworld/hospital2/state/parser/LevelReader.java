@@ -18,7 +18,7 @@ public class LevelReader implements AutoCloseable {
 
     public String readLine() throws IOException {
         String line = this.levelReader.readLine();
-        levelStringBuilder.append(line);
+        if (line != null) levelStringBuilder.append(line).append(System.lineSeparator());
         return line;
     }
 

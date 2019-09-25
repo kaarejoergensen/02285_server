@@ -12,6 +12,8 @@ public class SearchClient {
     public static State parseLevel(BufferedReader serverMessages) throws IOException {
         // We can assume that the level file is conforming to specification, since the server verifies this.
         // Read domain.
+        System.err.println("Started reading level");
+
         serverMessages.readLine(); // #domain
         serverMessages.readLine(); // hospital
 
@@ -24,6 +26,8 @@ public class SearchClient {
         Color[] agentColors = new Color[10];
         Color[] boxColors = new Color[26];
         String line = serverMessages.readLine();
+        System.err.println("line:");
+        System.err.println(line);
         while (!line.startsWith("#")) {
             String[] split = line.split(":");
             Color color = Color.fromString(split[0].strip());
@@ -37,6 +41,7 @@ public class SearchClient {
                 }
             }
             line = serverMessages.readLine();
+            System.err.println(line);
         }
 
         // Read initial state.
@@ -47,6 +52,7 @@ public class SearchClient {
         boolean[][] walls = new boolean[75][75];
         char[][] boxes = new char[75][75];
         line = serverMessages.readLine();
+        System.err.println(line);
         int row = 0;
         while (!line.startsWith("#")) {
             for (int col = 0; col < line.length(); ++col) {
@@ -65,6 +71,7 @@ public class SearchClient {
 
             ++row;
             line = serverMessages.readLine();
+            System.err.println(line);
         }
         agentRows = Arrays.copyOf(agentRows, numAgents);
         agentCols = Arrays.copyOf(agentCols, numAgents);
@@ -73,6 +80,7 @@ public class SearchClient {
         // line is currently "#goal".
         char[][] goals = new char[75][75];
         line = serverMessages.readLine();
+        System.err.println(line);
         row = 0;
         while (!line.startsWith("#")) {
             for (int col = 0; col < line.length(); ++col) {
@@ -85,11 +93,12 @@ public class SearchClient {
 
             ++row;
             line = serverMessages.readLine();
+            System.err.println(line);
         }
 
         // End.
         // line is currently "#end".
-
+        System.err.println("Finished reading level");
         return new State(agentRows, agentCols, agentColors, walls, boxes, boxColors, goals);
     }
 
