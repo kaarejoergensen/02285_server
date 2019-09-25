@@ -3,6 +3,7 @@ package domain.gridworld.hospital;
 import domain.ParseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import shared.Action;
 import shared.Farge;
 
 import java.awt.*;
@@ -1112,8 +1113,8 @@ class   StateSequence {
             Action action = jointAction[agent];
             short agentRow = currentState.agentRows[agent];
             short agentCol = currentState.agentCols[agent];
-            boxRows[agent] = (short) (agentRow + action.boxDeltaRow);
-            boxCols[agent] = (short) (agentCol + action.boxDeltaCol);
+            boxRows[agent] = (short) (agentRow + action.boxRowDelta);
+            boxCols[agent] = (short) (agentCol + action.boxColDelta);
             byte boxLetter;
 
             // Test for applicability.
@@ -1123,15 +1124,15 @@ class   StateSequence {
                     break;
 
                 case Move:
-                    destRows[agent] = (short) (agentRow + action.moveDeltaRow);
-                    destCols[agent] = (short) (agentCol + action.moveDeltaCol);
+                    destRows[agent] = (short) (agentRow + action.agentRowDelta);
+                    destCols[agent] = (short) (agentCol + action.agentColDelta);
                     applicable[agent] = this.freeAt(destRows[agent], destCols[agent]);
                     break;
 
                 case Push:
                     boxLetter = this.boxAt(boxRows[agent], boxCols[agent]);
-                    destRows[agent] = (short) (boxRows[agent] + action.moveDeltaRow);
-                    destCols[agent] = (short) (boxCols[agent] + action.moveDeltaCol);
+                    destRows[agent] = (short) (boxRows[agent] + action.agentRowDelta);
+                    destCols[agent] = (short) (boxCols[agent] + action.agentColDelta);
                     applicable[agent] = boxLetter != -1 &&
                             this.agentColors[agent] == this.boxColors[boxLetter] &&
                             this.freeAt(destRows[agent], destCols[agent]);
@@ -1139,8 +1140,8 @@ class   StateSequence {
 
                 case Pull:
                     boxLetter = this.boxAt(boxRows[agent], boxCols[agent]);
-                    destRows[agent] = (short) (agentRow + action.moveDeltaRow);
-                    destCols[agent] = (short) (agentCol + action.moveDeltaCol);
+                    destRows[agent] = (short) (agentRow + action.agentRowDelta);
+                    destCols[agent] = (short) (agentCol + action.agentColDelta);
                     applicable[agent] = boxLetter != -1 &&
                             this.agentColors[agent] == this.boxColors[boxLetter] &&
                             this.freeAt(destRows[agent], destCols[agent]);
@@ -1209,27 +1210,27 @@ class   StateSequence {
                     break;
 
                 case Move:
-                    newAgentRow = (short) (currentState.agentRows[agent] + action.moveDeltaRow);
-                    newAgentCol = (short) (currentState.agentCols[agent] + action.moveDeltaCol);
+                    newAgentRow = (short) (currentState.agentRows[agent] + action.agentRowDelta);
+                    newAgentCol = (short) (currentState.agentCols[agent] + action.agentColDelta);
                     this.moveAgent(newState, agent, newAgentRow, newAgentCol);
                     break;
 
                 case Push:
-                    newAgentRow = (short) (currentState.agentRows[agent] + action.boxDeltaRow);
-                    newAgentCol = (short) (currentState.agentCols[agent] + action.boxDeltaCol);
+                    newAgentRow = (short) (currentState.agentRows[agent] + action.boxRowDelta);
+                    newAgentCol = (short) (currentState.agentCols[agent] + action.boxColDelta);
                     oldBoxRow = newAgentRow;
                     oldBoxCol = newAgentCol;
-                    newBoxRow = (short) (oldBoxRow + action.moveDeltaRow);
-                    newBoxCol = (short) (oldBoxCol + action.moveDeltaCol);
+                    newBoxRow = (short) (oldBoxRow + action.agentRowDelta);
+                    newBoxCol = (short) (oldBoxCol + action.agentColDelta);
                     this.moveBox(newState, oldBoxRow, oldBoxCol, newBoxRow, newBoxCol);
                     this.moveAgent(newState, agent, newAgentRow, newAgentCol);
                     break;
 
                 case Pull:
-                    newAgentRow = (short) (currentState.agentRows[agent] + action.moveDeltaRow);
-                    newAgentCol = (short) (currentState.agentCols[agent] + action.moveDeltaCol);
-                    oldBoxRow = (short) (currentState.agentRows[agent] + action.boxDeltaRow);
-                    oldBoxCol = (short) (currentState.agentCols[agent] + action.boxDeltaCol);
+                    newAgentRow = (short) (currentState.agentRows[agent] + action.agentRowDelta);
+                    newAgentCol = (short) (currentState.agentCols[agent] + action.agentColDelta);
+                    oldBoxRow = (short) (currentState.agentRows[agent] + action.boxRowDelta);
+                    oldBoxCol = (short) (currentState.agentCols[agent] + action.boxColDelta);
                     newBoxRow = currentState.agentRows[agent];
                     newBoxCol = currentState.agentCols[agent];
                     this.moveAgent(newState, agent, newAgentRow, newAgentCol);
