@@ -39,7 +39,7 @@ public class StateParser {
         this.boxColors = new Color[10];
 
         this.staticState = new StaticState();
-        this.state = new State(new ArrayList<>(), new ArrayList<>(), 0);
+        this.state = new State(new ArrayList<>(), new ArrayList<>(), 0, null);
     }
 
     public void parse() throws IOException, ParseException {
@@ -371,7 +371,7 @@ public class StateParser {
                             levelReader.getLineNumber());
                 } else if ('0' <= c && c <= '9') {
                     // Agent.
-                    int id = c - '0';
+                    short id = (short) (c - '0');
                     if (id >= this.state.getAgents().size()) {
                         throw new ParseException(
                                 String.format("Goal state has agent '%s' who does not appear in the initial state.", c),
@@ -384,7 +384,7 @@ public class StateParser {
                     agentGoals.add(new Object(id, c, row, col, null));
                 } else if ('A' <= c && c <= 'Z') {
                     // Box.
-                    int id = c - 'A';
+                    short id = (short) (c - 'A');
                     boxGoals.add(new Object(id, c, row, col, null));
                 } else if (c != ' ') {
                     throw new ParseException(String.format("Invalid character '%s' in column %s.", c, col),

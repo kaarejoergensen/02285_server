@@ -4,6 +4,7 @@ import lombok.Data;
 import searchclient.NotImplementedException;
 
 import java.util.List;
+import java.util.Optional;
 
 @Data
 public class StaticState {
@@ -31,6 +32,14 @@ public class StaticState {
     }
 
     public boolean isSolved(State state) {
-        throw new NotImplementedException();
+        for (Object goal : agentGoals) {
+            Optional<Object> agent = state.getAgentAt(goal.getCol(), goal.getRow());
+            if (agent.isEmpty() || agent.get().getLetter() != goal.getLetter()) return false;
+        }
+        for (Object goal : boxGoals) {
+            Optional<Object> box = state.getBoxAt(goal.getCol(), goal.getRow());
+            if (box.isEmpty() || box.get().getLetter() != goal.getLetter()) return false;
+        }
+        return true;
     }
 }

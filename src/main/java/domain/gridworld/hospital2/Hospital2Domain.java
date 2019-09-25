@@ -6,7 +6,6 @@ import domain.ParseException;
 import domain.gridworld.hospital2.state.State;
 import domain.gridworld.hospital2.state.StaticState;
 import domain.gridworld.hospital2.state.parser.StateParser;
-import searchclient.NotImplementedException;
 
 import java.awt.*;
 import java.io.BufferedInputStream;
@@ -44,10 +43,24 @@ public class Hospital2Domain implements Domain {
         return this.staticState.getNumAgents();
     }
 
+    /**
+     * Execute a joint action.
+     * Returns a boolean array with success for each agent.
+     */
     boolean[] execute(Action[] jointAction, long actionTime) {
-        throw new NotImplementedException();
-    }
+        State state = this.getLatestState();
 
+        // Create new state with applicable and non-conflicting actions.
+        State newState = state.apply(jointAction);
+        newState.setStateTime(actionTime);
+
+        if (this.allowDiscardingPastStates) {
+            this.states.clear();
+        }
+        this.states.add(newState);
+
+        return newState.getApplicable();
+    }
     @Override
     public void runProtocol(Timeout timeout, long timeoutNS, BufferedInputStream clientIn, BufferedOutputStream clientOut, OutputStream logOut) {
         this.runner = new Hospital2Runner(timeout, timeoutNS, this.level, clientIn, clientOut, logOut, this);
