@@ -1145,7 +1145,7 @@ class   StateSequence {
                             this.agentColors[agent] == this.boxColors[boxLetter] &&
                             this.freeAt(destRows[agent], destCols[agent]);
                     break;
-                 //TODO PAINT
+                //TODO PAINT
             }
         }
 

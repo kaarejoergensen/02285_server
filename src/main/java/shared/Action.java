@@ -2,6 +2,7 @@ package shared;
 
 import lombok.Getter;
 
+@Getter
 public enum Action {
     NoOp("NoOp", ActionType.NoOp, 0, 0, 0, 0),
 
@@ -42,20 +43,27 @@ public enum Action {
     PaintW("Paint(W)", ActionType.Paint, 0, -1, 0, 0);
 
     public final String name;
-    @Getter
     public final ActionType type;
     public final int agentRowDelta;
     public final int agentColDelta;
     public final int boxRowDelta;
     public final int boxColDelta;
 
-    Action(String name, ActionType type, int ard, int acd, int brd, int bcd) {
+    Action(String name, ActionType type, int moveDeltaRow, int moveDeltaCol, int boxDeltaRow, int boxDeltaCol) {
         this.name = name;
         this.type = type;
-        this.agentRowDelta = ard;
-        this.agentColDelta = acd;
-        this.boxRowDelta = brd;
-        this.boxColDelta = bcd;
+        this.agentRowDelta = moveDeltaRow;
+        this.agentColDelta = moveDeltaCol;
+        this.boxRowDelta = boxDeltaRow;
+        this.boxColDelta = boxDeltaCol;
+    }
+
+
+    public static Action parse(String action){
+        for(Action a : Action.values()){
+            if(action.equals(a.name)) return a;
+        }
+        return null;
     }
 
     @Override
