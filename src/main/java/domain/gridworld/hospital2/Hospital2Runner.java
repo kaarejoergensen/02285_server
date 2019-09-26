@@ -134,6 +134,7 @@ public class Hospital2Runner {
             // Read client message.
             try {
                 clientMsg = clientReader.readLine();
+                clientLogger.debug("Message from client: " + clientMsg);
             } catch (CharacterCodingException e) {
                 clientLogger.error("Client message not valid ASCII.");
                 return;

@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -43,19 +44,42 @@ public class Hospital2Domain implements Domain {
         return this.staticState.getNumAgents();
     }
 
+    long getNumActions() {
+        return this.runner.getNumActions();
+    }
+
     /**
      * Execute a joint action.
      * Returns a boolean array with success for each agent.
      */
     boolean[] execute(Action[] jointAction, long actionTime) {
         State state = this.getLatestState();
-
+        for (int i = 0; i < staticState.getMap().size(); i++) {
+            for (int j = 0; j < staticState.getMap().get(i).size(); j++) {
+                boolean print = false;
+                if (state.getAgentAt(j, i).isPresent()) {
+                    System.out.print(state.getAgentAt(j, i).get().getLetter());
+                    print = true;
+                }
+                if (state.getBoxAt(j, i).isPresent()) {
+                    System.out.print(state.getBoxAt(j, i).get().getLetter());
+                    if (print) {
+                        System.out.print("X");
+                    }
+                    print = true;
+                }
+                if (!print) {
+                    System.out.print(staticState.getMap().get(i).get(j) ? ' ' : '+');
+                }
+            }
+            System.out.println();
+        }
         // Create new state with applicable and non-conflicting actions.
         State newState = state.apply(jointAction);
         newState.setStateTime(actionTime);
 
         if (this.allowDiscardingPastStates) {
-            this.states.clear();
+            //this.states.clear();
         }
         this.states.add(newState);
 
@@ -98,7 +122,7 @@ public class Hospital2Domain implements Domain {
 
         String[] status = new String[3];
         status[0] = String.format("Level solved: %s.", solved);
-        status[1] = String.format("Actions used: %d.", this.getNumAgents());
+        status[1] = String.format("Actions used: %d.", this.getNumActions());
         status[2] = String.format("Last action time: %.3f seconds.", state.getStateTime() / 1_000_000_000d);
 
         return status;

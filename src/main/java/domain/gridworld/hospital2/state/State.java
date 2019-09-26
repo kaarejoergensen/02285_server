@@ -11,9 +11,10 @@ import java.util.function.Predicate;
 
 @Data
 @AllArgsConstructor
+@ToString
 public class State {
-    private List<Object> boxes;
     private List<Object> agents;
+    private List<Object> boxes;
 
     private long stateTime;
 
@@ -81,10 +82,12 @@ public class State {
             switch (action.getType()) {
                 case NoOp: {
                     applicable[agentIndex] = true;
+                    boxIds[agentIndex] = -1;
                     break;
                 }
                 case Move: {
                     applicable[agentIndex] = this.cellFree(newAgentRows[agentIndex], newAgentCols[agentIndex]);
+                    boxIds[agentIndex] = -1;
                     break;
                 }
                 case Push: {
@@ -121,26 +124,27 @@ public class State {
 
                 // Objects moving into same cell?
                 if (newAgentRows[agentIndex] == newAgentRows[prevAction] && newAgentCols[agentIndex] == newAgentCols[prevAction]
-                    || newBoxRows[agentIndex] == newBoxRows[prevAction] && newBoxCols[agentIndex] == newBoxCols[prevAction]) {
+                    || boxIds[agentIndex] != -1 && boxIds[prevAction] != -1 && newBoxRows[agentIndex] == newBoxRows[prevAction] && newBoxCols[agentIndex] == newBoxCols[prevAction]) {
                     applicable[agentIndex] = false;
                     applicable[prevAction] = false;
                 }
             }
         }
 
-        State state = this.copyOf();
+        State newState = this.copyOf();
 
         for (int agentIndex = 0; agentIndex < jointAction.length; agentIndex++) {
             if (!applicable[agentIndex]) continue;
-            Object agent = this.getAgent(agentIds[agentIndex]);
+            Object agent = newState.getAgent(agentIds[agentIndex]);
             agent.setRow(newAgentRows[agentIndex]);
             agent.setCol(newAgentCols[agentIndex]);
-
-            Object box = this.getBox(boxIds[agentIndex]);
-            box.setRow(newBoxRows[agentIndex]);
-            box.setCol(newBoxCols[agentIndex]);
+            if (boxIds[agentIndex] != -1) {
+                Object box = newState.getBox(boxIds[agentIndex]);
+                box.setRow(newBoxRows[agentIndex]);
+                box.setCol(newBoxCols[agentIndex]);
+            }
         }
         this.applicable = applicable;
-        return state;
+        return newState;
     }
 }
