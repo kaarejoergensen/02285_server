@@ -1,13 +1,13 @@
 package domain.gridworld.hospital2.state.parser;
 
 import domain.ParseException;
-import domain.gridworld.hospital2.state.Colors;
 import domain.gridworld.hospital2.state.Object;
 import domain.gridworld.hospital2.state.State;
 import domain.gridworld.hospital2.state.StaticState;
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import shared.Farge;
 
 import java.awt.*;
 import java.io.IOException;
@@ -174,7 +174,7 @@ public class StateParser {
             }
 
             String colorName = split[0].strip().toLowerCase(java.util.Locale.ROOT);
-            Color color = Colors.fromString(colorName);
+            Color color = Farge.fromString(colorName).color;
             if (color == null) {
                 throw new ParseException(String.format("Invalid color name: '%s'.", colorName),
                         levelReader.getLineNumber());
