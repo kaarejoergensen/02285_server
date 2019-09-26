@@ -7,16 +7,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class LevelReader implements AutoCloseable {
-    LineNumberReader levelReader;
-    StringBuilder levelStringBuilder;
+    private LineNumberReader levelReader;
+    private StringBuilder levelStringBuilder;
 
-    public LevelReader(Path domainFile) throws IOException {
+    LevelReader(Path domainFile) throws IOException {
         this.levelReader = new LineNumberReader(Files.newBufferedReader(domainFile,
                 StandardCharsets.US_ASCII));
         levelStringBuilder = new StringBuilder();
     }
 
-    public String readLine() throws IOException {
+    String readLine() throws IOException {
         String line = this.levelReader.readLine();
         if (line != null) levelStringBuilder.append(line).append(System.lineSeparator());
         return line;
@@ -27,7 +27,7 @@ public class LevelReader implements AutoCloseable {
         this.levelReader.close();
     }
 
-    public int getLineNumber() {
+    int getLineNumber() {
         return this.levelReader.getLineNumber();
     }
 

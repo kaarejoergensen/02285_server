@@ -1,7 +1,8 @@
-package domain.gridworld.hospital2.state;
+package domain.gridworld.hospital2.state.objects;
 
+import domain.gridworld.hospital2.state.State;
+import domain.gridworld.hospital2.state.objects.Object;
 import lombok.Data;
-import searchclient.NotImplementedException;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,8 +17,8 @@ public class StaticState {
     byte numAgents;
 
     private List<List<Boolean>> map;
-    private List<Object> agentGoals;
-    private List<Object> boxGoals;
+    private List<Goal> agentGoals;
+    private List<Goal> boxGoals;
 
     public boolean isCell(int row, int col) {
         return this.isPartOfMap(row, col) && map.get(row).get(col);
@@ -32,12 +33,12 @@ public class StaticState {
     }
 
     public boolean isSolved(State state) {
-        for (Object goal : agentGoals) {
-            Optional<Object> agent = state.getAgentAt(goal.getCol(), goal.getRow());
+        for (Goal goal : agentGoals) {
+            Optional<Agent> agent = state.getAgentAt(goal.getCol(), goal.getRow());
             if (agent.isEmpty() || agent.get().getLetter() != goal.getLetter()) return false;
         }
-        for (Object goal : boxGoals) {
-            Optional<Object> box = state.getBoxAt(goal.getCol(), goal.getRow());
+        for (Goal goal : boxGoals) {
+            Optional<Box> box = state.getBoxAt(goal.getCol(), goal.getRow());
             if (box.isEmpty() || box.get().getLetter() != goal.getLetter()) return false;
         }
         return true;

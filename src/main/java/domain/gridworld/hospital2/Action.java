@@ -63,7 +63,7 @@ public class Action {
         return boxMoveDirection.getDeltaCol();
     }
 
-    static Action parse(String action) {
+    public static Action parse(String action) {
         try {
             int endIndex = action.indexOf('(');
             Type type = Type.valueOf(action.substring(0, endIndex != -1 ? endIndex : action.length()));

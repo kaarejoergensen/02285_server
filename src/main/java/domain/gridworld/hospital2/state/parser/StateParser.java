@@ -1,10 +1,11 @@
 package domain.gridworld.hospital2.state.parser;
 
 import domain.ParseException;
+import domain.gridworld.hospital2.Action;
 import domain.gridworld.hospital2.state.Colors;
-import domain.gridworld.hospital2.state.Object;
+import domain.gridworld.hospital2.state.objects.*;
 import domain.gridworld.hospital2.state.State;
-import domain.gridworld.hospital2.state.StaticState;
+import domain.gridworld.hospital2.state.objects.Object;
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -16,6 +17,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class StateParser {
@@ -29,6 +31,10 @@ public class StateParser {
     @Getter private StaticState staticState;
     @Getter private State state;
 
+    @Getter private List<Action[]> actions;
+    @Getter private List<Long> actionTimes;
+    @Getter private boolean logSolved;
+
     @Getter String level;
 
     public StateParser(Path domainFile, boolean isReplay) {
@@ -39,7 +45,7 @@ public class StateParser {
         this.boxColors = new Color[10];
 
         this.staticState = new StaticState();
-        this.state = new State(new ArrayList<>(), new ArrayList<>(), 0, null);
+        this.state = new State(new ArrayList<>(), new ArrayList<>(), 0);
     }
 
     public void parse() throws IOException, ParseException {
@@ -75,55 +81,54 @@ public class StateParser {
                 }
                 line = this.parseGoalSection(levelReader);
 
-//                // Initial and goal states loaded; check that states are legal.
-//                checkObjectsEnclosedInWalls();
+                checkObjectsEnclosedInWalls();
 
                 if (!line.stripTrailing().equalsIgnoreCase("#end")) {
                     throw new ParseException("Expected end section (#end).", levelReader.getLineNumber());
                 }
                 line = this.parseEndSection(levelReader);
-//
-//                // If this is a log file, then parse additional sections.
-//                if (isReplay) {
-//                    // Parse client name.
-//                    if (!line.stripTrailing().equalsIgnoreCase("#clientname")) {
-//                        throw new ParseException("Expected client name section (#clientname).",
-//                                levelReader.getLineNumber());
-//                    }
-//                    line = this.parseClientNameSection(levelReader);
-//
-//                    // Parse and simulate actions.
-//                    if (!line.stripTrailing().equalsIgnoreCase("#actions")) {
-//                        throw new ParseException("Expected actions section (#actions).", levelReader.getLineNumber());
-//                    }
-//                    line = this.parseActionsSection(levelReader);
-//
-//                    if (!line.stripTrailing().equalsIgnoreCase("#end")) {
-//                        throw new ParseException("Expected end section (#end).", levelReader.getLineNumber());
-//                    }
-//                    line = this.parseEndSection(levelReader);
-//
-//                    // Parse summary to check if it is consistent with simulation.
-//                    if (!line.stripTrailing().equalsIgnoreCase("#solved")) {
-//                        throw new ParseException("Expected solved section (#solved).", levelReader.getLineNumber());
-//                    }
-//                    line = this.parseSolvedSection(levelReader);
-//
-//                    if (!line.stripTrailing().equalsIgnoreCase("#numactions")) {
-//                        throw new ParseException("Expected numactions section (#numactions).", levelReader.getLineNumber());
-//                    }
-//                    line = this.parseNumActionsSection(levelReader);
-//
-//                    if (!line.stripTrailing().equalsIgnoreCase("#time")) {
-//                        throw new ParseException("Expected time section (#time).", levelReader.getLineNumber());
-//                    }
-//                    line = this.parseTimeSection(levelReader);
-//
-//                    if (!line.stripTrailing().equalsIgnoreCase("#end")) {
-//                        throw new ParseException("Expected end section (#end).", levelReader.getLineNumber());
-//                    }
-//                    line = this.parseEndSection(levelReader);
-//                }
+
+                // If this is a log file, then parse additional sections.
+                if (isReplay) {
+                    // Parse client name.
+                    if (!line.stripTrailing().equalsIgnoreCase("#clientname")) {
+                        throw new ParseException("Expected client name section (#clientname).",
+                                levelReader.getLineNumber());
+                    }
+                    line = this.parseClientNameSection(levelReader);
+
+                    // Parse and simulate actions.
+                    if (!line.stripTrailing().equalsIgnoreCase("#actions")) {
+                        throw new ParseException("Expected actions section (#actions).", levelReader.getLineNumber());
+                    }
+                    line = this.parseActionsSection(levelReader);
+
+                    if (!line.stripTrailing().equalsIgnoreCase("#end")) {
+                        throw new ParseException("Expected end section (#end).", levelReader.getLineNumber());
+                    }
+                    line = this.parseEndSection(levelReader);
+
+                    // Parse summary to check if it is consistent with simulation.
+                    if (!line.stripTrailing().equalsIgnoreCase("#solved")) {
+                        throw new ParseException("Expected solved section (#solved).", levelReader.getLineNumber());
+                    }
+                    line = this.parseSolvedSection(levelReader);
+
+                    if (!line.stripTrailing().equalsIgnoreCase("#numactions")) {
+                        throw new ParseException("Expected numactions section (#numactions).", levelReader.getLineNumber());
+                    }
+                    line = this.parseNumActionsSection(levelReader);
+
+                    if (!line.stripTrailing().equalsIgnoreCase("#time")) {
+                        throw new ParseException("Expected time section (#time).", levelReader.getLineNumber());
+                    }
+                    line = this.parseTimeSection(levelReader);
+
+                    if (!line.stripTrailing().equalsIgnoreCase("#end")) {
+                        throw new ParseException("Expected end section (#end).", levelReader.getLineNumber());
+                    }
+                    line = this.parseEndSection(levelReader);
+                }
 
                 if (line != null) {
                     throw new ParseException("Expected no more content after end section.",
@@ -216,8 +221,8 @@ public class StateParser {
             throws IOException, ParseException {
         short numRows = 0;
         List<List<Boolean>> map = new ArrayList<>();
-        List<Object> boxes = new ArrayList<>();
-        List<Object> agents = new ArrayList<>(10);
+        List<Box> boxes = new ArrayList<>();
+        List<Agent> agents = new ArrayList<>(10);
 
         // Parse level and accumulate walls, agents, and boxes.
         String line;
@@ -266,7 +271,7 @@ public class StateParser {
                         throw new ParseException(String.format("Agent '%s' has no color specified.", c),
                                 levelReader.getLineNumber());
                     }
-                    agents.add(new Object(id, c, numRows, col, agentColor));
+                    agents.add(new Agent(id, c, numRows, col, agentColor));
                 } else if ('A' <= c && c <= 'Z') {
                     // Box.
                     int id = c - 'A';
@@ -275,7 +280,7 @@ public class StateParser {
                         throw new ParseException(String.format("Box '%s' has no color specified.", c),
                                 levelReader.getLineNumber());
                     }
-                    boxes.add(new Object(id, c, numRows, col, boxColor));
+                    boxes.add(new Box(id, c, numRows, col, boxColor));
                 } else if (c != '+' && c != ' ') {
                     throw new ParseException(String.format("Invalid character '%s' in column %s.", c, col),
                             levelReader.getLineNumber());
@@ -308,8 +313,8 @@ public class StateParser {
             throws IOException, ParseException {
         short row = 0;
 
-        List<Object> agentGoals = new ArrayList<>(this.state.getAgents().size());
-        List<Object> boxGoals = new ArrayList<>(this.state.getBoxes().size());
+        List<Goal> agentGoals = new ArrayList<>(this.state.getAgents().size());
+        List<Goal> boxGoals = new ArrayList<>(this.state.getBoxes().size());
 
         String line;
         while (true) {
@@ -381,11 +386,11 @@ public class StateParser {
                         throw new ParseException(String.format("Agent '%s' appears multiple times in goal state.", c),
                                 levelReader.getLineNumber());
                     }
-                    agentGoals.add(new Object(id, c, row, col, null));
+                    agentGoals.add(new Goal(id, c, row, col, null));
                 } else if ('A' <= c && c <= 'Z') {
                     // Box.
                     short id = (short) (c - 'A');
-                    boxGoals.add(new Object(id, c, row, col, null));
+                    boxGoals.add(new Goal(id, c, row, col, null));
                 } else if (c != ' ') {
                     throw new ParseException(String.format("Invalid character '%s' in column %s.", c, col),
                             levelReader.getLineNumber());
@@ -424,11 +429,24 @@ public class StateParser {
         return line;
     }
 
-    /*private String parseActionsSection(LevelReader levelReader)
+    //TODO: Implement properly
+    private void checkObjectsEnclosedInWalls() throws ParseException {
+        Predicate<Object> pred = o -> !staticState.getMap().get(o.getRow()).get(o.getCol());
+        if (this.state.getAgents().stream().anyMatch(pred)
+                || this.state.getBoxes().stream().anyMatch(pred)
+                || this.staticState.getAgentGoals().stream().anyMatch(pred)
+                || this.staticState.getBoxGoals().stream().anyMatch(pred)) {
+            throw new ParseException("One or more objects not enclosed in walls");
+        }
+    }
+
+    private String parseActionsSection(LevelReader levelReader)
             throws IOException, ParseException {
-        Action[] jointAction = new Action[this.numAgents];
+        this.actions = new ArrayList<>();
+        this.actionTimes = new ArrayList<>();
 
         while (true) {
+            Action[] jointAction = new Action[this.state.getAgents().size()];
             String line = levelReader.readLine();
             if (line == null) {
                 throw new ParseException("Expected more action lines or end of actions section, but reached end of " +
@@ -452,14 +470,14 @@ public class StateParser {
             // Parse action timestamp.
             long actionTime;
             try {
-                actionTime = Long.valueOf(split[0]);
+                actionTime = Long.parseLong(split[0]);
             } catch (NumberFormatException e) {
                 throw new ParseException("Invalid action timestamp.", levelReader.getLineNumber());
             }
 
             // Parse and execute joint action.
             String[] actionsStr = split[1].split(";");
-            if (actionsStr.length != this.numAgents) {
+            if (actionsStr.length != this.state.getAgents().size()) {
                 throw new ParseException("Invalid number of agents in joint action.", levelReader.getLineNumber());
             }
             for (int i = 0; i < jointAction.length; ++i) {
@@ -470,7 +488,8 @@ public class StateParser {
             }
 
             // Execute action.
-            this.execute(jointAction, actionTime);
+            this.actions.add(jointAction);
+            this.actionTimes.add(actionTime);
         }
     }
 
@@ -485,38 +504,7 @@ public class StateParser {
             throw new ParseException("Invalid solved value.", levelReader.getLineNumber());
         }
 
-        boolean logSolved = line.equals("true");
-        boolean actuallySolved = true;
-        for (int boxGoalId = 0; boxGoalId < this.numBoxGoals; ++boxGoalId) {
-            short boxGoalRow = this.boxGoalRows[boxGoalId];
-            short boxGoalCol = this.boxGoalCols[boxGoalId];
-            byte boxGoalLetter = this.boxGoalLetters[boxGoalId];
-
-            if (this.boxAt(boxGoalRow, boxGoalCol) != boxGoalLetter) {
-                actuallySolved = false;
-                break;
-            }
-        }
-        State lastState = this.getState(this.numStates - 1);
-        for (int agent = 0; agent < this.numAgents; ++agent) {
-            short agentGoalRow = this.agentGoalRows[agent];
-            short agentGoalCol = this.agentGoalCols[agent];
-            short agentRow = lastState.agentRows[agent];
-            short agentCol = lastState.agentCols[agent];
-
-            if (agentGoalRow != -1 && (agentRow != agentGoalRow || agentCol != agentGoalCol)) {
-                actuallySolved = false;
-                break;
-            }
-        }
-
-        if (logSolved && !actuallySolved) {
-            throw new ParseException("Log summary claims level is solved, but the actions don't solve the level.",
-                    levelReader.getLineNumber());
-        } else if (!logSolved && actuallySolved) {
-            throw new ParseException("Log summary claims level is not solved, but the actions solve the level.",
-                    levelReader.getLineNumber());
-        }
+        this.logSolved = line.equals("true");
 
         line = levelReader.readLine();
         return line;
@@ -531,12 +519,12 @@ public class StateParser {
 
         long numActions;
         try {
-            numActions = Long.valueOf(line);
+            numActions = Long.parseLong(line);
         } catch (NumberFormatException e) {
             throw new ParseException("Invalid number of actions.", levelReader.getLineNumber());
         }
 
-        if (numActions != this.numStates - 1) {
+        if (numActions != this.actions.size()) {
             throw new ParseException("Number of action does not conform to the number of actions in the sequence.",
                     levelReader.getLineNumber());
         }
@@ -554,22 +542,21 @@ public class StateParser {
 
         long lastStateTime;
         try {
-            lastStateTime = Long.valueOf(line);
+            lastStateTime = Long.parseLong(line);
         } catch (NumberFormatException e) {
             throw new ParseException("Invalid time of last action.", levelReader.getLineNumber());
         }
-
-        if (lastStateTime != this.getStateTime(this.numStates - 1)) {
+        if (lastStateTime != this.actionTimes.get(this.actionTimes.size() - 1)) {
             throw new ParseException("Last state time does not conform to the timestamp of the last action.",
                     levelReader.getLineNumber());
         }
 
         line = levelReader.readLine();
         return line;
-    }*/
+    }
 
     private String parseEndSection(LevelReader levelReader)
-            throws IOException, ParseException {
+            throws IOException {
         return levelReader.readLine();
     }
 

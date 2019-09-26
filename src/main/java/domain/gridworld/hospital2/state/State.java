@@ -1,10 +1,13 @@
 package domain.gridworld.hospital2.state;
 
 import domain.gridworld.hospital2.Action;
+import domain.gridworld.hospital2.state.objects.Agent;
+import domain.gridworld.hospital2.state.objects.Box;
+import domain.gridworld.hospital2.state.objects.Object;
 import lombok.*;
+import org.javatuples.Pair;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -13,18 +16,16 @@ import java.util.function.Predicate;
 @AllArgsConstructor
 @ToString
 public class State {
-    private List<Object> agents;
-    private List<Object> boxes;
+    private List<Agent> agents;
+    private List<Box> boxes;
 
     private long stateTime;
 
-    private boolean[] applicable;
-
-    public Object getBox(int id) {
+    public Box getBox(int id) {
         return this.boxes.get(id);
     }
 
-    public Object getAgent(int id) {
+    public Agent getAgent(int id) {
         return this.agents.get(id);
     }
 
@@ -32,35 +33,35 @@ public class State {
         return o -> o.getCol() == col && o.getRow() == row;
     }
 
-    public boolean cellFree(int col, int row) {
+    private boolean cellFree(int col, int row) {
         return this.getBoxAt(col, row).isEmpty() && this.getAgentAt(col, row).isEmpty();
     }
 
-    public Optional<Object> getBoxAt(int col, int row) {
+    public Optional<Box> getBoxAt(int col, int row) {
         return this.getObjectAt(this.boxes, col, row);
     }
 
-    public Optional<Object> getAgentAt(int col, int row) {
+    public Optional<Agent> getAgentAt(int col, int row) {
         return this.getObjectAt(this.agents, col, row);
     }
 
-    private Optional<Object> getObjectAt(List<Object> list, int col, int row) {
+    private <T extends Object> Optional<T> getObjectAt(List<T> list, int col, int row) {
         return list.stream().filter(getPred(col, row)).findFirst();
     }
 
     private State copyOf() {
-        List<Object> agents = new ArrayList<>();
-        this.agents.forEach(a -> agents.add((Object) a.clone()));
-        List<Object> boxes = new ArrayList<>();
-        this.boxes.forEach(b -> boxes.add((Object) b.clone()));
-        return new State(agents, boxes, -1, null);
+        List<Agent> agents = new ArrayList<>();
+        this.agents.forEach(a -> agents.add((Agent) a.clone()));
+        List<Box> boxes = new ArrayList<>();
+        this.boxes.forEach(b -> boxes.add((Box) b.clone()));
+        return new State(agents, boxes, -1);
     }
 
     /**
      * Determines which actions are applicable and non-conflicting.
      * Returns an array with true for each action which was applicable and non-conflicting, and false otherwise.
      */
-    public State apply(Action[] jointAction) {
+    public Pair<State, boolean[]> apply(Action[] jointAction) {
         boolean[] applicable = new boolean[this.agents.size()];
 
         short[] newAgentRows = new short[this.agents.size()];
@@ -91,7 +92,7 @@ public class State {
                     break;
                 }
                 case Push: {
-                    Optional<Object> box = this.getBoxAt(newAgentCols[agentIndex], newAgentRows[agentIndex]);
+                    Optional<Box> box = this.getBoxAt(newAgentCols[agentIndex], newAgentRows[agentIndex]);
                     if (box.isPresent()) {
                         newBoxRows[agentIndex] = (short) (box.get().getRow() + action.getBoxDeltaRow());
                         newBoxCols[agentIndex] = (short) (box.get().getCol() + action.getBoxDeltaCol());
@@ -102,7 +103,7 @@ public class State {
                     break;
                 }
                 case Pull:
-                    Optional<Object> box = this.getBoxAt(
+                    Optional<Box> box = this.getBoxAt(
                             agent.getCol() + Math.negateExact(action.getBoxDeltaCol()),
                             agent.getRow() + Math.negateExact(action.getBoxDeltaRow()));
                     if (box.isPresent()) {
@@ -123,8 +124,15 @@ public class State {
                 }
 
                 // Objects moving into same cell?
-                if (newAgentRows[agentIndex] == newAgentRows[prevAction] && newAgentCols[agentIndex] == newAgentCols[prevAction]
-                    || boxIds[agentIndex] != -1 && boxIds[prevAction] != -1 && newBoxRows[agentIndex] == newBoxRows[prevAction] && newBoxCols[agentIndex] == newBoxCols[prevAction]) {
+                if (newAgentRows[agentIndex] == newAgentRows[prevAction]
+                    && newAgentCols[agentIndex] == newAgentCols[prevAction]) {
+                    applicable[agentIndex] = false;
+                    applicable[prevAction] = false;
+                }
+
+                if (boxIds[agentIndex] != -1 && boxIds[prevAction] != -1
+                    && newBoxRows[agentIndex] == newBoxRows[prevAction]
+                    && newBoxCols[agentIndex] == newBoxCols[prevAction]) {
                     applicable[agentIndex] = false;
                     applicable[prevAction] = false;
                 }
@@ -138,13 +146,13 @@ public class State {
             Object agent = newState.getAgent(agentIds[agentIndex]);
             agent.setRow(newAgentRows[agentIndex]);
             agent.setCol(newAgentCols[agentIndex]);
+
             if (boxIds[agentIndex] != -1) {
                 Object box = newState.getBox(boxIds[agentIndex]);
                 box.setRow(newBoxRows[agentIndex]);
                 box.setCol(newBoxCols[agentIndex]);
             }
         }
-        this.applicable = applicable;
-        return newState;
+        return Pair.with(newState, applicable);
     }
 }

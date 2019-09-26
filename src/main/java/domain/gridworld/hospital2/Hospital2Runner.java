@@ -221,7 +221,7 @@ public class Hospital2Runner {
             logWriter.write(this.domain.isSolved(this.domain.getLatestState()) ? "true" : "false" + System.lineSeparator());
 
             logWriter.write("#numactions" + System.lineSeparator());
-            logWriter.write(Long.toString(this.numActions) + System.lineSeparator());
+            logWriter.write(this.numActions + System.lineSeparator());
 
             logWriter.write("#time" + System.lineSeparator());
             logWriter.write(this.domain.getLatestState().getStateTime() + System.lineSeparator());
