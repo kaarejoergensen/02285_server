@@ -85,12 +85,12 @@ public class State {
 
                 case Move:
                     this.agentRows[agent] += action.getAgentDeltaRow();
-                    this.agentCols[agent] += action.getBoxDeltaCol();
+                    this.agentCols[agent] += action.getAgentDeltaCol();
                     break;
 
                 case Push:
                     this.agentRows[agent] += action.getAgentDeltaRow();
-                    this.agentCols[agent] += action.getBoxDeltaCol();
+                    this.agentCols[agent] += action.getAgentDeltaCol();
                     box = this.boxAt(this.agentRows[agent], this.agentCols[agent]);
                     this.boxes[this.agentRows[agent]][this.agentCols[agent]] = 0;
                     this.boxes[this.agentRows[agent] + action.getBoxDeltaRow()]
