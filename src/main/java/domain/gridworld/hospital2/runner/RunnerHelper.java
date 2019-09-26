@@ -1,87 +1,54 @@
-package domain.gridworld.hospital2;
+package domain.gridworld.hospital2.runner;
 
 import client.Timeout;
-import lombok.Getter;
+import domain.gridworld.hospital2.Action;
+import domain.gridworld.hospital2.state.State;
+import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.javatuples.Pair;
 import server.CustomLoggerConfigFactory;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
 import java.nio.charset.CharacterCodingException;
-import java.nio.charset.StandardCharsets;
-import java.util.concurrent.TimeUnit;
+import java.util.List;
 
-public class Hospital2Runner {
-    private Logger clientLogger = LogManager.getLogger("client");
+@RequiredArgsConstructor
+class RunnerHelper {
+    private static Logger clientLogger = LogManager.getLogger("client");
 
-    private BufferedReader clientReader;
-    private BufferedWriter clientWriter, logWriter;
-    private Timeout timeout;
-    private long timeoutNS, startNS;
-    private String level;
-    private Hospital2Domain domain;
-
-    @Getter private String clientName;
-    @Getter private long numActions;
-
-    public Hospital2Runner(Timeout timeout, long timeoutNS, String level, BufferedInputStream clientIn,
-                           BufferedOutputStream clientOut, OutputStream logOut, Hospital2Domain domain) {
-        this.timeout = timeout;
-        this.timeoutNS = timeoutNS;
-        this.level = level;
-
-        this.clientReader = new BufferedReader(new InputStreamReader(clientIn, StandardCharsets.US_ASCII.newDecoder()));
-        this.clientWriter = new BufferedWriter(new OutputStreamWriter(clientOut, StandardCharsets.US_ASCII.newEncoder()));
-        this.logWriter = new BufferedWriter(new OutputStreamWriter(logOut, StandardCharsets.US_ASCII.newEncoder()));
-        this.domain = domain;
-    }
-
-    public void run() {
-        this.startNS = System.nanoTime();
-        this.timeout.reset(startNS, TimeUnit.SECONDS.toNanos(10));
-
-        this.readClientName();
-        this.writeLevelToClientAndLog();
-        this.exchangeActions();
-        this.writeLogSummary();
-        clientLogger.debug("Protocol finished.");
-    }
-
-    private void readClientName() {
+    static String readClientName(BufferedReader clientReader, Timeout timeout, long startNS, long timeoutNS) throws RunException {
         String clientMsg = null;
         try {
             clientLogger.debug("Waiting for client name.");
             clientMsg = clientReader.readLine();
         } catch (CharacterCodingException e) {
-            clientLogger.error("Client message not valid ASCII.");
-            System.exit(-1);
+            throw new RunException("Client message not valid ASCII.");
         } catch (IOException e) {
             // FIXME: What may even cause this? Closing the stream causes readLine to return null rather than throw.
             synchronized (System.out) {
-                clientLogger.error("Unexpected exception while reading client name:");
-                e.printStackTrace(System.out);
+                throw new RunException("Unexpected exception while reading client name:", e);
             }
-            System.exit(-1);
         }
 
         // Check and reset timeout.
-
         if (!timeout.reset(startNS, timeoutNS)) {
-            clientLogger.error("Timed out while waiting for client name.");
-            System.exit(-1);
+            throw new RunException("Timed out while waiting for client name.");
         }
 
         // Store client name.
         if (clientMsg != null) {
             clientLogger.debug("Received client name: " + clientMsg);
-            this.clientName = clientMsg;
+            return clientMsg;
         } else {
-            clientLogger.error("Client closed its output stream before sending its name.");
-            System.exit(-1);
+            throw new RunException("Client closed its output stream before sending its name.");
         }
     }
 
-    private void writeLevelToClientAndLog() {
+    static void writeLevelToClientAndLog(BufferedWriter clientWriter, BufferedWriter logWriter,
+                                         String level, String clientName, Timeout timeout) throws RunException {
         clientLogger.debug("Writing level to client and log.");
         try {
             clientWriter.write(level);
@@ -90,11 +57,10 @@ public class Hospital2Runner {
             logWriter.flush();
         } catch (IOException e) {
             if (timeout.isExpired()) {
-                clientLogger.error("Timeout expired while sending level to client.");
+                throw new RunException("Timeout expired while sending level to client.");
             } else {
-                clientLogger.error("Could not send level to client and/or log. " + e.getMessage(), e);
+                throw new RunException("Could not send level to client and/or log. " + e.getMessage(), e);
             }
-            System.exit(-1);
         }
 
         // Log client name.
@@ -102,26 +68,24 @@ public class Hospital2Runner {
         try {
             clientLogger.debug("Logging client name.");
             logWriter.write("#clientname" + System.lineSeparator());
-            logWriter.write(this.clientName+ System.lineSeparator());
+            logWriter.write(clientName+ System.lineSeparator());
             logWriter.flush();
         } catch (IOException e) {
-            clientLogger.error("Could not write client name to log file. " + e.getMessage(), e);
-            System.exit(-1);
+            throw new RunException("Could not write client name to log file. " + e.getMessage(), e);
         }
     }
 
-    private void exchangeActions() {
+    static void exchangeActions(BufferedReader clientReader, BufferedWriter clientWriter, BufferedWriter logWriter,
+                                byte numAgents, Timeout timeout, long startNS, List<State> states, boolean allowDiscardingPastStates) throws RunException {
         clientLogger.debug("Beginning action/comment message exchanges.");
         long numMessages = 0;
-        Action[] jointAction = new Action[this.domain.getNumAgents()];
+        Action[] jointAction = new Action[numAgents];
         String clientMsg;
         try {
-            logWriter.write("#actions");
-            logWriter.newLine();
+            logWriter.write("#actions" + System.lineSeparator());
             logWriter.flush();
         } catch (IOException e) {
-            clientLogger.error("Could not write to log file. " + e.getMessage(), e);
-            return;
+            throw new RunException("Could not write to log file. " + e.getMessage(), e);
         }
 
         protocolLoop:
@@ -136,11 +100,9 @@ public class Hospital2Runner {
                 clientMsg = clientReader.readLine();
                 clientLogger.debug("Message from client: " + clientMsg);
             } catch (CharacterCodingException e) {
-                clientLogger.error("Client message not valid ASCII.");
-                return;
+                throw new RunException("Client message not valid ASCII.");
             } catch (IOException e) {
-                clientLogger.error("Unexpected exception while reading from client. " + e.getMessage(), e);
-                return;
+                throw new RunException("Unexpected exception while reading from client. " + e.getMessage(), e);
             }
             if (clientMsg == null) {
                 if (timeout.isExpired()) {
@@ -163,7 +125,7 @@ public class Hospital2Runner {
             } else {
                 // Parse action string.
                 String[] actionMsg = clientMsg.split(";");
-                if (actionMsg.length != this.domain.getNumAgents()) {
+                if (actionMsg.length != numAgents) {
                     clientLogger.error("Invalid number of agents in joint action:");
                     clientLogger.error(clientMsg);
                     continue;
@@ -179,8 +141,7 @@ public class Hospital2Runner {
 
                 // Execute action.
                 long actionTime = System.nanoTime() - startNS;
-                boolean[] result = this.domain.execute(jointAction, actionTime);
-                ++this.numActions;
+                boolean[] result = execute(jointAction, actionTime, states, allowDiscardingPastStates);
 
                 // Write response.
                 try {
@@ -194,43 +155,57 @@ public class Hospital2Runner {
                 } catch (IOException e) {
                     // TODO: Happens when client closes before reading responses, then server can't write to the
                     //  client's input stream.
-                    clientLogger.error("Could not write response to client. " + e.getMessage(), e);
-                    return;
+                    throw new RunException("Could not write response to client. " + e.getMessage(), e);
                 }
 
                 // Log action.
                 try {
-                    logWriter.write(Long.toString(actionTime));
-                    logWriter.write(":");
-                    logWriter.write(clientMsg + System.lineSeparator());
+                    logWriter.write(actionTime + ":" + clientMsg + System.lineSeparator());
                     logWriter.flush();
                 } catch (IOException e) {
-                    clientLogger.error("Could not write to log file. " + e.getMessage(), e);
-                    return;
+                    throw new RunException("Could not write to log file. " + e.getMessage(), e);
                 }
             }
         }
         clientLogger.debug("Messages exchanged: " + numMessages + ".");
     }
 
-    private void writeLogSummary() {
+    /**
+     * Execute a joint action.
+     * Returns a boolean array with success for each agent.
+     */
+    static boolean[] execute(Action[] jointAction, long actionTime, List<State> states, boolean allowDiscardingPastStates) {
+        State state = states.get(states.size() - 1);
+
+        // Create new state with applicable and non-conflicting actions.
+        Pair<State, boolean[]> result = state.apply(jointAction);
+        result.getValue0().setStateTime(actionTime);
+
+        if (allowDiscardingPastStates) {
+            states.clear();
+        }
+        states.add(result.getValue0());
+
+        return result.getValue1();
+    }
+
+    static void writeLogSummary(BufferedWriter logWriter, boolean solved, long numActions, long time) throws RunException {
         try {
             logWriter.write("#end" + System.lineSeparator());
 
             logWriter.write("#solved" + System.lineSeparator());
-            logWriter.write(this.domain.isSolved(this.domain.getLatestState()) ? "true" : "false" + System.lineSeparator());
+            logWriter.write(solved ? "true" : "false" + System.lineSeparator());
 
             logWriter.write("#numactions" + System.lineSeparator());
-            logWriter.write(this.numActions + System.lineSeparator());
+            logWriter.write(numActions + System.lineSeparator());
 
             logWriter.write("#time" + System.lineSeparator());
-            logWriter.write(this.domain.getLatestState().getStateTime() + System.lineSeparator());
+            logWriter.write(time + System.lineSeparator());
 
             logWriter.write("#end" + System.lineSeparator());
             logWriter.flush();
         } catch (IOException e) {
-            clientLogger.error("Could not write to log file. " + e.getMessage(), e);
-            System.exit(-1);
+            throw new RunException("Could not write to log file. " + e.getMessage(), e);
         }
     }
 }
