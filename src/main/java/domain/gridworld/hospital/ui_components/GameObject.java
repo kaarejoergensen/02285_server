@@ -1,6 +1,8 @@
 package domain.gridworld.hospital.ui_components;
 
 import domain.gridworld.hospital.HospitalDomain;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.awt.*;
 import java.awt.font.FontRenderContext;
@@ -8,22 +10,20 @@ import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
 
 public abstract class GameObject {
-
     protected static final Color BOX_AGENT_FONT_COLOR = Color.BLACK;
     protected static final AffineTransform IDENTITY_TRANSFORM = new AffineTransform();
     protected static final Stroke OUTLINE_STROKE = new BasicStroke(2.0f);
 
-
     public byte id;
 
-    private TextLayout letterText;
+    @Getter @Setter private TextLayout letterText;
 
-    private int letterTopOffset;
-    private int letterLeftOffset;
+    @Getter @Setter private int letterTopOffset;
+    @Getter @Setter private int letterLeftOffset;
 
     private Color color;
-    private Color outlineColor;
-    private Color armColor;
+    @Getter private Color outlineColor;
+    @Getter private Color armColor;
 
     public boolean solved;
 
@@ -66,37 +66,4 @@ public abstract class GameObject {
         setLetterTopOffset(canvas.cellTextMargin + size - (size - bound.height) / 2);
         setLetterLeftOffset(canvas.cellTextMargin + (size - bound.width) / 2 - bound.x);
     }
-
-    public TextLayout getLetterText() {
-        return letterText;
-    }
-
-    public void setLetterText(TextLayout letterText) {
-        this.letterText = letterText;
-    }
-
-    public int getLetterTopOffset() {
-        return letterTopOffset;
-    }
-
-    public void setLetterTopOffset(int letterTopOffset) {
-        this.letterTopOffset = letterTopOffset;
-    }
-
-    public int getLetterLeftOffset() {
-        return letterLeftOffset;
-    }
-
-    public void setLetterLeftOffset(int letterLeftOffset) {
-        this.letterLeftOffset = letterLeftOffset;
-    }
-
-    public Color getArmColor() {
-        return armColor;
-    }
-
-    public Color getOutlineColor() {
-        return outlineColor;
-    }
-
 }
