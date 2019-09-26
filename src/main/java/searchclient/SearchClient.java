@@ -217,10 +217,10 @@ public class SearchClient {
             System.err.format("Found solution of length %d.\n", plan.length);
 
             for (Action[] jointAction : plan) {
-                System.out.print(jointAction[0].name);
+                System.out.print(jointAction[0].getName());
                 for (int action = 1; action < jointAction.length; ++action) {
                     System.out.print(";");
-                    System.out.print(jointAction[action].name);
+                    System.out.print(jointAction[action].getName());
                 }
                 System.out.println();
                 // We must read the server's response to not fill up the stdin buffer and block the server.

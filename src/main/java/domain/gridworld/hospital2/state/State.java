@@ -1,10 +1,9 @@
 package domain.gridworld.hospital2.state;
 
-import domain.gridworld.hospital2.Action;
 import lombok.*;
+import shared.Action;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -114,11 +113,11 @@ public class State {
                             agent.getColor().equals(box.get().getColor());
                     break;
             }
-            if (!applicable[agentIndex] || jointAction[agentIndex].getType().equals(Action.Type.NoOp)) {
+            if (!applicable[agentIndex] || jointAction[agentIndex].getType().equals(Action.NoOp)) {
                 continue;
             }
             for (int prevAction = 0; prevAction < agentIndex; prevAction++) {
-                if (!applicable[prevAction] || jointAction[prevAction].getType().equals(Action.Type.NoOp)) {
+                if (!applicable[prevAction] || jointAction[prevAction].getType().equals(Action.NoOp)) {
                     continue;
                 }
 

@@ -6,6 +6,7 @@ import domain.ParseException;
 import domain.gridworld.hospital2.state.State;
 import domain.gridworld.hospital2.state.StaticState;
 import domain.gridworld.hospital2.state.parser.StateParser;
+import shared.Action;
 
 import java.awt.*;
 import java.io.BufferedInputStream;
