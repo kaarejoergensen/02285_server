@@ -3,7 +3,7 @@ package domain.gridworld.hospital2.state.objects;
 import java.awt.*;
 
 public class Goal extends Object {
-    public Goal(int id, char letter, short row, short col, Color color) {
+    public Goal(String id, char letter, short row, short col, Color color) {
         super(id, letter, row, col, color);
     }
 
@@ -11,4 +11,6 @@ public class Goal extends Object {
     public java.lang.Object clone() {
         return new Goal(id, letter, row, col, color);
     }
+
+
 }

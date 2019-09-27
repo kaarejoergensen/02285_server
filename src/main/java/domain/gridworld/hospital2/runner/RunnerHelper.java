@@ -20,7 +20,7 @@ class RunnerHelper {
     private static Logger clientLogger = LogManager.getLogger("client");
 
     static String readClientName(BufferedReader clientReader, Timeout timeout, long startNS, long timeoutNS) throws RunException {
-        String clientMsg = null;
+        String clientMsg;
         try {
             clientLogger.debug("Waiting for client name.");
             clientMsg = clientReader.readLine();
@@ -192,16 +192,12 @@ class RunnerHelper {
     static void writeLogSummary(BufferedWriter logWriter, boolean solved, long numActions, long time) throws RunException {
         try {
             logWriter.write("#end" + System.lineSeparator());
-
             logWriter.write("#solved" + System.lineSeparator());
             logWriter.write(solved ? "true" : "false" + System.lineSeparator());
-
             logWriter.write("#numactions" + System.lineSeparator());
             logWriter.write(numActions + System.lineSeparator());
-
             logWriter.write("#time" + System.lineSeparator());
             logWriter.write(time + System.lineSeparator());
-
             logWriter.write("#end" + System.lineSeparator());
             logWriter.flush();
         } catch (IOException e) {

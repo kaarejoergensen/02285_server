@@ -4,28 +4,39 @@ import domain.gridworld.hospital2.Action;
 import domain.gridworld.hospital2.state.objects.Agent;
 import domain.gridworld.hospital2.state.objects.Box;
 import domain.gridworld.hospital2.state.objects.Object;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.javatuples.Pair;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-@Data
 @AllArgsConstructor
 @ToString
 public class State {
-    private List<Agent> agents;
-    private List<Box> boxes;
+    @Setter private Map<String, Agent> agents;
+    @Setter private Map<String, Box> boxes;
 
-    private long stateTime;
+    @Setter @Getter private long stateTime;
 
-    public Box getBox(int id) {
+    public Collection<Agent> getAgents() {
+        return this.agents.values();
+    }
+
+    public Collection<Box> getBoxes() {
+        return this.boxes.values();
+    }
+
+    public Box getBox(String id) {
         return this.boxes.get(id);
     }
 
-    public Agent getAgent(int id) {
+    public Agent getAgent(String id) {
         return this.agents.get(id);
     }
 
@@ -45,15 +56,15 @@ public class State {
         return this.getObjectAt(this.agents, col, row);
     }
 
-    private <T extends Object> Optional<T> getObjectAt(List<T> list, int col, int row) {
-        return list.stream().filter(getPred(col, row)).findFirst();
+    private <T extends Object> Optional<T> getObjectAt(Map<String, T> map, int col, int row) {
+        return map.values().stream().filter(getPred(col, row)).findFirst();
     }
 
     private State copyOf() {
-        List<Agent> agents = new ArrayList<>();
-        this.agents.forEach(a -> agents.add((Agent) a.clone()));
-        List<Box> boxes = new ArrayList<>();
-        this.boxes.forEach(b -> boxes.add((Box) b.clone()));
+        Map<String, Agent> agents = new HashMap<>();
+        this.agents.values().forEach(a -> agents.put(a.getId(), (Agent) a.clone()));
+        Map<String, Box> boxes = new HashMap<>();
+        this.boxes.values().forEach(b -> boxes.put(b.getId(), (Box) b.clone()));
         return new State(agents, boxes, -1);
     }
 
@@ -69,13 +80,13 @@ public class State {
         short[] newBoxRows = new short[this.agents.size()];
         short[] newBoxCols = new short[this.agents.size()];
 
-        int[] agentIds = new int[this.agents.size()];
-        int[] boxIds = new int[this.agents.size()];
+        String[] agentIds = new String[this.agents.size()];
+        String[] boxIds = new String[this.agents.size()];
 
         for (byte agentIndex = 0; agentIndex < this.agents.size(); agentIndex++) {
             Action action = jointAction[agentIndex];
 
-            Object agent = this.getAgent(agentIndex);
+            Object agent = this.getAgent("A" + agentIndex);
             agentIds[agentIndex] = agent.getId();
             newAgentRows[agentIndex] = (short) (agent.getRow() + action.getAgentDeltaRow());
             newAgentCols[agentIndex] = (short) (agent.getCol() + action.getAgentDeltaCol());
@@ -83,12 +94,12 @@ public class State {
             switch (action.getType()) {
                 case NoOp: {
                     applicable[agentIndex] = true;
-                    boxIds[agentIndex] = -1;
+                    boxIds[agentIndex] = null;
                     break;
                 }
                 case Move: {
                     applicable[agentIndex] = this.cellFree(newAgentRows[agentIndex], newAgentCols[agentIndex]);
-                    boxIds[agentIndex] = -1;
+                    boxIds[agentIndex] = null;
                     break;
                 }
                 case Push: {
@@ -130,7 +141,7 @@ public class State {
                     applicable[prevAction] = false;
                 }
 
-                if (boxIds[agentIndex] != -1 && boxIds[prevAction] != -1
+                if (boxIds[agentIndex] != null && boxIds[prevAction] != null
                     && newBoxRows[agentIndex] == newBoxRows[prevAction]
                     && newBoxCols[agentIndex] == newBoxCols[prevAction]) {
                     applicable[agentIndex] = false;
@@ -147,7 +158,7 @@ public class State {
             agent.setRow(newAgentRows[agentIndex]);
             agent.setCol(newAgentCols[agentIndex]);
 
-            if (boxIds[agentIndex] != -1) {
+            if (boxIds[agentIndex] != null) {
                 Object box = newState.getBox(boxIds[agentIndex]);
                 box.setRow(newBoxRows[agentIndex]);
                 box.setCol(newBoxCols[agentIndex]);

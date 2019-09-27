@@ -20,8 +20,15 @@ public class Colors {
     //Update: Gray now means "uncolored"
     private static final Color Grey = new Color(112, 112, 112);
 
-    static final Color UnsolvedGoal = new Color(223, 223, 0);
-    static final Color SolvedGoal = new Color(0, 160, 0);
+
+    public static final Color LETTERBOX_COLOR = Color.BLACK;
+    public static final Color GRID_COLOR = Color.DARK_GRAY;
+    public static final Color CELL_COLOR = Color.LIGHT_GRAY;
+    public static final Color WALL_COLOR = Color.BLACK;
+    public static final Color BOX_AGENT_FONT_COLOR = Color.BLACK;
+    public static final Color GOAL_COLOR = new Color(223, 223, 0);
+    public static final Color GOAL_FONT_COLOR = new Color(66, 66, 0);
+    public static final Color GOAL_SOLVED_COLOR = new Color(0, 160, 0);
 
     public static Color fromString(String colorName) {
         switch (colorName) {

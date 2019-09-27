@@ -5,6 +5,9 @@ import domain.Domain;
 import domain.ParseException;
 import domain.gridworld.hospital2.runner.Hospital2Runner;
 import domain.gridworld.hospital2.runner.RunException;
+import domain.gridworld.hospital2.state.State;
+import domain.gridworld.hospital2.state.objects.StaticState;
+import domain.gridworld.hospital2.state.objects.ui.GUIState;
 import domain.gridworld.hospital2.state.parser.StateParser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -19,15 +22,20 @@ import java.nio.file.Path;
 public class Hospital2Domain implements Domain {
     private static Logger clientLogger = LogManager.getLogger("client");
     private Hospital2Runner runner;
+    private GUIState guiState;
 
     public Hospital2Domain(Path domainFile, boolean isReplay) throws IOException, ParseException {
         StateParser stateParser = new StateParser(domainFile, isReplay);
         stateParser.parse();
-        this.runner = new Hospital2Runner(stateParser.getLevel(), stateParser.getState(), stateParser.getStaticState());
+        State state = stateParser.getState();
+        StaticState staticState = stateParser.getStaticState();
+        this.runner = new Hospital2Runner(stateParser.getLevel(), state, staticState);
 
         if (isReplay) {
             runner.executeReplay(stateParser.getActions(), stateParser.getActionTimes(), stateParser.isLogSolved());
         }
+
+        this.guiState = new GUIState(staticState.getMap(), state.getAgents(), state.getBoxes(), staticState.getAllGoals());
     }
 
     @Override
@@ -71,12 +79,17 @@ public class Hospital2Domain implements Domain {
 
     @Override
     public void renderDomainBackground(Graphics2D g, int width, int height) {
-
+        short numCols = this.runner.getStaticState().getNumCols();
+        short numRows = this.runner.getStaticState().getNumRows();
+        this.guiState.drawBackground(g, width, numCols, height, numRows);
     }
 
     @Override
     public void renderStateBackground(Graphics2D g, int stateID) {
-
+        StaticState staticState = this.runner.getStaticState();
+        State currentState = this.runner.getState(stateID);
+        State nextState = this.runner.getState(stateID + 1);
+        guiState.drawStateBackground(g, staticState, currentState, nextState);
     }
 
     @Override

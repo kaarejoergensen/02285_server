@@ -10,12 +10,15 @@ import java.awt.*;
 @Setter
 @AllArgsConstructor
 public abstract class Object implements Cloneable {
-    protected int id;
+    protected String id;
     protected char letter;
-    protected short row;
-    protected short col;
+    protected short row, col;
     protected Color color;
 
     @Override
     public abstract java.lang.Object clone();
+
+    public boolean sameCoordinates(Object otherObject) {
+        return this.row == otherObject.row && this.col == otherObject.col;
+    }
 }

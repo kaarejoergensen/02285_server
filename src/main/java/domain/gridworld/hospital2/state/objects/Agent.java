@@ -4,7 +4,7 @@ import java.awt.*;
 
 public class Agent extends Object {
 
-    public Agent(int id, char letter, short row, short col, Color color) {
+    public Agent(String id, char letter, short row, short col, Color color) {
         super(id, letter, row, col, color);
     }
 

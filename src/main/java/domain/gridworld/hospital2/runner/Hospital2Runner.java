@@ -26,7 +26,7 @@ public class Hospital2Runner {
     private boolean allowDiscardingPastStates;
 
     private List<State> states;
-    private StaticState staticState;
+    @Getter private StaticState staticState;
 
     public Hospital2Runner(String level, State initialState, StaticState staticState) {
         this.level = level;
@@ -52,6 +52,11 @@ public class Hospital2Runner {
         return this.states.get(stateID).getStateTime();
     }
 
+    public State getState(int stateID) {
+        if (stateID < 0 || stateID >= this.states.size()) return null;
+        return this.states.get(stateID);
+    }
+
     public String[] getStatus() {
         State state = this.getLatestState();
 
@@ -59,7 +64,7 @@ public class Hospital2Runner {
 
         String[] status = new String[3];
         status[0] = String.format("Level solved: %s.", solved);
-        status[1] = String.format("Actions used: %d.", this.getNumActions());
+        status[1] = String.format("Actions used: %d.", this.getNumStates() - 1);
         status[2] = String.format("Last action time: %.3f seconds.", state.getStateTime() / 1_000_000_000d);
 
         return status;
@@ -99,10 +104,6 @@ public class Hospital2Runner {
                 throw new ParseException("Log summary claims level is not solved, but the actions solve the level.");
             }
         }
-    }
-
-    private int getNumActions() {
-        return this.getNumStates() - 1;
     }
 
     private State getLatestState() {
