@@ -1,6 +1,5 @@
 package domain.gridworld.hospital2.state;
 
-import domain.gridworld.hospital2.Action;
 import domain.gridworld.hospital2.state.objects.Agent;
 import domain.gridworld.hospital2.state.objects.Box;
 import domain.gridworld.hospital2.state.objects.Object;

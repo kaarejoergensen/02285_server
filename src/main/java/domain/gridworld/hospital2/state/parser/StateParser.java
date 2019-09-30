@@ -1,14 +1,13 @@
 package domain.gridworld.hospital2.state.parser;
 
 import domain.ParseException;
-import domain.gridworld.hospital2.Action;
-import domain.gridworld.hospital2.state.Colors;
 import domain.gridworld.hospital2.state.State;
 import domain.gridworld.hospital2.state.objects.Object;
 import domain.gridworld.hospital2.state.objects.*;
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import shared.Action;
 import shared.Farge;
 
 import java.awt.*;

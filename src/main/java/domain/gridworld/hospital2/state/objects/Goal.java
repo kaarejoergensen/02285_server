@@ -2,10 +2,10 @@ package domain.gridworld.hospital2.state.objects;
 
 import domain.gridworld.hospital2.state.objects.ui.CanvasDetails;
 import org.javatuples.Pair;
+import shared.Farge;
 
 import java.awt.*;
 
-import static domain.gridworld.hospital2.state.Colors.*;
 
 public class Goal extends Object {
     public Goal(String id, char letter, short row, short col, Color color) {
@@ -29,7 +29,7 @@ public class Goal extends Object {
     public void draw(Graphics2D g, CanvasDetails canvasDetails, boolean solved) {
         Pair<Integer, Integer> coordinates = this.calculateCoordinates(canvasDetails, this.row, this.col);
         int size = canvasDetails.getCellSize() - 2;
-        g.setColor(solved ? GOAL_SOLVED_COLOR : GOAL_COLOR);
+        g.setColor(solved ? Farge.GoalSolvedColor.color : Farge.GoalColor.color);
         if (this.isAgent()) {
             g.fillOval(coordinates.getValue1() + 1, coordinates.getValue0() + 1, size, size);
         } else {
@@ -37,7 +37,7 @@ public class Goal extends Object {
         }
 
         if (!solved) {
-            g.setColor(GOAL_FONT_COLOR);
+            g.setColor(Farge.GoalFontColor.color);
             this.letterText.draw(g, coordinates.getValue1(), coordinates.getValue0());
         }
     }

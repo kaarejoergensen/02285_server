@@ -6,11 +6,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.javatuples.Pair;
+import shared.Farge;
 
 import java.awt.*;
 import java.awt.font.TextLayout;
 
-import static domain.gridworld.hospital2.state.Colors.BOX_AGENT_FONT_COLOR;
 
 @Getter
 @Setter
@@ -58,7 +58,7 @@ public abstract class Object implements Cloneable {
             g.fillRect(coordinates.getValue1() + canvasDetails.getCellBoxMargin(), coordinates.getValue0() + canvasDetails.getCellBoxMargin(), size, size);
         }
 
-        g.setColor(BOX_AGENT_FONT_COLOR);
+        g.setColor(Farge.BoxAgentFontColor.color);
         letterText.draw(g, coordinates.getValue1(), coordinates.getValue0());
     }
 

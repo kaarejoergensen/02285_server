@@ -2,11 +2,11 @@ package domain.gridworld.hospital2.state.objects;
 
 import domain.gridworld.hospital2.state.objects.ui.CanvasDetails;
 import lombok.AllArgsConstructor;
+import shared.Farge;
 
 import java.awt.*;
 import java.util.List;
 
-import static domain.gridworld.hospital2.state.Colors.*;
 
 @AllArgsConstructor
 public class Map {
@@ -43,12 +43,12 @@ public class Map {
     }
 
     private void drawLetterBox(Graphics2D g, int width, int height) {
-        g.setColor(LETTERBOX_COLOR);
+        g.setColor(Farge.LetterboxColor.color);
         g.fillRect(0, 0, width, height);
     }
 
     private void drawCellBackground(Graphics2D g, CanvasDetails canvasDetails) {
-        g.setColor(CELL_COLOR);
+        g.setColor(Farge.CellColor.color);
         g.fillRect(canvasDetails.getOriginLeft(), canvasDetails.getOriginTop(),
                 canvasDetails.getWidth(), canvasDetails.getHeight());
     }
@@ -59,10 +59,10 @@ public class Map {
             for (short col = 0; col < this.getNumCols(row); ++col) {
                 int left = canvasDetails.getOriginLeft() + col * canvasDetails.getCellSize();
                 if (this.isWall(row, col)) {
-                    g.setColor(WALL_COLOR);
+                    g.setColor(Farge.WallColor.color);
                     g.fillRect(left, top, canvasDetails.getCellSize(), canvasDetails.getCellSize());
                 } else {
-                    g.setColor(GRID_COLOR);
+                    g.setColor(Farge.GridColor.color);
                     g.drawRect(left, top, canvasDetails.getCellSize() - 1, canvasDetails.getCellSize() - 1);
                 }
             }

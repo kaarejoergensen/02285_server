@@ -1,7 +1,6 @@
 package domain.gridworld.hospital2.runner;
 
 import client.Timeout;
-import domain.gridworld.hospital2.Action;
 import domain.gridworld.hospital2.state.State;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;

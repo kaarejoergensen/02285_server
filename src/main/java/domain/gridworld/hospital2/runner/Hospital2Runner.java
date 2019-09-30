@@ -2,12 +2,12 @@ package domain.gridworld.hospital2.runner;
 
 import client.Timeout;
 import domain.ParseException;
-import domain.gridworld.hospital2.Action;
 import domain.gridworld.hospital2.state.State;
 import domain.gridworld.hospital2.state.objects.StaticState;
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import shared.Action;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
