@@ -10,10 +10,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.javatuples.Pair;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Predicate;
 
 @AllArgsConstructor
@@ -21,6 +18,9 @@ import java.util.function.Predicate;
 public class State {
     @Setter private Map<String, Agent> agents;
     @Setter private Map<String, Box> boxes;
+
+    @Getter private Set<String> movedAgents;
+    @Getter private Set<String> movedBoxes;
 
     @Setter @Getter private long stateTime;
 
@@ -38,6 +38,21 @@ public class State {
 
     public Agent getAgent(String id) {
         return this.agents.get(id);
+    }
+
+    private void moveBox(String id, short newRow, short newCol) {
+        this.moveObject(id, newRow, newCol, this.boxes, this.movedBoxes);
+    }
+
+    private void moveAgent(String id, short newRow, short newCol) {
+        this.moveObject(id, newRow, newCol, this.agents, this.movedAgents);
+    }
+
+    private void moveObject(String id, short newRow, short newCol, Map<String, ? extends Object> objects, Set<String> moved) {
+        Object object = objects.get(id);
+        object.setRow(newRow);
+        object.setCol(newCol);
+        moved.add(id);
     }
 
     private Predicate<Object> getPred(int col, int row) {
@@ -65,7 +80,7 @@ public class State {
         this.agents.values().forEach(a -> agents.put(a.getId(), (Agent) a.clone()));
         Map<String, Box> boxes = new HashMap<>();
         this.boxes.values().forEach(b -> boxes.put(b.getId(), (Box) b.clone()));
-        return new State(agents, boxes, -1);
+        return new State(agents, boxes, new HashSet<>(agents.values().size()), new HashSet<>(boxes.values().size()), -1);
     }
 
     /**
@@ -95,6 +110,7 @@ public class State {
                 case NoOp: {
                     applicable[agentIndex] = true;
                     boxIds[agentIndex] = null;
+                    agentIds[agentIndex] = null;
                     break;
                 }
                 case Move: {
@@ -154,14 +170,12 @@ public class State {
 
         for (int agentIndex = 0; agentIndex < jointAction.length; agentIndex++) {
             if (!applicable[agentIndex]) continue;
-            Object agent = newState.getAgent(agentIds[agentIndex]);
-            agent.setRow(newAgentRows[agentIndex]);
-            agent.setCol(newAgentCols[agentIndex]);
+            if (agentIds[agentIndex] != null) {
+                newState.moveAgent(agentIds[agentIndex], newAgentRows[agentIndex], newAgentCols[agentIndex]);
+            }
 
             if (boxIds[agentIndex] != null) {
-                Object box = newState.getBox(boxIds[agentIndex]);
-                box.setRow(newBoxRows[agentIndex]);
-                box.setCol(newBoxCols[agentIndex]);
+                newState.moveBox(boxIds[agentIndex], newBoxRows[agentIndex], newBoxCols[agentIndex]);
             }
         }
         return Pair.with(newState, applicable);

@@ -21,6 +21,8 @@ import java.nio.file.Path;
 
 public class Hospital2Domain implements Domain {
     private static Logger clientLogger = LogManager.getLogger("client");
+    private static Logger serverLogger = LogManager.getLogger("server");
+
     private Hospital2Runner runner;
     private GUIState guiState;
 
@@ -94,6 +96,13 @@ public class Hospital2Domain implements Domain {
 
     @Override
     public void renderStateTransition(Graphics2D g, int stateID, double interpolation) {
-
+        if (interpolation < 0.0 || interpolation >= 1.0) {
+            serverLogger.error("Bad interpolation: " + interpolation);
+            return;
+        }
+        StaticState staticState = this.runner.getStaticState();
+        State currentState = this.runner.getState(stateID);
+        State nextState = interpolation == 0.0 ? currentState : this.runner.getState(stateID + 1);
+        guiState.drawStateTransition(g, staticState, currentState, nextState, interpolation);
     }
 }

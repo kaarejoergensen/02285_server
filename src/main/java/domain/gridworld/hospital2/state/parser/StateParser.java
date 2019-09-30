@@ -16,6 +16,7 @@ import java.nio.charset.MalformedInputException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -46,7 +47,7 @@ public class StateParser {
         this.boxColors = new HashMap<>();
 
         this.staticState = new StaticState();
-        this.state = new State(new HashMap<>(), new HashMap<>(), 0);
+        this.state = new State(new HashMap<>(), new HashMap<>(), new HashSet<>(), new HashSet<>(), 0);
     }
 
     public void parse() throws IOException, ParseException {
