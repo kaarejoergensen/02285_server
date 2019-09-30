@@ -1,10 +1,7 @@
 package shared;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import java.util.ArrayList;
-import java.util.List;
 
 @Getter
 public enum Action {
@@ -90,6 +87,7 @@ public enum Action {
 
     public short getAgentDeltaCol() {
         return agentMoveDirection.getDeltaCol();
+
     }
 
     public short getBoxDeltaRow() {

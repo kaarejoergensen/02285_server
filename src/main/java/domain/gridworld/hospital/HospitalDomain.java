@@ -9,6 +9,7 @@ import domain.gridworld.hospital.ui_components.Box;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import server.CustomLoggerConfigFactory;
+import shared.Action;
 import shared.Farge;
 
 import java.awt.*;
