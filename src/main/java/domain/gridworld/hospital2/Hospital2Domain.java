@@ -5,9 +5,6 @@ import domain.Domain;
 import domain.ParseException;
 import domain.gridworld.hospital2.runner.Hospital2Runner;
 import domain.gridworld.hospital2.runner.RunException;
-import domain.gridworld.hospital2.state.State;
-import domain.gridworld.hospital2.state.objects.StaticState;
-import domain.gridworld.hospital2.state.objects.ui.GUIState;
 import domain.gridworld.hospital2.state.parser.StateParser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,20 +21,19 @@ public class Hospital2Domain implements Domain {
     private static Logger serverLogger = LogManager.getLogger("server");
 
     private Hospital2Runner runner;
-    private GUIState guiState;
+    private GUIHandler guiHandler;
 
     public Hospital2Domain(Path domainFile, boolean isReplay) throws IOException, ParseException {
-        StateParser stateParser = new StateParser(domainFile, isReplay);
+        var stateParser = new StateParser(domainFile, isReplay);
         stateParser.parse();
-        State state = stateParser.getState();
-        StaticState staticState = stateParser.getStaticState();
-        this.runner = new Hospital2Runner(stateParser.getLevel(), state, staticState);
+        var staticState = stateParser.getStaticState();
+        this.runner = new Hospital2Runner(stateParser.getLevel(), stateParser.getState(), staticState);
 
         if (isReplay) {
             runner.executeReplay(stateParser.getActions(), stateParser.getActionTimes(), stateParser.isLogSolved());
         }
 
-        this.guiState = new GUIState(staticState.getMap(), state.getAgents(), state.getBoxes(), staticState.getAllGoals());
+        this.guiHandler = new GUIHandler(staticState);
     }
 
     @Override
@@ -83,15 +79,16 @@ public class Hospital2Domain implements Domain {
     public void renderDomainBackground(Graphics2D g, int width, int height) {
         short numCols = this.runner.getStaticState().getNumCols();
         short numRows = this.runner.getStaticState().getNumRows();
-        this.guiState.drawBackground(g, width, numCols, height, numRows);
+        var currentState = this.runner.getState(0);
+        this.guiHandler.drawBackground(g, width, numCols, height, numRows, currentState);
     }
 
     @Override
     public void renderStateBackground(Graphics2D g, int stateID) {
-        StaticState staticState = this.runner.getStaticState();
-        State currentState = this.runner.getState(stateID);
-        State nextState = this.runner.getState(stateID + 1);
-        guiState.drawStateBackground(g, staticState, currentState, nextState);
+        var staticState = this.runner.getStaticState();
+        var currentState = this.runner.getState(stateID);
+        var nextState = this.runner.getState(stateID + 1);
+        guiHandler.drawStateBackground(g, staticState, currentState, nextState);
     }
 
     @Override
@@ -100,9 +97,9 @@ public class Hospital2Domain implements Domain {
             serverLogger.error("Bad interpolation: " + interpolation);
             return;
         }
-        StaticState staticState = this.runner.getStaticState();
-        State currentState = this.runner.getState(stateID);
-        State nextState = interpolation == 0.0 ? currentState : this.runner.getState(stateID + 1);
-        guiState.drawStateTransition(g, staticState, currentState, nextState, interpolation);
+        var staticState = this.runner.getStaticState();
+        var currentState = this.runner.getState(stateID);
+        var nextState = interpolation == 0.0 ? currentState : this.runner.getState(stateID + 1);
+        guiHandler.drawStateTransition(g, staticState, currentState, nextState, interpolation);
     }
 }

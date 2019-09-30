@@ -4,14 +4,19 @@ import domain.gridworld.hospital2.Action;
 import domain.gridworld.hospital2.state.objects.Agent;
 import domain.gridworld.hospital2.state.objects.Box;
 import domain.gridworld.hospital2.state.objects.Object;
+import domain.gridworld.hospital2.state.objects.ui.CanvasDetails;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.javatuples.Pair;
 
+import java.awt.*;
+import java.util.List;
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @AllArgsConstructor
 @ToString
@@ -32,11 +37,11 @@ public class State {
         return this.boxes.values();
     }
 
-    public Box getBox(String id) {
+    private Box getBox(String id) {
         return this.boxes.get(id);
     }
 
-    public Agent getAgent(String id) {
+    private Agent getAgent(String id) {
         return this.agents.get(id);
     }
 
@@ -179,5 +184,53 @@ public class State {
             }
         }
         return Pair.with(newState, applicable);
+    }
+
+    public void initObjects(CanvasDetails canvasDetails) {
+        this.getBoxes().forEach(b -> b.letterTextUpdate(canvasDetails));
+        this.getAgents().forEach(a -> {
+            a.letterTextUpdate(canvasDetails);
+            a.setArmsSize(canvasDetails);
+        });
+    }
+
+    public void drawStaticObjects(Graphics2D g, CanvasDetails canvasDetails) {
+        this.getStaticObjects().forEach(o -> o.draw(g, canvasDetails));
+    }
+
+    private List<? extends Object> getStaticObjects() {
+        Stream<? extends Object> staticAgents = this.getAgents().stream().
+                filter(a -> !this.getMovedAgents().contains(a.getId()));
+        Stream<? extends Object> staticBoxes = this.getBoxes().stream().
+                filter(b -> !this.getMovedBoxes().contains(b.getId()));
+        return Stream.concat(staticAgents, staticBoxes).collect(Collectors.toList());
+    }
+
+    public void drawDynamicObjects(Graphics2D g, CanvasDetails canvasDetails, State nextState, double interpolation) {
+        for (String agentId : nextState.getMovedAgents()) {
+            Agent oldAgent = this.getAgent(agentId);
+            Agent newAgent = nextState.getAgent(agentId);
+            if (interpolation != 0.0) this.drawAgentArm(g, canvasDetails, nextState, interpolation, newAgent, oldAgent);
+            oldAgent.draw(g, canvasDetails, newAgent.getRow(), newAgent.getCol(), interpolation);
+        }
+        for (String boxId : nextState.getMovedBoxes()) {
+            Box oldBox = this.getBox(boxId);
+            Box newBox = nextState.getBox(boxId);
+            oldBox.draw(g, canvasDetails, newBox.getRow(), newBox.getCol(), interpolation);
+        }
+    }
+
+    private void drawAgentArm(Graphics2D g, CanvasDetails canvasDetails, State nextState, double interpolation,
+                              Agent newAgent, Agent oldAgent) {
+        for (String boxId : nextState.getMovedBoxes()) {
+            Box oldBox = this.getBox(boxId);
+            Box newBox = nextState.getBox(boxId);
+            if (newAgent.getRow() == oldBox.getRow() && newAgent.getCol() == oldBox.getCol() ||
+                    oldAgent.getRow() == newBox.getRow() && oldAgent.getCol() == newBox.getCol()) {
+                oldAgent.drawArmPullPush(g, canvasDetails, newAgent, oldBox, newBox, interpolation);
+                return;
+            }
+        }
+        oldAgent.drawArmMove(g, canvasDetails, newAgent, interpolation);
     }
 }

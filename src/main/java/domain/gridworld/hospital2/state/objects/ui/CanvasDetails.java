@@ -25,7 +25,7 @@ public class CanvasDetails {
     @Getter Font currentFont;
     @Getter FontRenderContext fontRenderContext;
 
-    void calculate(Graphics2D g, int bufferWidth, int numCols, int bufferHeight, int numRows) {
+    public void calculate(Graphics2D g, int bufferWidth, int numCols, int bufferHeight, int numRows) {
         this.calculateCanvas(bufferWidth, numCols, bufferHeight, numRows);
         this.calculateFont(g);
     }

@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class StateParser {
     private Logger serverLogger = LogManager.getLogger("server");
@@ -414,6 +415,7 @@ public class StateParser {
 
         this.staticState.setAgentGoals(agentGoals);
         this.staticState.setBoxGoals(boxGoals);
+        this.staticState.setAllGoals(Stream.concat(agentGoals.stream(), boxGoals.stream()).collect(Collectors.toList()));
 
         return line;
     }
