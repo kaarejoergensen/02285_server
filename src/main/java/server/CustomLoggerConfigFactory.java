@@ -20,8 +20,7 @@ import java.net.URI;
 public class CustomLoggerConfigFactory extends ConfigurationFactory {
     public static Level messageLevel = Level.forName("MESSAGE", 350);
     static Configuration createConfiguration(final String name, ConfigurationBuilder<BuiltConfiguration> builder) {
-//        boolean PRINT_DEBUG = "true".equalsIgnoreCase(System.getenv("AIMAS_SERVER_DEBUG"));
-        boolean PRINT_DEBUG = true;
+        boolean PRINT_DEBUG = "true".equalsIgnoreCase(System.getenv("AIMAS_SERVER_DEBUG"));
         builder.setConfigurationName(name);
         builder.setStatusLevel(Level.WARN);
         AppenderComponentBuilder appenderBuilder = builder.newAppender("Stdout", "CONSOLE").

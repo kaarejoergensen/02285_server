@@ -17,7 +17,16 @@ public enum Farge {
 
     Grey(new Color(112, 112, 112)),
     UnresolvedGoal(new Color(223,223,0)),
-    SolvedGoal(new Color(0,160,0));
+    SolvedGoal(new Color(0,160,0)),
+    LetterboxColor(new Color(0, 0, 0)),
+    GridColor(new Color(64, 64, 64)),
+    CellColor(new Color(192, 192, 192)),
+    WallColor(new Color(0, 0, 0)),
+    BoxAgentFontColor(new Color(0, 0, 0)),
+    GoalColor(new Color(223, 223, 0)),
+    GoalFontColor(new Color(66, 66, 0)),
+    GoalSolvedColor(new Color(0, 160, 0));
+
 
     public Color color;
 

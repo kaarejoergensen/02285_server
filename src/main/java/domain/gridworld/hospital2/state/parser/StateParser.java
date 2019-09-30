@@ -1,12 +1,13 @@
 package domain.gridworld.hospital2.state.parser;
 
 import domain.ParseException;
-import domain.gridworld.hospital2.state.Object;
 import domain.gridworld.hospital2.state.State;
-import domain.gridworld.hospital2.state.StaticState;
+import domain.gridworld.hospital2.state.objects.Object;
+import domain.gridworld.hospital2.state.objects.*;
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import shared.Action;
 import shared.Farge;
 
 import java.awt.*;
@@ -14,20 +15,28 @@ import java.io.IOException;
 import java.nio.charset.MalformedInputException;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class StateParser {
     private Logger serverLogger = LogManager.getLogger("server");
 
     private Path domainFile;
     private boolean isReplay;
-    private Color[] agentColors;
-    private Color[] boxColors;
+    private HashMap<String, Color> agentColors;
+    private HashMap<String, Color> boxColors;
 
     @Getter private StaticState staticState;
     @Getter private State state;
+
+    @Getter private List<Action[]> actions;
+    @Getter private List<Long> actionTimes;
+    @Getter private boolean logSolved;
 
     @Getter String level;
 
@@ -35,11 +44,11 @@ public class StateParser {
         this.domainFile = domainFile;
         this.isReplay = isReplay;
 
-        this.agentColors = new Color[10];
-        this.boxColors = new Color[10];
+        this.agentColors = new HashMap<>();
+        this.boxColors = new HashMap<>();
 
         this.staticState = new StaticState();
-        this.state = new State(new ArrayList<>(), new ArrayList<>(), 0, null);
+        this.state = new State(new HashMap<>(), new HashMap<>(), new HashSet<>(), new HashSet<>(), 0);
     }
 
     public void parse() throws IOException, ParseException {
@@ -75,55 +84,54 @@ public class StateParser {
                 }
                 line = this.parseGoalSection(levelReader);
 
-//                // Initial and goal states loaded; check that states are legal.
-//                checkObjectsEnclosedInWalls();
+                checkObjectsEnclosedInWalls();
 
                 if (!line.stripTrailing().equalsIgnoreCase("#end")) {
                     throw new ParseException("Expected end section (#end).", levelReader.getLineNumber());
                 }
                 line = this.parseEndSection(levelReader);
-//
-//                // If this is a log file, then parse additional sections.
-//                if (isReplay) {
-//                    // Parse client name.
-//                    if (!line.stripTrailing().equalsIgnoreCase("#clientname")) {
-//                        throw new ParseException("Expected client name section (#clientname).",
-//                                levelReader.getLineNumber());
-//                    }
-//                    line = this.parseClientNameSection(levelReader);
-//
-//                    // Parse and simulate actions.
-//                    if (!line.stripTrailing().equalsIgnoreCase("#actions")) {
-//                        throw new ParseException("Expected actions section (#actions).", levelReader.getLineNumber());
-//                    }
-//                    line = this.parseActionsSection(levelReader);
-//
-//                    if (!line.stripTrailing().equalsIgnoreCase("#end")) {
-//                        throw new ParseException("Expected end section (#end).", levelReader.getLineNumber());
-//                    }
-//                    line = this.parseEndSection(levelReader);
-//
-//                    // Parse summary to check if it is consistent with simulation.
-//                    if (!line.stripTrailing().equalsIgnoreCase("#solved")) {
-//                        throw new ParseException("Expected solved section (#solved).", levelReader.getLineNumber());
-//                    }
-//                    line = this.parseSolvedSection(levelReader);
-//
-//                    if (!line.stripTrailing().equalsIgnoreCase("#numactions")) {
-//                        throw new ParseException("Expected numactions section (#numactions).", levelReader.getLineNumber());
-//                    }
-//                    line = this.parseNumActionsSection(levelReader);
-//
-//                    if (!line.stripTrailing().equalsIgnoreCase("#time")) {
-//                        throw new ParseException("Expected time section (#time).", levelReader.getLineNumber());
-//                    }
-//                    line = this.parseTimeSection(levelReader);
-//
-//                    if (!line.stripTrailing().equalsIgnoreCase("#end")) {
-//                        throw new ParseException("Expected end section (#end).", levelReader.getLineNumber());
-//                    }
-//                    line = this.parseEndSection(levelReader);
-//                }
+
+                // If this is a log file, then parse additional sections.
+                if (isReplay) {
+                    // Parse client name.
+                    if (!line.stripTrailing().equalsIgnoreCase("#clientname")) {
+                        throw new ParseException("Expected client name section (#clientname).",
+                                levelReader.getLineNumber());
+                    }
+                    line = this.parseClientNameSection(levelReader);
+
+                    // Parse and simulate actions.
+                    if (!line.stripTrailing().equalsIgnoreCase("#actions")) {
+                        throw new ParseException("Expected actions section (#actions).", levelReader.getLineNumber());
+                    }
+                    line = this.parseActionsSection(levelReader);
+
+                    if (!line.stripTrailing().equalsIgnoreCase("#end")) {
+                        throw new ParseException("Expected end section (#end).", levelReader.getLineNumber());
+                    }
+                    line = this.parseEndSection(levelReader);
+
+                    // Parse summary to check if it is consistent with simulation.
+                    if (!line.stripTrailing().equalsIgnoreCase("#solved")) {
+                        throw new ParseException("Expected solved section (#solved).", levelReader.getLineNumber());
+                    }
+                    line = this.parseSolvedSection(levelReader);
+
+                    if (!line.stripTrailing().equalsIgnoreCase("#numactions")) {
+                        throw new ParseException("Expected numactions section (#numactions).", levelReader.getLineNumber());
+                    }
+                    line = this.parseNumActionsSection(levelReader);
+
+                    if (!line.stripTrailing().equalsIgnoreCase("#time")) {
+                        throw new ParseException("Expected time section (#time).", levelReader.getLineNumber());
+                    }
+                    line = this.parseTimeSection(levelReader);
+
+                    if (!line.stripTrailing().equalsIgnoreCase("#end")) {
+                        throw new ParseException("Expected end section (#end).", levelReader.getLineNumber());
+                    }
+                    line = this.parseEndSection(levelReader);
+                }
 
                 if (line != null) {
                     throw new ParseException("Expected no more content after end section.",
@@ -193,17 +201,19 @@ public class StateParser {
                 }
                 char s = symbol.charAt(0);
                 if ('0' <= s && s <= '9') {
-                    if (this.agentColors[s - '0'] != null) {
+                    String id = "A" + (s - '0');
+                    if (this.agentColors.containsKey(id)) {
                         throw new ParseException(String.format("Agent '%s' already has a color specified.", s),
                                 levelReader.getLineNumber());
                     }
-                    this.agentColors[s - '0'] = color;
+                    this.agentColors.put(id, color);
                 } else if ('A' <= s && s <= 'Z') {
-                    if (this.boxColors[s - 'A'] != null) {
+                    String id = "B" + (s - 'A');
+                    if (this.boxColors.containsKey(id)) {
                         throw new ParseException(String.format("Box '%s' already has a color specified.", s),
                                 levelReader.getLineNumber());
                     }
-                    this.boxColors[s - 'A'] = color;
+                    this.boxColors.put(id, color);
                 } else {
                     throw new ParseException(String.format("Invalid agent or box symbol: '%s'.", s),
                             levelReader.getLineNumber());
@@ -216,8 +226,8 @@ public class StateParser {
             throws IOException, ParseException {
         short numRows = 0;
         List<List<Boolean>> map = new ArrayList<>();
-        List<Object> boxes = new ArrayList<>();
-        List<Object> agents = new ArrayList<>(10);
+        List<Box> boxes = new ArrayList<>();
+        List<Agent> agents = new ArrayList<>(10);
 
         // Parse level and accumulate walls, agents, and boxes.
         String line;
@@ -255,27 +265,27 @@ public class StateParser {
                 char c = line.charAt(col);
                 if ('0' <= c && c <= '9') {
                     // Agent.
-                    int id = c - '0';
-                    if (agents.stream().anyMatch(a -> a.getId() == id)) {
+                    String id = "A" + (c - '0');
+                    if (agents.stream().anyMatch(a -> a.getId().equals(id))) {
                         throw new ParseException(
                                 String.format("Agent '%s' appears multiple times in initial state.", c),
                                 levelReader.getLineNumber());
                     }
-                    Color agentColor = this.agentColors[id];
+                    Color agentColor = this.agentColors.get(id);
                     if (agentColor == null) {
                         throw new ParseException(String.format("Agent '%s' has no color specified.", c),
                                 levelReader.getLineNumber());
                     }
-                    agents.add(new Object(id, c, numRows, col, agentColor));
+                    agents.add(new Agent(id, c, numRows, col, agentColor));
                 } else if ('A' <= c && c <= 'Z') {
                     // Box.
-                    int id = c - 'A';
-                    Color boxColor = this.boxColors[id];
+                    String id = "B" + (c - 'A') + numRows + "" + col;
+                    Color boxColor = this.boxColors.get("B" + (c - 'A'));
                     if (boxColor == null) {
                         throw new ParseException(String.format("Box '%s' has no color specified.", c),
                                 levelReader.getLineNumber());
                     }
-                    boxes.add(new Object(id, c, numRows, col, boxColor));
+                    boxes.add(new Box(id, c, numRows, col, boxColor));
                 } else if (c != '+' && c != ' ') {
                     throw new ParseException(String.format("Invalid character '%s' in column %s.", c, col),
                             levelReader.getLineNumber());
@@ -291,11 +301,13 @@ public class StateParser {
             }
         }
         this.staticState.setNumRows(numRows);
-        this.staticState.setMap(map);
+        this.staticState.setMap(new Map(map));
         this.staticState.setNumAgents((byte) agents.size());
 
-        this.state.setBoxes(boxes.stream().sorted(Comparator.comparingInt(Object::getId)).collect(Collectors.toList()));
-        this.state.setAgents(agents.stream().sorted(Comparator.comparingInt(Object::getId)).collect(Collectors.toList()));
+        this.state.setBoxes(boxes.stream().collect(Collectors.toMap(Box::getId, Function.identity())));
+        this.state.setMovedBoxes(boxes.stream().map(Object::getId).collect(Collectors.toSet()));
+        this.state.setAgents(agents.stream().collect(Collectors.toMap(Agent::getId, Function.identity())));
+        this.state.setMovedAgents(agents.stream().map(Object::getId).collect(Collectors.toSet()));
 
         if (agents.isEmpty()) {
             throw new ParseException("Level contains no agents.", levelReader.getLineNumber());
@@ -308,8 +320,8 @@ public class StateParser {
             throws IOException, ParseException {
         short row = 0;
 
-        List<Object> agentGoals = new ArrayList<>(this.state.getAgents().size());
-        List<Object> boxGoals = new ArrayList<>(this.state.getBoxes().size());
+        List<Goal> agentGoals = new ArrayList<>(this.state.getAgents().size());
+        List<Goal> boxGoals = new ArrayList<>(this.state.getBoxes().size());
 
         String line;
         while (true) {
@@ -358,34 +370,35 @@ public class StateParser {
                 char c = line.charAt(col);
                 if (c == '+') {
                     // Wall.
-                    if (!this.staticState.isWall(row, col)) {
+                    if (!this.staticState.getMap().isWall(row, col)) {
                         // Which doesn't match a wall in the initial state.
                         throw new ParseException(
                                 String.format("Initial state has no wall at column %d, but goal state does.", col),
                                 levelReader.getLineNumber());
                     }
-                } else if (this.staticState.isWall(row, col)) {
+                } else if (this.staticState.getMap().isWall(row, col)) {
                     // Missing wall compared to the initial state.
                     throw new ParseException(
                             String.format("Goal state not matching initial state's wall on column %d.", col),
                             levelReader.getLineNumber());
                 } else if ('0' <= c && c <= '9') {
                     // Agent.
-                    short id = (short) (c - '0');
-                    if (id >= this.state.getAgents().size()) {
+                    short number = (short) (c - '0');
+                    if (number >= this.state.getAgents().size()) {
                         throw new ParseException(
                                 String.format("Goal state has agent '%s' who does not appear in the initial state.", c),
                                 levelReader.getLineNumber());
                     }
-                    if (agentGoals.stream().anyMatch(g -> g.getId() == id)) {
+                    String id = "GA" + number;
+                    if (agentGoals.stream().anyMatch(g -> g.getId().equals(id))) {
                         throw new ParseException(String.format("Agent '%s' appears multiple times in goal state.", c),
                                 levelReader.getLineNumber());
                     }
-                    agentGoals.add(new Object(id, c, row, col, null));
+                    agentGoals.add(new Goal(id, c, row, col, null));
                 } else if ('A' <= c && c <= 'Z') {
                     // Box.
-                    short id = (short) (c - 'A');
-                    boxGoals.add(new Object(id, c, row, col, null));
+                    String id = "BA" + (c - 'A') + row + "" + col;
+                    boxGoals.add(new Goal(id, c, row, col, null));
                 } else if (c != ' ') {
                     throw new ParseException(String.format("Invalid character '%s' in column %s.", c, col),
                             levelReader.getLineNumber());
@@ -393,7 +406,7 @@ public class StateParser {
             }
             // If the goal state line is shorter than the level width, we must check that no walls were omitted.
             for (; col < this.staticState.getNumCols(); ++col) {
-                if (this.staticState.isWall(row, col)) {
+                if (this.staticState.getMap().isWall(row, col)) {
                     throw new ParseException(
                             String.format("Goal state not matching initial state's wall on column %s.", col),
                             levelReader.getLineNumber());
@@ -402,10 +415,9 @@ public class StateParser {
             ++row;
         }
 
-        this.staticState.setAgentGoals(agentGoals.stream().
-                sorted(Comparator.comparingInt(Object::getId)).collect(Collectors.toList()));
-        this.staticState.setBoxGoals(boxGoals.stream().
-                sorted(Comparator.comparingInt(Object::getId)).collect(Collectors.toList()));
+        this.staticState.setAgentGoals(agentGoals);
+        this.staticState.setBoxGoals(boxGoals);
+        this.staticState.setAllGoals(Stream.concat(agentGoals.stream(), boxGoals.stream()).collect(Collectors.toList()));
 
         return line;
     }
@@ -424,11 +436,24 @@ public class StateParser {
         return line;
     }
 
-    /*private String parseActionsSection(LevelReader levelReader)
+    //TODO: Implement properly
+    private void checkObjectsEnclosedInWalls() throws ParseException {
+        Predicate<Object> pred = o -> !staticState.getMap().isCell(o.getRow(),o.getCol());
+        if (this.state.getAgents().stream().anyMatch(pred)
+                || this.state.getBoxes().stream().anyMatch(pred)
+                || this.staticState.getAgentGoals().stream().anyMatch(pred)
+                || this.staticState.getBoxGoals().stream().anyMatch(pred)) {
+            throw new ParseException("One or more objects not enclosed in walls");
+        }
+    }
+
+    private String parseActionsSection(LevelReader levelReader)
             throws IOException, ParseException {
-        Action[] jointAction = new Action[this.numAgents];
+        this.actions = new ArrayList<>();
+        this.actionTimes = new ArrayList<>();
 
         while (true) {
+            Action[] jointAction = new Action[this.state.getAgents().size()];
             String line = levelReader.readLine();
             if (line == null) {
                 throw new ParseException("Expected more action lines or end of actions section, but reached end of " +
@@ -452,14 +477,14 @@ public class StateParser {
             // Parse action timestamp.
             long actionTime;
             try {
-                actionTime = Long.valueOf(split[0]);
+                actionTime = Long.parseLong(split[0]);
             } catch (NumberFormatException e) {
                 throw new ParseException("Invalid action timestamp.", levelReader.getLineNumber());
             }
 
             // Parse and execute joint action.
             String[] actionsStr = split[1].split(";");
-            if (actionsStr.length != this.numAgents) {
+            if (actionsStr.length != this.state.getAgents().size()) {
                 throw new ParseException("Invalid number of agents in joint action.", levelReader.getLineNumber());
             }
             for (int i = 0; i < jointAction.length; ++i) {
@@ -470,7 +495,8 @@ public class StateParser {
             }
 
             // Execute action.
-            this.execute(jointAction, actionTime);
+            this.actions.add(jointAction);
+            this.actionTimes.add(actionTime);
         }
     }
 
@@ -485,38 +511,7 @@ public class StateParser {
             throw new ParseException("Invalid solved value.", levelReader.getLineNumber());
         }
 
-        boolean logSolved = line.equals("true");
-        boolean actuallySolved = true;
-        for (int boxGoalId = 0; boxGoalId < this.numBoxGoals; ++boxGoalId) {
-            short boxGoalRow = this.boxGoalRows[boxGoalId];
-            short boxGoalCol = this.boxGoalCols[boxGoalId];
-            byte boxGoalLetter = this.boxGoalLetters[boxGoalId];
-
-            if (this.boxAt(boxGoalRow, boxGoalCol) != boxGoalLetter) {
-                actuallySolved = false;
-                break;
-            }
-        }
-        State lastState = this.getState(this.numStates - 1);
-        for (int agent = 0; agent < this.numAgents; ++agent) {
-            short agentGoalRow = this.agentGoalRows[agent];
-            short agentGoalCol = this.agentGoalCols[agent];
-            short agentRow = lastState.agentRows[agent];
-            short agentCol = lastState.agentCols[agent];
-
-            if (agentGoalRow != -1 && (agentRow != agentGoalRow || agentCol != agentGoalCol)) {
-                actuallySolved = false;
-                break;
-            }
-        }
-
-        if (logSolved && !actuallySolved) {
-            throw new ParseException("Log summary claims level is solved, but the actions don't solve the level.",
-                    levelReader.getLineNumber());
-        } else if (!logSolved && actuallySolved) {
-            throw new ParseException("Log summary claims level is not solved, but the actions solve the level.",
-                    levelReader.getLineNumber());
-        }
+        this.logSolved = line.equals("true");
 
         line = levelReader.readLine();
         return line;
@@ -531,12 +526,12 @@ public class StateParser {
 
         long numActions;
         try {
-            numActions = Long.valueOf(line);
+            numActions = Long.parseLong(line);
         } catch (NumberFormatException e) {
             throw new ParseException("Invalid number of actions.", levelReader.getLineNumber());
         }
 
-        if (numActions != this.numStates - 1) {
+        if (numActions != this.actions.size()) {
             throw new ParseException("Number of action does not conform to the number of actions in the sequence.",
                     levelReader.getLineNumber());
         }
@@ -554,22 +549,21 @@ public class StateParser {
 
         long lastStateTime;
         try {
-            lastStateTime = Long.valueOf(line);
+            lastStateTime = Long.parseLong(line);
         } catch (NumberFormatException e) {
             throw new ParseException("Invalid time of last action.", levelReader.getLineNumber());
         }
-
-        if (lastStateTime != this.getStateTime(this.numStates - 1)) {
+        if (lastStateTime != this.actionTimes.get(this.actionTimes.size() - 1)) {
             throw new ParseException("Last state time does not conform to the timestamp of the last action.",
                     levelReader.getLineNumber());
         }
 
         line = levelReader.readLine();
         return line;
-    }*/
+    }
 
     private String parseEndSection(LevelReader levelReader)
-            throws IOException, ParseException {
+            throws IOException {
         return levelReader.readLine();
     }
 
