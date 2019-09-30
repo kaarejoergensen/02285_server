@@ -136,7 +136,6 @@ public class State {
     }
 
     public boolean isGoalState() {
-        System.err.println("Goalz length: " + this.goals.length);
         for (int row = 1; row < this.goals.length - 1; row++) {
             for (int col = 1; col < this.goals[row].length - 1; col++) {
                 char goal = this.goals[row][col];

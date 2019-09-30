@@ -3,7 +3,7 @@ hospital2
 #levelname
 01
 #colors
-blue:0,A,C
+Blue:0,A,C
 Red:1,B
 #initial
 ++++++++

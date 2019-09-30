@@ -15,112 +15,21 @@ import java.util.Locale;
 public class SearchClient {
     public static State parseLevel(BufferedReader serverMessages) throws IOException {
         // We can assume that the level file is conforming to specification, since the server verifies this.
-        // Read domain.
-        System.err.println("Started reading level");
-
         Level level = new Level(serverMessages);
+
         level.parse.credentials();
+        level.parse.colors();
+        level.initateMapDependentArrays();
+        level.parse.initialState();
 
+        level.agentRows = Arrays.copyOf(level.agentRows, level.numAgents);
+        level.agentCols = Arrays.copyOf(level.agentCols, level.numAgents);
 
-        // Read colors.
-        serverMessages.readLine(); // #colors
-        Farge[] agentColors = new Farge[10];
-        Farge[] boxColors = new Farge[26];
-        String line = serverMessages.readLine();
-        System.err.println("line:");
-        System.err.println(line);
+        level.parse.goalState();
 
-        while (!line.startsWith("#")) {
-            String[] split = line.split(":");
-            Farge colors = Farge.fromString(split[0].strip());
-            String[] entities = split[1].split(",");
-            for (String entity : entities) {
-                char c = entity.strip().charAt(0);
-                if ('0' <= c && c <= '9') {
-                    agentColors[c - '0'] = colors;
-                } else if ('A' <= c && c <= 'Z') {
-                    boxColors[c - 'A'] = colors;
-                }
-            }
-            line = serverMessages.readLine();
-            System.err.println(line);
-        }
+        System.err.println(level);
 
-        // Read initial state.
-        // line is currently "#initial".
-        int numAgents = 0;
-        int[] agentRows = new int[10];
-        int[] agentCols = new int[10];
-        //Fredrik Notes: 75 er maks størrelse på banen. Siden vi ikke allerede vet
-        //Høyde eller bredde på kartet, så lagrer vi først i temp_boxes, for å så flytte verdiene over
-        //til en approriate størrelse. Det samme gjelder walls
-        char[][] tmp_boxes = new char[75][75];
-        boolean[][] tmp_walls = new boolean[75][75];
-
-
-        line = serverMessages.readLine();
-        System.err.println(line);
-        int row = 0;
-        int col = 0;
-        while (!line.startsWith("#")) {
-            for (; col < line.length(); ++col) {
-                char c = line.charAt(col);
-
-                if ('0' <= c && c <= '9') {
-                    agentRows[c - '0'] = row;
-                    agentCols[c - '0'] = col;
-                    ++numAgents;
-                } else if ('A' <= c && c <= 'Z') {
-                    tmp_boxes[row][col] = c;
-                } else if (c == '+') {
-                    tmp_walls[row][col] = true;
-                }
-            }
-
-            ++row;
-            line = serverMessages.readLine();
-            System.err.println(line);
-        }
-        System.err.println("Map - Width/Height: " + col + ", " + row);
-
-        char[][] boxes = new char[row][col];
-        boolean[][] walls = new boolean[row][col];
-        //Kopierer verdiene over til den ekte
-        for(int i = row; i < 0; i++){
-            for(int j = col; j < 0 ; j++){
-                boxes[i][j] = tmp_boxes[i][j];
-                walls[i][j] = tmp_walls[i][j];
-            }
-        }
-
-        agentRows = Arrays.copyOf(agentRows, numAgents);
-        agentCols = Arrays.copyOf(agentCols, numAgents);
-
-        // Read goal state.
-        // line is currently "#goal".
-        char[][] goals = new char[row][col];
-
-        line = serverMessages.readLine();
-        System.err.println(line);
-        row = 0;
-        while (!line.startsWith("#")) {
-            for (int tmp_col = 0; tmp_col < line.length(); ++tmp_col) {
-                char c = line.charAt(tmp_col);
-
-                if (('0' <= c && c <= '9') || ('A' <= c && c <= 'Z')) {
-                    goals[row][tmp_col] = c;
-                }
-            }
-
-            ++row;
-            line = serverMessages.readLine();
-            System.err.println(line);
-        }
-
-        // End.
-        // line is currently "#end".
-        System.err.println("Finished reading level");
-        return new State(agentRows, agentCols, agentColors, walls, boxes, boxColors, goals);
+        return level.toState();
     }
 
     /**
