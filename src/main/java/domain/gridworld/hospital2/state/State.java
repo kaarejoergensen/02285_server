@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.javatuples.Pair;
+import shared.Action;
 
 import java.awt.*;
 import java.util.*;
@@ -144,11 +145,11 @@ public class State {
                             agent.getColor().equals(box.get().getColor());
                     break;
             }
-            if (!applicable[agentIndex] || jointAction[agentIndex].getType().equals(Action.Type.NoOp)) {
+            if (!applicable[agentIndex] || jointAction[agentIndex].getType().equals(Action.NoOp)) {
                 continue;
             }
             for (int prevAction = 0; prevAction < agentIndex; prevAction++) {
-                if (!applicable[prevAction] || jointAction[prevAction].getType().equals(Action.Type.NoOp)) {
+                if (!applicable[prevAction] || jointAction[prevAction].getType().equals(Action.NoOp)) {
                     continue;
                 }
 

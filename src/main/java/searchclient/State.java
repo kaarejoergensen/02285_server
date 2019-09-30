@@ -1,7 +1,6 @@
 package searchclient;
 
 import shared.Action;
-import shared.ActionType;
 import shared.Farge;
 
 import java.util.ArrayList;
@@ -80,40 +79,51 @@ public class State {
             Action action = jointAction[agent];
             char box;
 
-            switch (action.type) {
+            switch (action.getType()) {
                 case NoOp:
                     break;
 
                 case Move:
-                    this.agentRows[agent] += action.agentRowDelta;
-                    this.agentCols[agent] += action.agentColDelta;
+                    this.agentRows[agent] += action.getAgentDeltaRow();
+                    this.agentCols[agent] += action.getAgentDeltaCol();
                     break;
 
                 case Push:
-                    this.agentRows[agent] += action.agentRowDelta;
-                    this.agentCols[agent] += action.agentColDelta;
+                    this.agentRows[agent] += action.getAgentDeltaRow();
+                    this.agentCols[agent] += action.getAgentDeltaCol();
                     box = this.boxAt(this.agentRows[agent], this.agentCols[agent]);
                     this.boxes[this.agentRows[agent]][this.agentCols[agent]] = 0;
-                    this.boxes[this.agentRows[agent] + action.boxRowDelta]
-                            [this.agentCols[agent] + action.boxColDelta] = box;
+                    this.boxes[this.agentRows[agent] + action.getBoxDeltaRow()]
+                            [this.agentCols[agent] + action.getBoxDeltaCol()] = box;
                     break;
 
                 case Pull:
-                    box = this.boxAt(this.agentRows[agent] + action.boxRowDelta,
-                            this.agentCols[agent] + action.boxColDelta);
-                    this.boxes[this.agentRows[agent] + action.boxRowDelta]
-                            [this.agentCols[agent] + action.boxColDelta] = 0;
+                    box = this.boxAt(this.agentRows[agent] + action.getBoxDeltaRow(),
+                            this.agentCols[agent] + action.getBoxDeltaCol());
+                    this.boxes[this.agentRows[agent] + action.getBoxDeltaRow()]
+                            [this.agentCols[agent] + action.getBoxDeltaCol()] = 0;
                     this.boxes[this.agentRows[agent]][this.agentCols[agent]] = box;
-                    this.agentRows[agent] += action.agentRowDelta;
-                    this.agentCols[agent] += action.agentColDelta;
+                    this.agentRows[agent] += action.getAgentDeltaRow();
+                    this.agentCols[agent] += action.getAgentDeltaCol();
                     break;
 
                 case Paint:
-                    var index = this.boxAt(this.agentRows[agent] + action.boxRowDelta,
-                            this.agentCols[agent] + action.boxColDelta);
+                    // Loop through all rows
 
-                    System.err.println("Painting from " + boxColors[index] + " to " + Farge.next(boxColors[index]));
+                    for (int i = 0; i < boxes.length; i++){
+                        // Loop through all elements of current row
+                        for (int j = 0; j < boxes[i].length; j++)
+                            System.err.print(boxes[i][j] + " ");
+                        System.err.println("");
+                    }
 
+
+
+
+                    System.err.println(Arrays.toString(boxColors));
+                    var index = this.boxAt(this.agentRows[agent] + action.getBoxDeltaRow(),
+                            this.agentCols[agent] + action.getBoxDeltaCol());
+                    System.err.println("Index: " + index);
                     boxColors[index] = Farge.next(boxColors[index]);
                     break;
 
@@ -147,6 +157,7 @@ public class State {
         // Determine list of applicable actions for each individual agent.
         Action[][] applicableActions = new Action[numAgents][];
         for (int agent = 0; agent < numAgents; ++agent) {
+
             ArrayList<Action> agentActions = new ArrayList<>(Action.values().length);
             for (Action action : Action.values()) {
                 if (this.isApplicable(agent, action)) {
@@ -202,45 +213,43 @@ public class State {
         char box;
         int destinationRow;
         int destinationCol;
-        switch (action.type) {
+        switch (action.getType()) {
             case NoOp:
                 return true;
 
             case Move:
-                destinationRow = agentRow + action.agentRowDelta;
-                destinationCol = agentCol + action.agentColDelta;
+                destinationRow = agentRow + action.getAgentDeltaRow();
+                destinationCol = agentCol + action.getAgentDeltaCol();
                 return this.cellIsFree(destinationRow, destinationCol);
 
             case Push:
-                boxRow = agentRow + action.agentRowDelta;
-                boxCol = agentCol + action.agentColDelta;
+                boxRow = agentRow + action.getAgentDeltaRow();
+                boxCol = agentCol + action.getAgentDeltaCol();
                 box = this.boxAt(boxRow, boxCol);
                 if (box == 0 || agentColors != this.boxColors[box - 'A']) {
                     return false;
                 }
-                destinationRow = boxRow + action.boxRowDelta;
-                destinationCol = boxCol + action.boxColDelta;
+                destinationRow = boxRow + action.getBoxDeltaRow();
+                destinationCol = boxCol + action.getBoxDeltaCol();
                 return this.cellIsFree(destinationRow, destinationCol);
 
             case Pull:
-                boxRow = agentRow + action.boxRowDelta;
-                boxCol = agentCol + action.boxColDelta;
+                boxRow = agentRow + action.getBoxDeltaRow();
+                boxCol = agentCol + action.getBoxDeltaCol();
                 box = this.boxAt(boxRow, boxCol);
                 if (box == 0 || agentColors != this.boxColors[box - 'A']) {
                     return false;
                 }
-                destinationRow = agentRow + action.agentRowDelta;
-                destinationCol = agentCol + action.agentColDelta;
+                destinationRow = agentRow + action.getAgentDeltaRow();
+                destinationCol = agentCol + action.getAgentDeltaCol();
                 return this.cellIsFree(destinationRow, destinationCol);
             //TODO: PAINT
             case Paint:
                 if(agentColors.equals(Farge.Grey)){
 
-                    boxRow = agentRow + action.agentRowDelta;
-                    boxCol = agentCol + action.agentColDelta;
+                    boxRow = agentRow + action.getBoxDeltaRow();
+                    boxCol = agentCol + action.getBoxDeltaCol();
                     box = this.boxAt(boxRow, boxCol);
-                    System.err.println("Applicable: " + agent + " " + action.toString()  + " Box: " + box);
-
 
                     return box != 0;
                 }
@@ -267,30 +276,30 @@ public class State {
             int boxRow;
             int boxCol;
 
-            switch (action.type) {
+            switch (action.getType()) {
                 case Move:
-                    destinationRows[agent] = agentRow + action.agentRowDelta;
-                    destinationCols[agent] = agentCol + action.agentColDelta;
+                    destinationRows[agent] = agentRow + action.getAgentDeltaRow();
+                    destinationCols[agent] = agentCol + action.getAgentDeltaCol();
                     boxRows[agent] = agentRow; // Distinct dummy value.
                     boxCols[agent] = agentCol; // Distinct dummy value.
                     break;
 
                 case Push:
-                    boxRow = agentRow + action.agentRowDelta;
-                    boxCol = agentCol + action.agentColDelta;
+                    boxRow = agentRow + action.getAgentDeltaRow();
+                    boxCol = agentCol + action.getAgentDeltaCol();
                     boxRows[agent] = boxRow;
                     boxCols[agent] = boxCol;
-                    destinationRows[agent] = boxRow + action.boxRowDelta;
-                    destinationCols[agent] = boxCol + action.boxColDelta;
+                    destinationRows[agent] = boxRow + action.getBoxDeltaRow();
+                    destinationCols[agent] = boxCol + action.getBoxDeltaCol();
                     break;
 
                 case Pull:
-                    boxRow = agentRow + action.boxRowDelta;
-                    boxCol = agentCol + action.boxColDelta;
+                    boxRow = agentRow + action.getBoxDeltaRow();
+                    boxCol = agentCol + action.getBoxDeltaCol();
                     boxRows[agent] = boxRow;
                     boxCols[agent] = boxCol;
-                    destinationRows[agent] = agentRow + action.agentRowDelta;
-                    destinationCols[agent] = agentCol + action.agentColDelta;
+                    destinationRows[agent] = agentRow + action.getAgentDeltaRow();
+                    destinationCols[agent] = agentCol + action.getAgentDeltaCol();
                     break;
                 default:
                     break;
@@ -398,4 +407,5 @@ public class State {
         }
         return s.toString();
     }
+
 }

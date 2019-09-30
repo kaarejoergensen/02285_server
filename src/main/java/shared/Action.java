@@ -2,64 +2,135 @@ package shared;
 
 import lombok.Getter;
 
+
+@Getter
 public enum Action {
-    NoOp("NoOp", ActionType.NoOp, 0, 0, 0, 0),
 
-    MoveN("Move(N)", ActionType.Move, -1, 0, 0, 0),
-    MoveS("Move(S)", ActionType.Move, 1, 0, 0, 0),
-    MoveE("Move(E)", ActionType.Move, 0, 1, 0, 0),
-    MoveW("Move(W)", ActionType.Move, 0, -1, 0, 0),
+    NoOp(ActionType.NoOp, MoveDirection.NONE,  MoveDirection.NONE),
 
-    PushNN("Push(N,N)", ActionType.Push, -1, 0, -1, 0),
-    PushNE("Push(N,E)", ActionType.Push, -1, 0, 0, 1),
-    PushNW("Push(N,W)", ActionType.Push, -1, 0, 0, -1),
-    PushSS("Push(S,S)", ActionType.Push, 1, 0, 1, 0),
-    PushSE("Push(S,E)", ActionType.Push, 1, 0, 0, 1),
-    PushSW("Push(S,W)", ActionType.Push, 1, 0, 0, -1),
-    PushEN("Push(E,N)", ActionType.Push, 0, 1, -1, 0),
-    PushES("Push(E,S)", ActionType.Push, 0, 1, 1, 0),
-    PushEE("Push(E,E)", ActionType.Push, 0, 1, 0, 1),
-    PushWN("Push(W,N)", ActionType.Push, 0, -1, -1, 0),
-    PushWS("Push(W,S)", ActionType.Push, 0, -1, 1, 0),
-    PushWW("Push(W,W)", ActionType.Push, 0, -1, 0, -1),
+    MoveN(ActionType.Move, MoveDirection.NORTH, MoveDirection.NONE),
+    MoveS(ActionType.Move, MoveDirection.SOUTH, MoveDirection.NONE),
+    MoveE(ActionType.Move, MoveDirection.EAST, MoveDirection.NONE),
+    MoveW(ActionType.Move, MoveDirection.WEST, MoveDirection.NONE),
 
-    PullNS("Pull(N,S)", ActionType.Pull, -1, 0, 1, 0),
-    PullNE("Pull(N,E)", ActionType.Pull, -1, 0, 0, 1),
-    PullNW("Pull(N,W)", ActionType.Pull, -1, 0, 0, -1),
-    PullSN("Pull(S,N)", ActionType.Pull, 1, 0, -1, 0),
-    PullSE("Pull(S,E)", ActionType.Pull, 1, 0, 0, 1),
-    PullSW("Pull(S,W)", ActionType.Pull, 1, 0, 0, -1),
-    PullEN("Pull(E,N)", ActionType.Pull, 0, 1, -1, 0),
-    PullES("Pull(E,S)", ActionType.Pull, 0, 1, 1, 0),
-    PullEW("Pull(E,W)", ActionType.Pull, 0, 1, 0, -1),
-    PullWN("Pull(W,N)", ActionType.Pull, 0, -1, -1, 0),
-    PullWS("Pull(W,S)", ActionType.Pull, 0, -1, 1, 0),
-    PullWE("Pull(W,E)", ActionType.Pull, 0, -1, 0, 1),
+    //PUSH
+    PushNN(ActionType.Push, MoveDirection.NORTH, MoveDirection.NORTH),
+    PushNE(ActionType.Push, MoveDirection.NORTH, MoveDirection.EAST),
+    PushNW(ActionType.Push, MoveDirection.NORTH, MoveDirection.WEST),
 
-    PaintN("Paint(N)", ActionType.Paint, -1, 0, 0, 0),
-    PaintS("Paint(S)", ActionType.Paint, 1, 0, 0, 0),
-    PaintE("Paint(E)", ActionType.Paint, 0, 1, 0, 0),
-    PaintW("Paint(W)", ActionType.Paint, 0, -1, 0, 0);
+    PushSS(ActionType.Push, MoveDirection.SOUTH, MoveDirection.SOUTH),
+    PushSE(ActionType.Push, MoveDirection.SOUTH, MoveDirection.EAST),
+    PushSW(ActionType.Push, MoveDirection.SOUTH, MoveDirection.WEST),
 
-    public final String name;
-    @Getter
-    public final ActionType type;
-    public final int agentRowDelta;
-    public final int agentColDelta;
-    public final int boxRowDelta;
-    public final int boxColDelta;
+    PushEE(ActionType.Push, MoveDirection.EAST, MoveDirection.EAST),
+    PushEN(ActionType.Push, MoveDirection.EAST, MoveDirection.NORTH),
+    PushES(ActionType.Push, MoveDirection.EAST, MoveDirection.SOUTH),
 
-    Action(String name, ActionType type, int ard, int acd, int brd, int bcd) {
-        this.name = name;
+    PushWW(ActionType.Push, MoveDirection.WEST, MoveDirection.WEST),
+    PushWN(ActionType.Push, MoveDirection.WEST, MoveDirection.NORTH),
+    PushWS(ActionType.Push, MoveDirection.WEST, MoveDirection.SOUTH),
+
+
+    //Pull
+    PullNS(ActionType.Pull, MoveDirection.NORTH, MoveDirection.SOUTH),
+    PullNE(ActionType.Pull, MoveDirection.NORTH, MoveDirection.EAST),
+    PullNW(ActionType.Pull, MoveDirection.NORTH, MoveDirection.WEST),
+
+
+    PullSN(ActionType.Pull, MoveDirection.SOUTH, MoveDirection.NORTH),
+    PullSE(ActionType.Pull, MoveDirection.SOUTH, MoveDirection.EAST),
+    PullSW(ActionType.Pull, MoveDirection.SOUTH, MoveDirection.WEST),
+
+    PullEN(ActionType.Pull, MoveDirection.EAST, MoveDirection.NORTH),
+    PullES(ActionType.Pull, MoveDirection.EAST, MoveDirection.SOUTH),
+    PullEW(ActionType.Pull, MoveDirection.EAST, MoveDirection.WEST),
+
+    PullWN(ActionType.Pull, MoveDirection.WEST, MoveDirection.NORTH),
+    PullWS(ActionType.Pull, MoveDirection.WEST, MoveDirection.SOUTH),
+    PullWE(ActionType.Pull, MoveDirection.WEST, MoveDirection.EAST),
+
+
+    PaintN(ActionType.Paint,MoveDirection.NONE, MoveDirection.NORTH),
+    PaintS(ActionType.Paint,MoveDirection.NONE, MoveDirection.SOUTH),
+    PaintE(ActionType.Paint,MoveDirection.NONE, MoveDirection.EAST),
+    PaintW(ActionType.Paint,MoveDirection.NONE, MoveDirection.WEST);
+
+
+    private String name;
+    private final ActionType type;
+    private final MoveDirection agentMoveDirection;
+    private final MoveDirection boxMoveDirection;
+
+    Action(ActionType type, MoveDirection agentMoveDirection, MoveDirection boxMoveDirection) {
         this.type = type;
-        this.agentRowDelta = ard;
-        this.agentColDelta = acd;
-        this.boxRowDelta = brd;
-        this.boxColDelta = bcd;
+        this.agentMoveDirection = agentMoveDirection;
+        this.boxMoveDirection = boxMoveDirection;
+        //Setting name for enum
+        name = generateName();
     }
 
-    @Override
-    public String toString() {
-        return "Action: " + name + " (" + type + ") ";
+    private String generateName(){
+        String temp = type.name();
+        if(agentMoveDirection != MoveDirection.NONE){
+            temp += "(" + agentMoveDirection.getLetter();
+            if(boxMoveDirection != MoveDirection.NONE){
+                temp += ", " + boxMoveDirection.getLetter();
+            }
+            temp += ")";
+        }
+        return temp;
+    }
+
+    public short getAgentDeltaRow() {
+        return agentMoveDirection.getDeltaRow();
+    }
+
+    public short getAgentDeltaCol() {
+        return agentMoveDirection.getDeltaCol();
+
+    }
+
+    public short getBoxDeltaRow() {
+        return boxMoveDirection.getDeltaRow();
+    }
+
+    public short getBoxDeltaCol() {
+        return boxMoveDirection.getDeltaCol();
+    }
+
+    public static Action parse(String action) {
+        for(Action a: Action.values()){
+            if(a.getName().equals(action)) return a;
+        }
+        return NoOp;
+    }
+
+
+}
+
+@Getter
+enum MoveDirection {
+    NORTH("N",-1, 0),
+    EAST("E",0, 1),
+    SOUTH("S",1, 0),
+    WEST("W", 0, -1),
+    NONE("", 0,0);
+
+     private String letter;
+     private final short deltaRow;
+     private final short deltaCol;
+
+    MoveDirection(String letter, int deltaRow, int deltaCol) {
+        this.letter = letter;
+        this.deltaRow = (short) deltaRow;
+        this.deltaCol = (short) deltaCol;
+    }
+
+    public static MoveDirection fromShortString(String s) {
+        for (MoveDirection moveDirection : MoveDirection.values()) {
+            if (moveDirection.getLetter().equals(s)) return moveDirection;
+        }
+        return NONE;
     }
 }
+

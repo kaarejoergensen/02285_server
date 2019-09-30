@@ -1,5 +1,6 @@
 package searchclient;
 
+import searchclient.level.Level;
 import shared.Action;
 import shared.Farge;
 
@@ -14,95 +15,21 @@ import java.util.Locale;
 public class SearchClient {
     public static State parseLevel(BufferedReader serverMessages) throws IOException {
         // We can assume that the level file is conforming to specification, since the server verifies this.
-        // Read domain.
-        System.err.println("Started reading level");
+        Level level = new Level(serverMessages);
 
-        serverMessages.readLine(); // #domain
-        serverMessages.readLine(); // hospital
+        level.parse.credentials();
+        level.parse.colors();
+        level.initateMapDependentArrays();
+        level.parse.initialState();
 
-        // Read Level name.
-        serverMessages.readLine(); // #levelname
-        serverMessages.readLine(); // <name>
+        level.agentRows = Arrays.copyOf(level.agentRows, level.numAgents);
+        level.agentCols = Arrays.copyOf(level.agentCols, level.numAgents);
 
-        // Read colors.
-        serverMessages.readLine(); // #colors
-        Farge[] agentColors = new Farge[10];
-        Farge[] boxColors = new Farge[26];
-        String line = serverMessages.readLine();
-        System.err.println("line:");
-        System.err.println(line);
-        while (!line.startsWith("#")) {
-            String[] split = line.split(":");
-            Farge colors = Farge.fromString(split[0].strip());
-            String[] entities = split[1].split(",");
-            for (String entity : entities) {
-                char c = entity.strip().charAt(0);
-                if ('0' <= c && c <= '9') {
-                    agentColors[c - '0'] = colors;
-                } else if ('A' <= c && c <= 'Z') {
-                    boxColors[c - 'A'] = colors;
-                }
-            }
-            line = serverMessages.readLine();
-            System.err.println(line);
-        }
+        level.parse.goalState();
 
-        // Read initial state.
-        // line is currently "#initial".
-        int numAgents = 0;
-        int[] agentRows = new int[10];
-        int[] agentCols = new int[10];
-        boolean[][] walls = new boolean[75][75];
-        char[][] boxes = new char[75][75];
-        line = serverMessages.readLine();
-        System.err.println(line);
-        int row = 0;
-        while (!line.startsWith("#")) {
-            for (int col = 0; col < line.length(); ++col) {
-                char c = line.charAt(col);
+        System.err.println(level);
 
-                if ('0' <= c && c <= '9') {
-                    agentRows[c - '0'] = row;
-                    agentCols[c - '0'] = col;
-                    ++numAgents;
-                } else if ('A' <= c && c <= 'Z') {
-                    boxes[row][col] = c;
-                } else if (c == '+') {
-                    walls[row][col] = true;
-                }
-            }
-
-            ++row;
-            line = serverMessages.readLine();
-            System.err.println(line);
-        }
-        agentRows = Arrays.copyOf(agentRows, numAgents);
-        agentCols = Arrays.copyOf(agentCols, numAgents);
-
-        // Read goal state.
-        // line is currently "#goal".
-        char[][] goals = new char[75][75];
-        line = serverMessages.readLine();
-        System.err.println(line);
-        row = 0;
-        while (!line.startsWith("#")) {
-            for (int col = 0; col < line.length(); ++col) {
-                char c = line.charAt(col);
-
-                if (('0' <= c && c <= '9') || ('A' <= c && c <= 'Z')) {
-                    goals[row][col] = c;
-                }
-            }
-
-            ++row;
-            line = serverMessages.readLine();
-            System.err.println(line);
-        }
-
-        // End.
-        // line is currently "#end".
-        System.err.println("Finished reading level");
-        return new State(agentRows, agentCols, agentColors, walls, boxes, boxColors, goals);
+        return level.toState();
     }
 
     /**
@@ -152,6 +79,8 @@ public class SearchClient {
         System.err.format(statusTemplate, explored.size(), frontier.size(), explored.size() + frontier.size(),
                 elapsedTime, Memory.stringRep());
     }
+
+
 
     public static void main(String[] args)
             throws IOException {
@@ -217,10 +146,10 @@ public class SearchClient {
             System.err.format("Found solution of length %d.\n", plan.length);
 
             for (Action[] jointAction : plan) {
-                System.out.print(jointAction[0].name);
+                System.out.print(jointAction[0].getName());
                 for (int action = 1; action < jointAction.length; ++action) {
                     System.out.print(";");
-                    System.out.print(jointAction[action].name);
+                    System.out.print(jointAction[action].getName());
                 }
                 System.out.println();
                 // We must read the server's response to not fill up the stdin buffer and block the server.
