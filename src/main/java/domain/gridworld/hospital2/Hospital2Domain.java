@@ -77,18 +77,14 @@ public class Hospital2Domain implements Domain {
 
     @Override
     public void renderDomainBackground(Graphics2D g, int width, int height) {
-        short numCols = this.runner.getStaticState().getNumCols();
-        short numRows = this.runner.getStaticState().getNumRows();
         var currentState = this.runner.getState(0);
-        this.guiHandler.drawBackground(g, width, numCols, height, numRows, currentState);
+        this.guiHandler.drawBackground(g, width, height, currentState);
     }
 
     @Override
     public void renderStateBackground(Graphics2D g, int stateID) {
-        var staticState = this.runner.getStaticState();
         var currentState = this.runner.getState(stateID);
-        var nextState = this.runner.getState(stateID + 1);
-        guiHandler.drawStateBackground(g, staticState, currentState, nextState);
+        guiHandler.drawStateBackground(g, currentState);
     }
 
     @Override
@@ -97,9 +93,8 @@ public class Hospital2Domain implements Domain {
             serverLogger.error("Bad interpolation: " + interpolation);
             return;
         }
-        var staticState = this.runner.getStaticState();
         var currentState = this.runner.getState(stateID);
         var nextState = interpolation == 0.0 ? currentState : this.runner.getState(stateID + 1);
-        guiHandler.drawStateTransition(g, staticState, currentState, nextState, interpolation);
+        guiHandler.drawStateTransition(g, currentState, nextState, interpolation);
     }
 }

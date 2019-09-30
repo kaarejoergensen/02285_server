@@ -10,41 +10,32 @@ import java.awt.*;
 @Data
 class GUIHandler {
     private CanvasDetails canvasDetails;
-
     private StaticState staticState;
-
-    private boolean staticObjectsDrawn;
 
     GUIHandler(StaticState staticState) {
         this.canvasDetails = new CanvasDetails();
         this.staticState = staticState;
     }
 
-    void drawBackground(Graphics2D g, int bufferWidth, int numCols, int bufferHeight, int numRows, State state) {
-        this.calculateCanvas(g, bufferWidth, numCols, bufferHeight, numRows, state);
-        this.staticState.drawMap(g, canvasDetails, bufferWidth, bufferHeight);
-        this.staticState.drawAllGoals(g, canvasDetails);
-    }
-
-    void drawStateBackground(Graphics2D g, StaticState staticState, State currentState, State nextState) {
-        staticState.drawSolvedGoals(g, canvasDetails, currentState);
-        if (nextState != null) currentState.drawStaticObjects(g, this.canvasDetails, nextState);
-        this.staticObjectsDrawn = nextState != null;
-    }
-
-    void drawStateTransition(Graphics2D g, StaticState staticState,
-                             State currentState, State nextState, double interpolation) {
-        staticState.drawGoalsUnsolvedInNextState(g, canvasDetails, currentState, nextState);
-        if (!this.staticObjectsDrawn) {
-            currentState.drawStaticObjects(g, this.canvasDetails, nextState);
-            this.staticObjectsDrawn = true;
-        }
-        currentState.drawDynamicObjects(g, this.canvasDetails, nextState, interpolation);
+    void drawBackground(Graphics2D g, int bufferWidth, int bufferHeight, State state) {
+        this.calculateCanvas(g, bufferWidth, this.staticState.getNumCols(), bufferHeight, this.staticState.getNumRows(), state);
+        this.staticState.drawMap(g, this.canvasDetails, bufferWidth, bufferHeight);
+        this.staticState.drawAllGoals(g, this.canvasDetails);
     }
 
     private void calculateCanvas(Graphics2D g, int bufferWidth, int numCols, int bufferHeight, int numRows, State state) {
         this.canvasDetails.calculate(g, bufferWidth, numCols, bufferHeight, numRows);
         state.initObjects(this.canvasDetails);
         this.staticState.initGoals(this.canvasDetails);
+    }
+
+    void drawStateBackground(Graphics2D g, State currentState) {
+        this.staticState.drawSolvedGoals(g, this.canvasDetails, currentState);
+        currentState.drawStaticObjects(g, this.canvasDetails);
+    }
+
+    void drawStateTransition(Graphics2D g, State currentState, State nextState, double interpolation) {
+        this.staticState.drawGoalsUnsolvedInNextState(g, this.canvasDetails, currentState, nextState);
+        currentState.drawDynamicObjects(g, this.canvasDetails, nextState, interpolation);
     }
 }

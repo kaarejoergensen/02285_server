@@ -42,12 +42,12 @@ public class State {
         return this.agents.get(id);
     }
 
-    private void moveBox(String id, short newRow, short newCol) {
-        this.moveObject(id, newRow, newCol, this.boxes, this.movedBoxes);
+    private void moveBox(String id, short newRow, short newCol, Set<String> moved) {
+        this.moveObject(id, newRow, newCol, this.boxes, moved);
     }
 
-    private void moveAgent(String id, short newRow, short newCol) {
-        this.moveObject(id, newRow, newCol, this.agents, this.movedAgents);
+    private void moveAgent(String id, short newRow, short newCol, Set<String> moved) {
+        this.moveObject(id, newRow, newCol, this.agents, moved);
     }
 
     private void moveObject(String id, short newRow, short newCol, Map<String, ? extends Object> objects, Set<String> moved) {
@@ -173,11 +173,11 @@ public class State {
         for (int agentIndex = 0; agentIndex < jointAction.length; agentIndex++) {
             if (!applicable[agentIndex]) continue;
             if (agentIds[agentIndex] != null) {
-                newState.moveAgent(agentIds[agentIndex], newAgentRows[agentIndex], newAgentCols[agentIndex]);
+                newState.moveAgent(agentIds[agentIndex], newAgentRows[agentIndex], newAgentCols[agentIndex], this.movedAgents);
             }
 
             if (boxIds[agentIndex] != null) {
-                newState.moveBox(boxIds[agentIndex], newBoxRows[agentIndex], newBoxCols[agentIndex]);
+                newState.moveBox(boxIds[agentIndex], newBoxRows[agentIndex], newBoxCols[agentIndex], this.movedBoxes);
             }
         }
         return Pair.with(newState, applicable);
@@ -191,26 +191,23 @@ public class State {
         });
     }
 
-    public void drawStaticObjects(Graphics2D g, CanvasDetails canvasDetails, State nextState) {
-        nextState.getAgents().stream()
-                .map(Object::getId)
-                .filter(a -> !nextState.getMovedAgents().contains(a))
-                .forEach(a -> this.getAgent(a).draw(g, canvasDetails));
-
-        nextState.getBoxes().stream()
-                .map(Object::getId)
-                .filter(b -> !nextState.getMovedBoxes().contains(b))
-                .forEach(b -> this.getBox(b).draw(g, canvasDetails));
+    public void drawStaticObjects(Graphics2D g, CanvasDetails canvasDetails) {
+        this.getAgents().stream()
+                .filter(a -> !this.getMovedAgents().contains(a.getId()))
+                .forEach(a -> this.getAgent(a.getId()).draw(g, canvasDetails));
+        this.getBoxes().stream()
+                .filter(b -> !this.getMovedBoxes().contains(b.getId()))
+                .forEach(b -> this.getBox(b.getId()).draw(g, canvasDetails));
     }
 
     public void drawDynamicObjects(Graphics2D g, CanvasDetails canvasDetails, State nextState, double interpolation) {
-        for (String agentId : nextState.getMovedAgents()) {
+        for (String agentId : this.getMovedAgents()) {
             Agent oldAgent = this.getAgent(agentId);
             Agent newAgent = nextState.getAgent(agentId);
             if (interpolation != 0.0) this.drawAgentArm(g, canvasDetails, nextState, interpolation, newAgent, oldAgent);
             oldAgent.draw(g, canvasDetails, newAgent.getRow(), newAgent.getCol(), interpolation);
         }
-        for (String boxId : nextState.getMovedBoxes()) {
+        for (String boxId : this.getMovedBoxes()) {
             Box oldBox = this.getBox(boxId);
             Box newBox = nextState.getBox(boxId);
             oldBox.draw(g, canvasDetails, newBox.getRow(), newBox.getCol(), interpolation);
@@ -219,7 +216,7 @@ public class State {
 
     private void drawAgentArm(Graphics2D g, CanvasDetails canvasDetails, State nextState, double interpolation,
                               Agent newAgent, Agent oldAgent) {
-        for (String boxId : nextState.getMovedBoxes()) {
+        for (String boxId : this.getMovedBoxes()) {
             Box oldBox = this.getBox(boxId);
             Box newBox = nextState.getBox(boxId);
             if (newAgent.getRow() == oldBox.getRow() && newAgent.getCol() == oldBox.getCol() ||

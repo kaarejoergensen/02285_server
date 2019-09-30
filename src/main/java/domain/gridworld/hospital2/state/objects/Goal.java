@@ -4,7 +4,6 @@ import domain.gridworld.hospital2.state.objects.ui.CanvasDetails;
 import org.javatuples.Pair;
 
 import java.awt.*;
-import java.awt.font.TextLayout;
 
 import static domain.gridworld.hospital2.state.Colors.*;
 
@@ -13,13 +12,13 @@ public class Goal extends Object {
         super(id, letter, row, col, color);
     }
 
-    private Goal(String id, char letter, short row, short col, Color color, TextLayout letterText, int letterTopOffset, int letterLeftOffset) {
-        super(id, letter, row, col, color, letterText, letterTopOffset, letterLeftOffset);
+    private Goal(String id, char letter, short row, short col, Color color, LetterTextContainer letterText) {
+        super(id, letter, row, col, color, letterText);
     }
 
     @Override
     public java.lang.Object clone() {
-        return new Goal(id, letter, row, col, color, letterText, letterTopOffset, letterLeftOffset);
+        return new Goal(id, letter, row, col, color, letterText);
     }
 
     @Override
@@ -39,7 +38,7 @@ public class Goal extends Object {
 
         if (!solved) {
             g.setColor(GOAL_FONT_COLOR);
-            this.letterText.draw(g, coordinates.getValue1() + this.letterLeftOffset, coordinates.getValue0() + this.letterTopOffset);
+            this.letterText.draw(g, coordinates.getValue1(), coordinates.getValue0());
         }
     }
 }

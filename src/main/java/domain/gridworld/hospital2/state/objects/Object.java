@@ -3,6 +3,7 @@ package domain.gridworld.hospital2.state.objects;
 import domain.gridworld.hospital2.state.objects.ui.CanvasDetails;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.javatuples.Pair;
 
@@ -19,8 +20,8 @@ public abstract class Object implements Cloneable {
     protected char letter;
     protected short row, col;
     protected Color color;
-    protected TextLayout letterText;
-    protected int letterTopOffset, letterLeftOffset;
+
+    protected LetterTextContainer letterText;
 
     Object(String id, char letter, short row, short col, Color color) {
         this.id = id;
@@ -28,21 +29,14 @@ public abstract class Object implements Cloneable {
         this.row = row;
         this.col = col;
         this.color = color;
-        this.letterText = null;
-        this.letterTopOffset = 0;
-        this.letterLeftOffset = 0;
+        this.letterText = new LetterTextContainer();
     }
 
     @Override
     public abstract java.lang.Object clone();
 
     public void letterTextUpdate(CanvasDetails canvasDetails){
-        this.letterText = new TextLayout(String.valueOf(this.letter), canvasDetails.getCurrentFont(), canvasDetails.getFontRenderContext());
-        Rectangle bound = this.letterText.getPixelBounds(canvasDetails.getFontRenderContext(), 0, 0);
-
-        int size = canvasDetails.getCellSize() - 2 * canvasDetails.getCellTextMargin();
-        this.letterTopOffset = canvasDetails.getCellTextMargin() + size - (size - bound.height) / 2;
-        this.letterLeftOffset = canvasDetails.getCellTextMargin() + (size - bound.width) / 2 - bound.x;
+        this.letterText.letterTextUpdate(canvasDetails, this.letter);
     }
 
     public void draw(Graphics2D g, CanvasDetails canvasDetails) {
@@ -65,11 +59,10 @@ public abstract class Object implements Cloneable {
         }
 
         g.setColor(BOX_AGENT_FONT_COLOR);
-        letterText.draw(g, coordinates.getValue1() + this.letterLeftOffset, coordinates.getValue0() + this.letterTopOffset);
+        letterText.draw(g, coordinates.getValue1(), coordinates.getValue0());
     }
 
-    Pair<Integer, Integer> calculateInterpolationCoordinates(CanvasDetails canvasDetails,
-                                                             short row, short col,
+    Pair<Integer, Integer> calculateInterpolationCoordinates(CanvasDetails canvasDetails, short row, short col,
                                                              short newRow, short newCol, double interpolation) {
         Pair<Integer, Integer> oldCoordinates = this.calculateCoordinates(canvasDetails, row, col);
         Pair<Integer, Integer> newCoordinates = this.calculateCoordinates(canvasDetails, newRow, newCol);
@@ -98,5 +91,26 @@ public abstract class Object implements Cloneable {
 
     boolean isAgent() {
         return '0' <= this.letter && this.letter <= '9';
+    }
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    public static class LetterTextContainer {
+        protected TextLayout letterText;
+        protected int letterTopOffset, letterLeftOffset;
+
+        void letterTextUpdate(CanvasDetails canvasDetails, char letter){
+            this.letterText = new TextLayout(String.valueOf(letter), canvasDetails.getCurrentFont(), canvasDetails.getFontRenderContext());
+            Rectangle bound = this.letterText.getPixelBounds(canvasDetails.getFontRenderContext(), 0, 0);
+
+            int size = canvasDetails.getCellSize() - 2 * canvasDetails.getCellTextMargin();
+            this.letterTopOffset = canvasDetails.getCellTextMargin() + size - (size - bound.height) / 2;
+            this.letterLeftOffset = canvasDetails.getCellTextMargin() + (size - bound.width) / 2 - bound.x;
+        }
+
+        public void draw(Graphics2D g, int left, int top) {
+            this.letterText.draw(g, left + this.letterLeftOffset, top + this.letterTopOffset);
+        }
     }
 }

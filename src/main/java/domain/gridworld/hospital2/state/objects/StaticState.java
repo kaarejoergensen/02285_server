@@ -27,7 +27,7 @@ public class StaticState {
                 && this.agentGoals.stream().allMatch(b -> this.isSolved(state, b));
     }
 
-    public boolean isSolved(State state, Goal goal) {
+    private boolean isSolved(State state, Goal goal) {
         return this.isSolved(state, goal.getCol(), goal.getRow(), goal.getLetter());
     }
 
