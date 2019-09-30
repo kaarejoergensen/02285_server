@@ -108,11 +108,22 @@ public class State {
                     break;
 
                 case Paint:
+                    // Loop through all rows
+
+                    for (int i = 0; i < boxes.length; i++){
+                        // Loop through all elements of current row
+                        for (int j = 0; j < boxes[i].length; j++)
+                            System.err.print(boxes[i][j] + " ");
+                        System.err.println("");
+                    }
+
+
+
+
+                    System.err.println(Arrays.toString(boxColors));
                     var index = this.boxAt(this.agentRows[agent] + action.getBoxDeltaRow(),
                             this.agentCols[agent] + action.getBoxDeltaCol());
-
-                    System.err.println("Painting from " + boxColors[index] + " to " + Farge.next(boxColors[index]));
-
+                    System.err.println("Index: " + index);
                     boxColors[index] = Farge.next(boxColors[index]);
                     break;
 
@@ -125,6 +136,7 @@ public class State {
     }
 
     public boolean isGoalState() {
+        System.err.println("Goalz length: " + this.goals.length);
         for (int row = 1; row < this.goals.length - 1; row++) {
             for (int col = 1; col < this.goals[row].length - 1; col++) {
                 char goal = this.goals[row][col];
@@ -236,11 +248,9 @@ public class State {
             case Paint:
                 if(agentColors.equals(Farge.Grey)){
 
-                    boxRow = agentRow + action.getAgentDeltaRow();
-                    boxCol = agentCol + action.getAgentDeltaCol();
+                    boxRow = agentRow + action.getBoxDeltaRow();
+                    boxCol = agentCol + action.getBoxDeltaCol();
                     box = this.boxAt(boxRow, boxCol);
-                    System.err.println("Applicable: " + agent + " " + action.toString()  + " Box: " + box);
-
 
                     return box != 0;
                 }
@@ -398,4 +408,5 @@ public class State {
         }
         return s.toString();
     }
+
 }

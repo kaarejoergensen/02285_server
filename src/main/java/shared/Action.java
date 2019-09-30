@@ -53,10 +53,10 @@ public enum Action {
     PullWE(ActionType.Pull, MoveDirection.WEST, MoveDirection.EAST),
 
 
-    PaintN(ActionType.Paint,MoveDirection.NONE, MoveDirection.NONE),
-    PaintS(ActionType.Paint,MoveDirection.NONE, MoveDirection.NONE),
-    PaintE(ActionType.Paint,MoveDirection.NONE, MoveDirection.NONE),
-    PaintW(ActionType.Paint,MoveDirection.NONE, MoveDirection.NONE);
+    PaintN(ActionType.Paint,MoveDirection.NONE, MoveDirection.NORTH),
+    PaintS(ActionType.Paint,MoveDirection.NONE, MoveDirection.SOUTH),
+    PaintE(ActionType.Paint,MoveDirection.NONE, MoveDirection.EAST),
+    PaintW(ActionType.Paint,MoveDirection.NONE, MoveDirection.WEST);
 
 
     private String name;

@@ -1,5 +1,6 @@
 package searchclient;
 
+import searchclient.level.Level;
 import shared.Action;
 import shared.Farge;
 
@@ -17,12 +18,9 @@ public class SearchClient {
         // Read domain.
         System.err.println("Started reading level");
 
-        serverMessages.readLine(); // #domain
-        serverMessages.readLine(); // hospital
+        Level level = new Level(serverMessages);
+        level.parse.credentials();
 
-        // Read Level name.
-        serverMessages.readLine(); // #levelname
-        serverMessages.readLine(); // <name>
 
         // Read colors.
         serverMessages.readLine(); // #colors
@@ -31,6 +29,7 @@ public class SearchClient {
         String line = serverMessages.readLine();
         System.err.println("line:");
         System.err.println(line);
+
         while (!line.startsWith("#")) {
             String[] split = line.split(":");
             Farge colors = Farge.fromString(split[0].strip());
@@ -52,13 +51,19 @@ public class SearchClient {
         int numAgents = 0;
         int[] agentRows = new int[10];
         int[] agentCols = new int[10];
-        boolean[][] walls = new boolean[75][75];
-        char[][] boxes = new char[75][75];
+        //Fredrik Notes: 75 er maks størrelse på banen. Siden vi ikke allerede vet
+        //Høyde eller bredde på kartet, så lagrer vi først i temp_boxes, for å så flytte verdiene over
+        //til en approriate størrelse. Det samme gjelder walls
+        char[][] tmp_boxes = new char[75][75];
+        boolean[][] tmp_walls = new boolean[75][75];
+
+
         line = serverMessages.readLine();
         System.err.println(line);
         int row = 0;
+        int col = 0;
         while (!line.startsWith("#")) {
-            for (int col = 0; col < line.length(); ++col) {
+            for (; col < line.length(); ++col) {
                 char c = line.charAt(col);
 
                 if ('0' <= c && c <= '9') {
@@ -66,9 +71,9 @@ public class SearchClient {
                     agentCols[c - '0'] = col;
                     ++numAgents;
                 } else if ('A' <= c && c <= 'Z') {
-                    boxes[row][col] = c;
+                    tmp_boxes[row][col] = c;
                 } else if (c == '+') {
-                    walls[row][col] = true;
+                    tmp_walls[row][col] = true;
                 }
             }
 
@@ -76,21 +81,34 @@ public class SearchClient {
             line = serverMessages.readLine();
             System.err.println(line);
         }
+        System.err.println("Map - Width/Height: " + col + ", " + row);
+
+        char[][] boxes = new char[row][col];
+        boolean[][] walls = new boolean[row][col];
+        //Kopierer verdiene over til den ekte
+        for(int i = row; i < 0; i++){
+            for(int j = col; j < 0 ; j++){
+                boxes[i][j] = tmp_boxes[i][j];
+                walls[i][j] = tmp_walls[i][j];
+            }
+        }
+
         agentRows = Arrays.copyOf(agentRows, numAgents);
         agentCols = Arrays.copyOf(agentCols, numAgents);
 
         // Read goal state.
         // line is currently "#goal".
-        char[][] goals = new char[75][75];
+        char[][] goals = new char[row][col];
+
         line = serverMessages.readLine();
         System.err.println(line);
         row = 0;
         while (!line.startsWith("#")) {
-            for (int col = 0; col < line.length(); ++col) {
-                char c = line.charAt(col);
+            for (int tmp_col = 0; tmp_col < line.length(); ++tmp_col) {
+                char c = line.charAt(tmp_col);
 
                 if (('0' <= c && c <= '9') || ('A' <= c && c <= 'Z')) {
-                    goals[row][col] = c;
+                    goals[row][tmp_col] = c;
                 }
             }
 
@@ -152,6 +170,8 @@ public class SearchClient {
         System.err.format(statusTemplate, explored.size(), frontier.size(), explored.size() + frontier.size(),
                 elapsedTime, Memory.stringRep());
     }
+
+
 
     public static void main(String[] args)
             throws IOException {
