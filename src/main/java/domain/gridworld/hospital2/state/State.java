@@ -12,11 +12,8 @@ import lombok.ToString;
 import org.javatuples.Pair;
 
 import java.awt.*;
-import java.util.List;
 import java.util.*;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @AllArgsConstructor
 @ToString
@@ -24,8 +21,8 @@ public class State {
     @Setter private Map<String, Agent> agents;
     @Setter private Map<String, Box> boxes;
 
-    @Getter private Set<String> movedAgents;
-    @Getter private Set<String> movedBoxes;
+    @Getter @Setter private Set<String> movedAgents;
+    @Getter @Setter private Set<String> movedBoxes;
 
     @Setter @Getter private long stateTime;
 
@@ -194,16 +191,16 @@ public class State {
         });
     }
 
-    public void drawStaticObjects(Graphics2D g, CanvasDetails canvasDetails) {
-        this.getStaticObjects().forEach(o -> o.draw(g, canvasDetails));
-    }
+    public void drawStaticObjects(Graphics2D g, CanvasDetails canvasDetails, State nextState) {
+        nextState.getAgents().stream()
+                .map(Object::getId)
+                .filter(a -> !nextState.getMovedAgents().contains(a))
+                .forEach(a -> this.getAgent(a).draw(g, canvasDetails));
 
-    private List<? extends Object> getStaticObjects() {
-        Stream<? extends Object> staticAgents = this.getAgents().stream().
-                filter(a -> !this.getMovedAgents().contains(a.getId()));
-        Stream<? extends Object> staticBoxes = this.getBoxes().stream().
-                filter(b -> !this.getMovedBoxes().contains(b.getId()));
-        return Stream.concat(staticAgents, staticBoxes).collect(Collectors.toList());
+        nextState.getBoxes().stream()
+                .map(Object::getId)
+                .filter(b -> !nextState.getMovedBoxes().contains(b))
+                .forEach(b -> this.getBox(b).draw(g, canvasDetails));
     }
 
     public void drawDynamicObjects(Graphics2D g, CanvasDetails canvasDetails, State nextState, double interpolation) {

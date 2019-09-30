@@ -8,36 +8,35 @@ import lombok.Data;
 import java.awt.*;
 
 @Data
-public class GUIHandler {
+class GUIHandler {
     private CanvasDetails canvasDetails;
 
     private StaticState staticState;
 
     private boolean staticObjectsDrawn;
 
-    public GUIHandler(StaticState staticState) {
+    GUIHandler(StaticState staticState) {
         this.canvasDetails = new CanvasDetails();
         this.staticState = staticState;
     }
 
-    public void drawBackground(Graphics2D g, int bufferWidth, int numCols, int bufferHeight, int numRows, State state) {
+    void drawBackground(Graphics2D g, int bufferWidth, int numCols, int bufferHeight, int numRows, State state) {
         this.calculateCanvas(g, bufferWidth, numCols, bufferHeight, numRows, state);
         this.staticState.drawMap(g, canvasDetails, bufferWidth, bufferHeight);
         this.staticState.drawAllGoals(g, canvasDetails);
     }
 
-    //TODO: Fix bug in first state, where static objects are not shown
-    public void drawStateBackground(Graphics2D g, StaticState staticState, State currentState, State nextState) {
+    void drawStateBackground(Graphics2D g, StaticState staticState, State currentState, State nextState) {
         staticState.drawSolvedGoals(g, canvasDetails, currentState);
-        if (nextState != null) nextState.drawStaticObjects(g, this.canvasDetails);
+        if (nextState != null) currentState.drawStaticObjects(g, this.canvasDetails, nextState);
         this.staticObjectsDrawn = nextState != null;
     }
 
-    public void drawStateTransition(Graphics2D g, StaticState staticState,
-                                    State currentState, State nextState, double interpolation) {
+    void drawStateTransition(Graphics2D g, StaticState staticState,
+                             State currentState, State nextState, double interpolation) {
         staticState.drawGoalsUnsolvedInNextState(g, canvasDetails, currentState, nextState);
         if (!this.staticObjectsDrawn) {
-            currentState.drawStaticObjects(g, this.canvasDetails);
+            currentState.drawStaticObjects(g, this.canvasDetails, nextState);
             this.staticObjectsDrawn = true;
         }
         currentState.drawDynamicObjects(g, this.canvasDetails, nextState, interpolation);

@@ -305,7 +305,9 @@ public class StateParser {
         this.staticState.setNumAgents((byte) agents.size());
 
         this.state.setBoxes(boxes.stream().collect(Collectors.toMap(Box::getId, Function.identity())));
+        this.state.setMovedBoxes(boxes.stream().map(Object::getId).collect(Collectors.toSet()));
         this.state.setAgents(agents.stream().collect(Collectors.toMap(Agent::getId, Function.identity())));
+        this.state.setMovedAgents(agents.stream().map(Object::getId).collect(Collectors.toSet()));
 
         if (agents.isEmpty()) {
             throw new ParseException("Level contains no agents.", levelReader.getLineNumber());
