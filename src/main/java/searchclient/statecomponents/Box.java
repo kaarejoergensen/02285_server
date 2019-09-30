@@ -1,10 +1,10 @@
 package searchclient.statecomponents;
 
-import searchclient.Color;
+import shared.Farge;
 
 public class Box extends Object {
 
-    public Box(Color color, int init_x, int init_y) {
+    public Box(Farge color, int init_x, int init_y) {
         super(color, init_x, init_y);
     }
 }

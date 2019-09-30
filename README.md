@@ -27,6 +27,15 @@
 * GameObjects: Parent class to all objects in scene. Boxes and Agents are separated into two child classes
 * Canvas is a new class describing variables and methods regards to the relativity of the program window.
 
+## Shared Class Folder
+
+Some classes that coexisted in both client and server are extracted to common package (/src/main/java/shared). 
+Extracted classes:
+
+* ActionType / Action
+* Color
+* 
+
 ## Todo
 * Clean shutdown of server on Ctrl-C, SIGINT, or whatever mechanisms that cause the JVM to shut down nicely.
 

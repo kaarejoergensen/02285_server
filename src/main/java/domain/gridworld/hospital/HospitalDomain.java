@@ -9,6 +9,7 @@ import domain.gridworld.hospital.ui_components.Box;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import server.CustomLoggerConfigFactory;
+import shared.Farge;
 
 import java.awt.*;
 import java.awt.font.TextLayout;
@@ -43,9 +44,9 @@ public final class HospitalDomain implements Domain {
     private static final Color CELL_COLOR = Color.LIGHT_GRAY;
     private static final Color WALL_COLOR = Color.BLACK;
     private static final Color BOX_AGENT_FONT_COLOR = Color.BLACK;
-    private static final Color GOAL_COLOR = Colors.UnsolvedGoal;
+    private static final Color GOAL_COLOR = new Color(223,223,0);
     private static final Color GOAL_FONT_COLOR = blendColors(GOAL_COLOR, Color.BLACK, 0.7);
-    private static final Color GOAL_SOLVED_COLOR = Colors.SolvedGoal;
+    private static final Color GOAL_SOLVED_COLOR = new Color(0,160,0);
 
 
 

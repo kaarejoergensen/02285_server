@@ -3,6 +3,7 @@ package domain.gridworld.hospital;
 import domain.ParseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import shared.Farge;
 
 import java.awt.*;
 import java.io.IOException;
@@ -33,7 +34,7 @@ import java.util.BitSet;
  * StateSequence objects are thread-safe to write only from a single thread (the protocol thread), but can be read
  * from any number threads (e.g. the GUI threads). The state is up-to-date with calls to getNumStates().
  */
-class StateSequence {
+class   StateSequence {
     private Logger serverLogger = LogManager.getLogger("server");
 
     /**
@@ -412,7 +413,9 @@ class StateSequence {
             }
 
             String colorName = split[0].strip().toLowerCase(java.util.Locale.ROOT);
-            Color color = Colors.fromString(colorName);
+
+
+            Color color = Farge.fromString(colorName).color;
             if (color == null) {
                 throw new ParseException(String.format("Invalid color name: '%s'.", colorName),
                         levelReader.getLineNumber());
@@ -1041,8 +1044,7 @@ class StateSequence {
     void repaintBox(State newState, short col, short row){
         int sortedBoxIdx = this.findBox(newState, col, row);
         int boxId = this.sortedBoxIds[sortedBoxIdx];
-
-        this.boxColors[sortedBoxIdx - 'A'] = Colors.nextFrom(boxColors[sortedBoxIdx - 'A']);
+        this.boxColors[sortedBoxIdx - 'A'] = Farge.next(boxColors[sortedBoxIdx - 'A']).color;
     }
 
     /**
