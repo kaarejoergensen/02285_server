@@ -10,6 +10,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.javatuples.Pair;
 import shared.Action;
+import shared.Farge;
 
 import java.awt.*;
 import java.util.*;
@@ -54,6 +55,12 @@ public class State {
         Object object = objects.get(id);
         object.setRow(newRow);
         object.setCol(newCol);
+        moved.add(id);
+    }
+
+    private void paintBox(String id, Set<String> moved) {
+        Box box = this.boxes.get(id);
+        box.setColor(Farge.next(Objects.requireNonNull(Farge.getFromRGB(box.getColor()))).color);
         moved.add(id);
     }
 
@@ -104,24 +111,25 @@ public class State {
             Action action = jointAction[agentIndex];
 
             Object agent = this.getAgent("A" + agentIndex);
-            agentIds[agentIndex] = agent.getId();
-            newAgentRows[agentIndex] = (short) (agent.getRow() + action.getAgentDeltaRow());
-            newAgentCols[agentIndex] = (short) (agent.getCol() + action.getAgentDeltaCol());
+            if (!action.getAgentMoveDirection().equals(Action.MoveDirection.NONE)) {
+                agentIds[agentIndex] = agent.getId();
+                newAgentRows[agentIndex] = (short) (agent.getRow() + action.getAgentDeltaRow());
+                newAgentCols[agentIndex] = (short) (agent.getCol() + action.getAgentDeltaCol());
+            }
 
             switch (action.getType()) {
                 case NoOp: {
                     applicable[agentIndex] = true;
-                    boxIds[agentIndex] = null;
-                    agentIds[agentIndex] = null;
                     break;
                 }
                 case Move: {
                     applicable[agentIndex] = this.cellFree(newAgentRows[agentIndex], newAgentCols[agentIndex]);
-                    boxIds[agentIndex] = null;
                     break;
                 }
                 case Push: {
-                    Optional<Box> box = this.getBoxAt(newAgentCols[agentIndex], newAgentRows[agentIndex]);
+                    Optional<Box> box = this.getBoxAt(
+                            agent.getCol() + action.getAgentDeltaCol(),
+                            agent.getRow() + action.getAgentDeltaRow());
                     if (box.isPresent()) {
                         newBoxRows[agentIndex] = (short) (box.get().getRow() + action.getBoxDeltaRow());
                         newBoxCols[agentIndex] = (short) (box.get().getCol() + action.getBoxDeltaCol());
@@ -131,7 +139,7 @@ public class State {
                             agent.getColor().equals(box.get().getColor());
                     break;
                 }
-                case Pull:
+                case Pull: {
                     Optional<Box> box = this.getBoxAt(
                             agent.getCol() + Math.negateExact(action.getBoxDeltaCol()),
                             agent.getRow() + Math.negateExact(action.getBoxDeltaRow()));
@@ -143,12 +151,25 @@ public class State {
                     applicable[agentIndex] = box.isPresent() &&
                             agent.getColor().equals(box.get().getColor());
                     break;
+                }
+                case Paint: {
+                    Optional<Box> box = this.getBoxAt(
+                            agent.getCol() + action.getBoxDeltaCol(),
+                            agent.getRow() + action.getBoxDeltaRow());
+                    if (box.isPresent()) {
+                        newBoxRows[agentIndex] = -1;
+                        newBoxCols[agentIndex] = -1;
+                        boxIds[agentIndex] = box.get().getId();
+                    }
+                    applicable[agentIndex] = box.isPresent() &&
+                            agent.getColor().equals(Farge.Grey.color);
+                }
             }
-            if (!applicable[agentIndex] || jointAction[agentIndex].getType().equals(Action.NoOp)) {
+            if (!applicable[agentIndex] || jointAction[agentIndex].equals(Action.NoOp)) {
                 continue;
             }
             for (int prevAction = 0; prevAction < agentIndex; prevAction++) {
-                if (!applicable[prevAction] || jointAction[prevAction].getType().equals(Action.NoOp)) {
+                if (!applicable[prevAction] || jointAction[prevAction].equals(Action.NoOp)) {
                     continue;
                 }
 
@@ -177,7 +198,11 @@ public class State {
             }
 
             if (boxIds[agentIndex] != null) {
-                newState.moveBox(boxIds[agentIndex], newBoxRows[agentIndex], newBoxCols[agentIndex], this.movedBoxes);
+                if (newBoxRows[agentIndex] != -1 && newBoxCols[agentIndex] != -1) {
+                    newState.moveBox(boxIds[agentIndex], newBoxRows[agentIndex], newBoxCols[agentIndex], this.movedBoxes);
+                } else {
+                    newState.paintBox(boxIds[agentIndex], this.movedBoxes);
+                }
             }
         }
         return Pair.with(newState, applicable);

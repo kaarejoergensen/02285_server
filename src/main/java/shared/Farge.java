@@ -2,10 +2,11 @@ package shared;
 
 
 import java.awt.*;
-import java.util.Locale;
+import java.util.*;
+import java.util.List;
 
 public enum Farge {
-    Blue (new Color(48, 80, 255)) ,
+    Blue (new Color(48, 80, 255)),
     Red (new Color(255, 0, 0)),
     Cyan (new Color(0, 255, 255)),
     Purple (new Color(96, 0, 176)),
@@ -14,8 +15,8 @@ public enum Farge {
     Pink(new Color(240, 96, 192)),
     Lightblue(new Color(112, 192, 255)),
     Brown(new Color(96, 48, 0)),
-
     Grey(new Color(112, 112, 112)),
+
     UnresolvedGoal(new Color(223,223,0)),
     SolvedGoal(new Color(0,160,0)),
     LetterboxColor(new Color(0, 0, 0)),
@@ -27,18 +28,17 @@ public enum Farge {
     GoalFontColor(new Color(66, 66, 0)),
     GoalSolvedColor(new Color(0, 160, 0));
 
-
     public Color color;
 
     Farge(Color color){
         this.color = color;
     }
 
-    private static Farge[] farger = values();
+    private static Object[] clientFarger = EnumSet.range(Blue, Grey).toArray();
 
     //TODO: Rename this class - doesn't make sense to call it colors. dankColors måske?
     public static Farge getFromRGB(Color color){
-        for(Farge c : farger){
+        for(Farge c : values()){
             if(c.color.equals(color)) return c;
         }
         return null;
@@ -73,12 +73,11 @@ public enum Farge {
 
     public static Farge next(Farge current){
         int nextIndex = current.ordinal() + 1;
-        var nextColor = farger[nextIndex % farger.length];
-        return nextColor != Grey || nextColor != UnresolvedGoal || nextColor != SolvedGoal? nextColor : next(nextColor);
+        return (Farge) clientFarger[nextIndex % clientFarger.length];
     }
 
     public static Farge next(Color color){
-        return next(getFromRGB(color));
+        return next(Objects.requireNonNull(getFromRGB(color)));
     }
 
 }

@@ -182,8 +182,8 @@ public class StateParser {
             }
 
             String colorName = split[0].strip().toLowerCase(java.util.Locale.ROOT);
-            Color color = Farge.fromString(colorName).color;
-            if (color == null) {
+            Farge farge = Farge.fromString(colorName);
+            if (farge == null) {
                 throw new ParseException(String.format("Invalid color name: '%s'.", colorName),
                         levelReader.getLineNumber());
             }
@@ -206,14 +206,14 @@ public class StateParser {
                         throw new ParseException(String.format("Agent '%s' already has a color specified.", s),
                                 levelReader.getLineNumber());
                     }
-                    this.agentColors.put(id, color);
+                    this.agentColors.put(id, farge.color);
                 } else if ('A' <= s && s <= 'Z') {
                     String id = "B" + (s - 'A');
                     if (this.boxColors.containsKey(id)) {
                         throw new ParseException(String.format("Box '%s' already has a color specified.", s),
                                 levelReader.getLineNumber());
                     }
-                    this.boxColors.put(id, color);
+                    this.boxColors.put(id, farge.color);
                 } else {
                     throw new ParseException(String.format("Invalid agent or box symbol: '%s'.", s),
                             levelReader.getLineNumber());

@@ -50,10 +50,11 @@ public enum Action {
     PullWE(ActionType.Pull, MoveDirection.WEST, MoveDirection.EAST),
 
 
-    PaintN(ActionType.Paint,MoveDirection.NONE, MoveDirection.NORTH),
-    PaintS(ActionType.Paint,MoveDirection.NONE, MoveDirection.SOUTH),
-    PaintE(ActionType.Paint,MoveDirection.NONE, MoveDirection.EAST),
-    PaintW(ActionType.Paint,MoveDirection.NONE, MoveDirection.WEST);
+    //Paint
+    PaintN(ActionType.Paint, MoveDirection.NONE, MoveDirection.NORTH),
+    PaintS(ActionType.Paint, MoveDirection.NONE, MoveDirection.SOUTH),
+    PaintE(ActionType.Paint, MoveDirection.NONE, MoveDirection.EAST),
+    PaintW(ActionType.Paint, MoveDirection.NONE, MoveDirection.WEST);
 
 
     private String name;
@@ -70,15 +71,15 @@ public enum Action {
     }
 
     private String generateName(){
-        String temp = type.name();
+        StringBuilder stringBuilder = new StringBuilder(type.name());
         if(agentMoveDirection != MoveDirection.NONE){
-            temp += "(" + agentMoveDirection.getLetter();
+            stringBuilder.append("(").append(agentMoveDirection.getLetter());
             if(boxMoveDirection != MoveDirection.NONE){
-                temp += ", " + boxMoveDirection.getLetter();
+                stringBuilder.append(", ").append(boxMoveDirection.getLetter());
             }
-            temp += ")";
+            stringBuilder.append(")");
         }
-        return temp;
+        return stringBuilder.toString();
     }
 
     public short getAgentDeltaRow() {
@@ -105,32 +106,30 @@ public enum Action {
         return NoOp;
     }
 
-
-}
-
-@Getter
-enum MoveDirection {
-    NORTH("N",-1, 0),
-    EAST("E",0, 1),
-    SOUTH("S",1, 0),
-    WEST("W", 0, -1),
-    NONE("", 0,0);
-
-     private String letter;
-     private final short deltaRow;
-     private final short deltaCol;
-
-    MoveDirection(String letter, int deltaRow, int deltaCol) {
-        this.letter = letter;
-        this.deltaRow = (short) deltaRow;
-        this.deltaCol = (short) deltaCol;
+    public enum ActionType {
+        NoOp,
+        Move,
+        Push,
+        Pull,
+        Paint
     }
 
-    public static MoveDirection fromShortString(String s) {
-        for (MoveDirection moveDirection : MoveDirection.values()) {
-            if (moveDirection.getLetter().equals(s)) return moveDirection;
+    @Getter
+    public enum MoveDirection {
+        NORTH("N",-1, 0),
+        EAST("E",0, 1),
+        SOUTH("S",1, 0),
+        WEST("W", 0, -1),
+        NONE("", 0,0);
+
+        private String letter;
+        private final short deltaRow;
+        private final short deltaCol;
+
+        MoveDirection(String letter, int deltaRow, int deltaCol) {
+            this.letter = letter;
+            this.deltaRow = (short) deltaRow;
+            this.deltaCol = (short) deltaCol;
         }
-        return NONE;
     }
 }
-
