@@ -3,6 +3,7 @@ package domain.gridworld.hospital2.state;
 import domain.gridworld.hospital2.state.objects.Agent;
 import domain.gridworld.hospital2.state.objects.Box;
 import domain.gridworld.hospital2.state.objects.Object;
+import domain.gridworld.hospital2.state.objects.StaticState;
 import domain.gridworld.hospital2.state.objects.ui.CanvasDetails;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -60,7 +61,9 @@ public class State {
 
     private void paintBox(String id, Set<String> moved) {
         Box box = this.boxes.get(id);
-        box.setColor(Farge.next(Objects.requireNonNull(Farge.getFromRGB(box.getColor()))).color);
+        Farge nextFarge = Farge.next(Objects.requireNonNull(Farge.getFromRGB(box.getColor())));
+        System.out.println(nextFarge.name());
+        box.setColor(nextFarge.color);
         moved.add(id);
     }
 
@@ -96,7 +99,7 @@ public class State {
      * Determines which actions are applicable and non-conflicting.
      * Returns an array with true for each action which was applicable and non-conflicting, and false otherwise.
      */
-    public Pair<State, boolean[]> apply(Action[] jointAction) {
+    public Pair<State, boolean[]> apply(Action[] jointAction, StaticState staticState) {
         boolean[] applicable = new boolean[this.agents.size()];
 
         short[] newAgentRows = new short[this.agents.size()];
@@ -123,7 +126,8 @@ public class State {
                     break;
                 }
                 case Move: {
-                    applicable[agentIndex] = this.cellFree(newAgentRows[agentIndex], newAgentCols[agentIndex]);
+                    applicable[agentIndex] = this.cellFree(newAgentCols[agentIndex], newAgentRows[agentIndex]) &&
+                            staticState.getMap().isCell(newAgentRows[agentIndex], newAgentCols[agentIndex]);
                     break;
                 }
                 case Push: {
@@ -136,20 +140,24 @@ public class State {
                         boxIds[agentIndex] = box.get().getId();
                     }
                     applicable[agentIndex] = box.isPresent() &&
-                            agent.getColor().equals(box.get().getColor());
+                            agent.getColor().equals(box.get().getColor()) &&
+                            staticState.getMap().isCell(newAgentRows[agentIndex], newAgentCols[agentIndex]) &&
+                            staticState.getMap().isCell(newBoxRows[agentIndex], newBoxCols[agentIndex]);
                     break;
                 }
                 case Pull: {
                     Optional<Box> box = this.getBoxAt(
-                            agent.getCol() + Math.negateExact(action.getBoxDeltaCol()),
-                            agent.getRow() + Math.negateExact(action.getBoxDeltaRow()));
+                            agent.getCol() + action.getBoxDeltaCol(),
+                            agent.getRow() + action.getBoxDeltaRow());
                     if (box.isPresent()) {
                         newBoxRows[agentIndex] = agent.getRow();
                         newBoxCols[agentIndex] = agent.getCol();
                         boxIds[agentIndex] = box.get().getId();
                     }
                     applicable[agentIndex] = box.isPresent() &&
-                            agent.getColor().equals(box.get().getColor());
+                            agent.getColor().equals(box.get().getColor()) &&
+                            staticState.getMap().isCell(newAgentRows[agentIndex], newAgentCols[agentIndex]) &&
+                            staticState.getMap().isCell(newBoxRows[agentIndex], newBoxCols[agentIndex]);
                     break;
                 }
                 case Paint: {

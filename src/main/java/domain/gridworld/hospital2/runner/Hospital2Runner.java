@@ -83,7 +83,7 @@ public class Hospital2Runner {
 
         this.clientName = RunnerHelper.readClientName(clientReader, timeout, startNS, timeoutNS);
         RunnerHelper.writeLevelToClientAndLog(clientWriter, logWriter, level, clientName, timeout);
-        RunnerHelper.exchangeActions(clientReader, clientWriter, logWriter, this.staticState.getNumAgents(), timeout,
+        RunnerHelper.exchangeActions(clientReader, clientWriter, logWriter, this.staticState, timeout,
                 startNS, states, allowDiscardingPastStates);
         RunnerHelper.writeLogSummary(logWriter, this.isSolved(this.getLatestState()),
                 this.getNumStates(), this.getLatestState().getStateTime());
@@ -95,7 +95,7 @@ public class Hospital2Runner {
         for (int i = 0; i < jointActions.size(); i++) {
             Action[] jointAction = jointActions.get(i);
             Long actionTime = actionTimes.get(i);
-            RunnerHelper.execute(jointAction, actionTime, this.states, this.allowDiscardingPastStates);
+            RunnerHelper.execute(jointAction, actionTime, this.states, this.staticState, this.allowDiscardingPastStates);
         }
         if (this.staticState.isSolved(this.getLatestState()) != logSolved) {
             if (logSolved) {
