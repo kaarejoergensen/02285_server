@@ -265,7 +265,7 @@ public class StateParser {
                 char c = line.charAt(col);
                 if ('0' <= c && c <= '9') {
                     // Agent.
-                    String id = "A" + (c - '0');
+                    String id = "A" + c;
                     if (agents.stream().anyMatch(a -> a.getId().equals(id))) {
                         throw new ParseException(
                                 String.format("Agent '%s' appears multiple times in initial state.", c),
@@ -279,7 +279,7 @@ public class StateParser {
                     agents.add(new Agent(id, c, numRows, col, agentColor));
                 } else if ('A' <= c && c <= 'Z') {
                     // Box.
-                    String id = "B" + (c - 'A') + numRows + "" + col;
+                    String id = "B" + c + "" + numRows + "" + col;
                     Color boxColor = this.boxColors.get("B" + (c - 'A'));
                     if (boxColor == null) {
                         throw new ParseException(String.format("Box '%s' has no color specified.", c),

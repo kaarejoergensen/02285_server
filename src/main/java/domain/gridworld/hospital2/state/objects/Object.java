@@ -32,6 +32,10 @@ public abstract class Object implements Cloneable {
         this.letterText = new LetterTextContainer();
     }
 
+    public boolean sameCoordinates(Object other) {
+        return this.row == other.row && this.col == other.col;
+    }
+
     @Override
     public abstract java.lang.Object clone();
 
@@ -41,17 +45,22 @@ public abstract class Object implements Cloneable {
 
     public void draw(Graphics2D g, CanvasDetails canvasDetails) {
         var coordinates = this.calculateCoordinates(canvasDetails, this.row, this.col);
-        this.draw(g, canvasDetails, coordinates);
+        this.draw(g, canvasDetails, coordinates, this.color);
     }
 
     public void draw(Graphics2D g, CanvasDetails canvasDetails,  short newRow, short newCol, double interpolation) {
         var coordinates = this.calculateInterpolationCoordinates(canvasDetails, this.row, this.col, newRow, newCol, interpolation);
-        this.draw(g, canvasDetails, coordinates);
+        this.draw(g, canvasDetails, coordinates, this.color);
     }
 
-    private void draw(Graphics2D g, CanvasDetails canvasDetails, Pair<Integer, Integer> coordinates) {
+    public void draw(Graphics2D g, CanvasDetails canvasDetails,  short newRow, short newCol, double interpolation, Color color) {
+        var coordinates = this.calculateInterpolationCoordinates(canvasDetails, this.row, this.col, newRow, newCol, interpolation);
+        this.draw(g, canvasDetails, coordinates, color);
+    }
+
+    private void draw(Graphics2D g, CanvasDetails canvasDetails, Pair<Integer, Integer> coordinates, Color color) {
         int size = canvasDetails.getCellSize() - 2 * canvasDetails.getCellBoxMargin();
-        g.setColor(this.color);
+        g.setColor(color);
         if (this.isAgent()) {
             g.fillOval(coordinates.getValue1() + canvasDetails.getCellBoxMargin(), coordinates.getValue0() + canvasDetails.getCellBoxMargin(), size, size);
         } else {

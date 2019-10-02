@@ -62,7 +62,6 @@ public class State {
     private void paintBox(String id, Set<String> moved) {
         Box box = this.boxes.get(id);
         Farge nextFarge = Farge.next(Objects.requireNonNull(Farge.getFromRGB(box.getColor())));
-        System.out.println(nextFarge.name());
         box.setColor(nextFarge.color);
         moved.add(id);
     }
@@ -243,7 +242,7 @@ public class State {
         for (String boxId : this.getMovedBoxes()) {
             Box oldBox = this.getBox(boxId);
             Box newBox = nextState.getBox(boxId);
-            oldBox.draw(g, canvasDetails, newBox.getRow(), newBox.getCol(), interpolation);
+            oldBox.draw(g, canvasDetails, newBox.getRow(), newBox.getCol(), interpolation, newBox.getColor());
         }
     }
 
@@ -258,6 +257,6 @@ public class State {
                 return;
             }
         }
-        oldAgent.drawArmMove(g, canvasDetails, newAgent, interpolation);
+        if (!oldAgent.sameCoordinates(newAgent)) oldAgent.drawArmMove(g, canvasDetails, newAgent, interpolation);
     }
 }

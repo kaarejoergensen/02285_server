@@ -100,7 +100,6 @@ class RunnerHelper {
             // Read client message.
             try {
                 clientMsg = clientReader.readLine();
-                System.out.println(clientMsg);
                 clientLogger.debug("Message from client: " + clientMsg);
             } catch (CharacterCodingException e) {
                 throw new RunException("Client message not valid ASCII.");
@@ -145,7 +144,6 @@ class RunnerHelper {
                 // Execute action.
                 long actionTime = System.nanoTime() - startNS;
                 boolean[] result = execute(jointAction, actionTime, states, staticState, allowDiscardingPastStates);
-                System.out.println(Arrays.toString(result));
                 // Write response.
                 try {
                     clientWriter.write(result[0] ? "true" : "false");
