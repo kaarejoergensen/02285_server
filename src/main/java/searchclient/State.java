@@ -106,7 +106,6 @@ public class State {
                     this.agentRows[agent] += action.getAgentDeltaRow();
                     this.agentCols[agent] += action.getAgentDeltaCol();
                     break;
-                //TODO: Optimalisere next farge
                 case Paint:
                     char index = this.boxAt(this.agentRows[agent] + action.getBoxDeltaRow(),
                             this.agentCols[agent] + action.getBoxDeltaCol());
@@ -352,6 +351,7 @@ public class State {
             int result = 1;
             result = prime * result + Arrays.hashCode(this.agentRows);
             result = prime * result + Arrays.hashCode(this.agentCols);
+            result = prime * result + Arrays.hashCode(this.boxColors);
             result = prime * result + Arrays.deepHashCode(this.boxes);
             this._hash = result;
         }
@@ -372,7 +372,8 @@ public class State {
         State other = (State) obj;
         return Arrays.equals(this.agentRows, other.agentRows) &&
                 Arrays.equals(this.agentCols, other.agentCols) &&
-                Arrays.deepEquals(this.boxes, other.boxes);
+                Arrays.deepEquals(this.boxes, other.boxes) &&
+                Arrays.equals(this.boxColors, other.boxColors);
     }
 
     @Override
