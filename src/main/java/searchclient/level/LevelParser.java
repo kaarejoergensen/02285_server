@@ -81,15 +81,9 @@ public class LevelParser {
     public void initialState() throws IOException{
         file.reset();
         checkArgument("#initial", file.readLine());
+        requireArraysInitialized();
 
         level.numAgents = 0;
-
-        //75 er maks størrelse på banen. Siden vi ikke allerede vet
-        //Høyde eller bredde på kartet, så lagrer vi først i temp_boxes, for å så flytte verdiene over
-        //til en approriate størrelse. Det samme gjelder walls
-
-        char[][] tmp_boxes = new char[75][75];
-        boolean[][] tmp_walls = new boolean[75][75];
 
         String line = file.readLine();
         if(print_debugger)System.err.println(line);
@@ -114,8 +108,9 @@ public class LevelParser {
             if(print_debugger) System.err.println(line);
         }
 
+        level.agentRows = Arrays.copyOf(level.agentRows, level.numAgents);
+        level.agentCols = Arrays.copyOf(level.agentCols, level.numAgents);
 
-        level.setMapDetails(1,row);
     }
 
     public void goalState() throws IOException {
@@ -163,14 +158,7 @@ public class LevelParser {
         }
     }
 
-    public static <E> void printMatrix(E[][] input){
-        String output = "[" + System.lineSeparator();
-        for(int i = 0; i < input[0].length; i++){
-            output += Arrays.toString(input[i]) + System.lineSeparator();
-        }
-        output += "]";
-        System.err.println(output);
-    }
+
 
        /*
         char[][] boxes = new char[row][col];

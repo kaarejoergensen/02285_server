@@ -20,12 +20,8 @@ public class SearchClient {
         level.parse.credentials();
         level.parse.colors();
         level.parse.determineMapDetails();
-        level.initateMapDependentArrays();
+        level.initiateMapDependentArrays();
         level.parse.initialState();
-
-        level.agentRows = Arrays.copyOf(level.agentRows, level.numAgents);
-        level.agentCols = Arrays.copyOf(level.agentCols, level.numAgents);
-
         level.parse.goalState();
 
         System.err.println(level);

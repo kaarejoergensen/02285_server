@@ -56,28 +56,19 @@ public class Level {
         this.width = width;
     }
 
-    //TODO: Faktisk legge inn width og height
-    public void initateMapDependentArrays(){
-        goals = new char[75][75];
-        boxes = new char[75][75];
-        walls = new boolean[75][75];
+
+    public void initiateMapDependentArrays(){
+        goals = new char[width][height];
+        boxes = new char[width][height];
+        walls = new boolean[width][height];
 
     }
 
     public State toState(){
         return new State(agentRows, agentCols, agentColors, walls, boxes, boxColors, goals);
     }
+    
 
-    @Override
-    public String toString() {
-        String output;
-        System.err.println("Walls: " + goals);
-        System.err.println("AgentRows: " + Arrays.toString(agentRows));
-        System.err.println("AgentCols: " + Arrays.toString(agentCols));
-        System.err.println("Goals " + Arrays.toString(goals));
-
-        return super.toString();
-    }
 
 
 }
