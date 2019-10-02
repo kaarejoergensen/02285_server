@@ -106,25 +106,11 @@ public class State {
                     this.agentRows[agent] += action.getAgentDeltaRow();
                     this.agentCols[agent] += action.getAgentDeltaCol();
                     break;
-
+                //TODO: Optimalisere next farge
                 case Paint:
-                    // Loop through all rows
-
-                    for (int i = 0; i < boxes.length; i++){
-                        // Loop through all elements of current row
-                        for (int j = 0; j < boxes[i].length; j++)
-                            System.err.print(boxes[i][j] + " ");
-                        System.err.println("");
-                    }
-
-
-
-
-                    System.err.println(Arrays.toString(boxColors));
-                    var index = this.boxAt(this.agentRows[agent] + action.getBoxDeltaRow(),
+                    char index = this.boxAt(this.agentRows[agent] + action.getBoxDeltaRow(),
                             this.agentCols[agent] + action.getBoxDeltaCol());
-                    System.err.println("Index: " + index);
-                    boxColors[index] = Farge.next(boxColors[index]);
+                    boxColors[index - 'A'] = Farge.next(boxColors[index - 'A']);
                     break;
 
             }
@@ -243,7 +229,6 @@ public class State {
                 destinationRow = agentRow + action.getAgentDeltaRow();
                 destinationCol = agentCol + action.getAgentDeltaCol();
                 return this.cellIsFree(destinationRow, destinationCol);
-            //TODO: PAINT
             case Paint:
                 if(agentColors.equals(Farge.Grey)){
 

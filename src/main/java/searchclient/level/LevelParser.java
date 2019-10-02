@@ -159,16 +159,4 @@ public class LevelParser {
     }
 
 
-
-       /*
-        char[][] boxes = new char[row][col];
-        boolean[][] walls = new boolean[row][col];
-        //Kopierer verdiene over til den ekte
-        for(int i = row; i < 0; i++){
-            for(int j = col; j < 0 ; j++){
-                boxes[i][j] = tmp_boxes[i][j];
-                walls[i][j] = tmp_walls[i][j];
-            }
-        }
-        */
 }

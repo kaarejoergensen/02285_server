@@ -67,7 +67,7 @@ public class Level {
     public State toState(){
         return new State(agentRows, agentCols, agentColors, walls, boxes, boxColors, goals);
     }
-    
+
 
 
 
