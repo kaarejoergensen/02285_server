@@ -67,7 +67,7 @@ public class State {
         for (int i = 0; i < parent.boxes.length; i++) {
             this.boxes[i] = Arrays.copyOf(parent.boxes[i], parent.boxes[i].length);
         }
-        this.boxColors = parent.boxColors;
+        this.boxColors = Arrays.copyOf(parent.boxColors, parent.boxColors.length);
         this.goals = parent.goals;
         this.parent = parent;
         this.jointAction = Arrays.copyOf(jointAction, jointAction.length);
@@ -212,7 +212,7 @@ public class State {
                 boxRow = agentRow + action.getAgentDeltaRow();
                 boxCol = agentCol + action.getAgentDeltaCol();
                 box = this.boxAt(boxRow, boxCol);
-                if (box == 0 || agentColors != this.boxColors[box - 'A']) {
+                if (box == 0 || !agentColors.equals(this.boxColors[box - 'A'])) {
                     return false;
                 }
                 destinationRow = boxRow + action.getBoxDeltaRow();
@@ -223,7 +223,10 @@ public class State {
                 boxRow = agentRow + action.getBoxDeltaRow();
                 boxCol = agentCol + action.getBoxDeltaCol();
                 box = this.boxAt(boxRow, boxCol);
-                if (box == 0 || agentColors != this.boxColors[box - 'A']) {
+                if (agent == 1 && box != 0 && agentColors.equals(this.boxColors[box - 'A'])) {
+                    System.err.println(agentColors.name() + " | " + this.boxColors[box - 'A'].name());
+                }
+                if (box == 0 || !agentColors.equals(this.boxColors[box - 'A'])) {
                     return false;
                 }
                 destinationRow = agentRow + action.getAgentDeltaRow();
@@ -231,7 +234,6 @@ public class State {
                 return this.cellIsFree(destinationRow, destinationCol);
             case Paint:
                 if(agentColors.equals(Farge.Grey)){
-
                     boxRow = agentRow + action.getBoxDeltaRow();
                     boxCol = agentCol + action.getBoxDeltaCol();
                     box = this.boxAt(boxRow, boxCol);
@@ -292,12 +294,12 @@ public class State {
         }
 
         for (int a1 = 0; a1 < numAgents; ++a1) {
-            if (jointAction[a1] == Action.NoOp) {
+            if (jointAction[a1] == Action.NoOp || jointAction[a1].getType().equals(Action.ActionType.Paint)) {
                 continue;
             }
 
             for (int a2 = a1 + 1; a2 < numAgents; ++a2) {
-                if (jointAction[a2] == Action.NoOp) {
+                if (jointAction[a2] == Action.NoOp || jointAction[a1].getType().equals(Action.ActionType.Paint)) {
                     continue;
                 }
 
