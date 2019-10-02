@@ -62,6 +62,22 @@ public class LevelParser {
         }
     }
 
+    public void determineMapDetails() throws IOException {
+        file.reset();
+        file.mark(BUFFER_SIZE);
+        checkArgument("#initial", file.readLine());
+
+        int height = 0, width = 0;
+        String line = file.readLine();
+        while (!line.startsWith("#")) {
+            ++height;
+            if(line.length() > width) width = line.length();
+            line = file.readLine();
+        }
+        if(print_debugger) System.err.println("Map Details Determined. Height:[" + height + "] Width:[" + width + "]");
+        level.setMapDetails(height,width);
+    }
+
     public void initialState() throws IOException{
         file.reset();
         checkArgument("#initial", file.readLine());

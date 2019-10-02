@@ -19,6 +19,7 @@ public class SearchClient {
 
         level.parse.credentials();
         level.parse.colors();
+        level.parse.determineMapDetails();
         level.initateMapDependentArrays();
         level.parse.initialState();
 
