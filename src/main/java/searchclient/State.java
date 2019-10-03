@@ -67,7 +67,7 @@ public class State {
         for (int i = 0; i < parent.boxes.length; i++) {
             this.boxes[i] = Arrays.copyOf(parent.boxes[i], parent.boxes[i].length);
         }
-        this.boxColors = parent.boxColors;
+        this.boxColors = Arrays.copyOf(parent.boxColors, parent.boxColors.length);
         this.goals = parent.goals;
         this.parent = parent;
         this.jointAction = Arrays.copyOf(jointAction, jointAction.length);
@@ -106,25 +106,10 @@ public class State {
                     this.agentRows[agent] += action.getAgentDeltaRow();
                     this.agentCols[agent] += action.getAgentDeltaCol();
                     break;
-
                 case Paint:
-                    // Loop through all rows
-
-                    for (int i = 0; i < boxes.length; i++){
-                        // Loop through all elements of current row
-                        for (int j = 0; j < boxes[i].length; j++)
-                            System.err.print(boxes[i][j] + " ");
-                        System.err.println("");
-                    }
-
-
-
-
-                    System.err.println(Arrays.toString(boxColors));
-                    var index = this.boxAt(this.agentRows[agent] + action.getBoxDeltaRow(),
+                    char index = this.boxAt(this.agentRows[agent] + action.getBoxDeltaRow(),
                             this.agentCols[agent] + action.getBoxDeltaCol());
-                    System.err.println("Index: " + index);
-                    boxColors[index] = Farge.next(boxColors[index]);
+                    boxColors[index - 'A'] = Farge.next(boxColors[index - 'A']);
                     break;
 
             }
@@ -226,7 +211,7 @@ public class State {
                 boxRow = agentRow + action.getAgentDeltaRow();
                 boxCol = agentCol + action.getAgentDeltaCol();
                 box = this.boxAt(boxRow, boxCol);
-                if (box == 0 || agentColors != this.boxColors[box - 'A']) {
+                if (box == 0 || !agentColors.equals(this.boxColors[box - 'A'])) {
                     return false;
                 }
                 destinationRow = boxRow + action.getBoxDeltaRow();
@@ -237,16 +222,14 @@ public class State {
                 boxRow = agentRow + action.getBoxDeltaRow();
                 boxCol = agentCol + action.getBoxDeltaCol();
                 box = this.boxAt(boxRow, boxCol);
-                if (box == 0 || agentColors != this.boxColors[box - 'A']) {
+                if (box == 0 || !agentColors.equals(this.boxColors[box - 'A'])) {
                     return false;
                 }
                 destinationRow = agentRow + action.getAgentDeltaRow();
                 destinationCol = agentCol + action.getAgentDeltaCol();
                 return this.cellIsFree(destinationRow, destinationCol);
-            //TODO: PAINT
             case Paint:
                 if(agentColors.equals(Farge.Grey)){
-
                     boxRow = agentRow + action.getBoxDeltaRow();
                     boxCol = agentCol + action.getBoxDeltaCol();
                     box = this.boxAt(boxRow, boxCol);
@@ -307,12 +290,12 @@ public class State {
         }
 
         for (int a1 = 0; a1 < numAgents; ++a1) {
-            if (jointAction[a1] == Action.NoOp) {
+            if (jointAction[a1] == Action.NoOp || jointAction[a1].getType().equals(Action.ActionType.Paint)) {
                 continue;
             }
 
             for (int a2 = a1 + 1; a2 < numAgents; ++a2) {
-                if (jointAction[a2] == Action.NoOp) {
+                if (jointAction[a2] == Action.NoOp || jointAction[a1].getType().equals(Action.ActionType.Paint)) {
                     continue;
                 }
 
@@ -365,6 +348,7 @@ public class State {
             int result = 1;
             result = prime * result + Arrays.hashCode(this.agentRows);
             result = prime * result + Arrays.hashCode(this.agentCols);
+            result = prime * result + Arrays.hashCode(this.boxColors);
             result = prime * result + Arrays.deepHashCode(this.boxes);
             this._hash = result;
         }
@@ -385,7 +369,8 @@ public class State {
         State other = (State) obj;
         return Arrays.equals(this.agentRows, other.agentRows) &&
                 Arrays.equals(this.agentCols, other.agentCols) &&
-                Arrays.deepEquals(this.boxes, other.boxes);
+                Arrays.deepEquals(this.boxes, other.boxes) &&
+                Arrays.equals(this.boxColors, other.boxColors);
     }
 
     @Override

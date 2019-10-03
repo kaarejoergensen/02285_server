@@ -15,6 +15,7 @@ public enum Farge {
     Pink(new Color(240, 96, 192)),
     Lightblue(new Color(112, 192, 255)),
     Brown(new Color(96, 48, 0)),
+
     Grey(new Color(112, 112, 112)),
 
     UnresolvedGoal(new Color(223,223,0)),
@@ -34,7 +35,7 @@ public enum Farge {
         this.color = color;
     }
 
-    private static Object[] clientFarger = EnumSet.range(Blue, Grey).toArray();
+    private static Object[] clientFarger = EnumSet.range(Blue, Brown).toArray();
 
     //TODO: Rename this class - doesn't make sense to call it colors. dankColors måske?
     public static Farge getFromRGB(Color color){
