@@ -222,9 +222,6 @@ public class State {
                 boxRow = agentRow + action.getBoxDeltaRow();
                 boxCol = agentCol + action.getBoxDeltaCol();
                 box = this.boxAt(boxRow, boxCol);
-                if (agent == 1 && box != 0 && agentColors.equals(this.boxColors[box - 'A'])) {
-                    System.err.println(agentColors.name() + " | " + this.boxColors[box - 'A'].name());
-                }
                 if (box == 0 || !agentColors.equals(this.boxColors[box - 'A'])) {
                     return false;
                 }
