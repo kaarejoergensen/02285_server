@@ -15,7 +15,7 @@ import java.awt.font.TextLayout;
 @Getter
 @Setter
 @AllArgsConstructor
-public abstract class Object implements Cloneable {
+public abstract class Object implements Cloneable, Comparable {
     protected String id;
     protected char letter;
     protected Coordinate coordinate;
@@ -104,6 +104,10 @@ public abstract class Object implements Cloneable {
         return new Color(r, g, b);
     }
 
+    @Override
+    public int compareTo(java.lang.Object o) {
+        return this.id.compareTo(((Object) o).getId());
+    }
 
     @Getter
     @Setter

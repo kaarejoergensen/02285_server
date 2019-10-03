@@ -10,6 +10,7 @@ import shared.Action;
 
 import java.awt.*;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -38,17 +39,16 @@ public abstract class MoveBoxAction extends MoveAction {
     @Override
     public void apply(State newState) {
         super.apply(newState);
-        newState.getBox(this.box.getId()).setCoordinate(this.newBoxCoordinate);
+        Optional<Box> newBox = newState.getBoxAt(this.box.getCoordinate());
+        newBox.ifPresent(value -> newState.updateBox(value, this.newBoxCoordinate));
     }
 
     @Override
-    public void draw(Graphics2D g, CanvasDetails canvasDetails, State oldState, State nextState, double interpolation) {
-        Agent nextAgent = nextState.getAgent(this.agent.getId());
-        Box nextBox = nextState.getBox(this.box.getId());
-        this.agent.drawArmPullPush(g, canvasDetails, nextAgent.getCoordinate(), this.box.getCoordinate(),
-                nextBox.getCoordinate(), interpolation);
-        this.agent.draw(g, canvasDetails, nextAgent.getCoordinate(), interpolation);
-        this.box.draw(g, canvasDetails, nextBox.getCoordinate(), interpolation);
+    public void draw(Graphics2D g, CanvasDetails canvasDetails, State nextState, double interpolation) {
+        this.agent.drawArmPullPush(g, canvasDetails, this.newAgentCoordinate, this.box.getCoordinate(),
+                this.newBoxCoordinate, interpolation);
+        this.agent.draw(g, canvasDetails, this.newAgentCoordinate, interpolation);
+        this.box.draw(g, canvasDetails, this.newBoxCoordinate, interpolation);
     }
 
     @Override

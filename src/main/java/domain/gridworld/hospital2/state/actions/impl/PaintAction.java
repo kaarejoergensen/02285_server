@@ -14,6 +14,7 @@ import shared.Farge;
 import java.awt.*;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -42,11 +43,12 @@ public class PaintAction extends ApplicableAction {
 
     @Override
     public void apply(State newState) {
-        newState.getBox(this.box.getId()).setColor(this.newColor);
+        Optional<Box> newBox = newState.getBoxAt(this.box.getCoordinate());
+        newBox.ifPresent(value -> value.setColor(this.newColor));
     }
 
     @Override
-    public void draw(Graphics2D g, CanvasDetails canvasDetails, State oldState, State nextState, double interpolation) {
+    public void draw(Graphics2D g, CanvasDetails canvasDetails, State nextState, double interpolation) {
         this.agent.drawArmPaint(g, canvasDetails, this.box.getCoordinate(), this.box.getColor(), this.newColor, interpolation);
         this.agent.draw(g, canvasDetails, this.agent.getCoordinate(), interpolation);
         this.box.draw(g, canvasDetails, this.box.getCoordinate(), interpolation, newColor);

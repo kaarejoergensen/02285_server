@@ -1,0 +1,29 @@
+#domain
+hospital2
+#levelname
+01
+#colors
+grey:0
+blue:A,B,C
+red:1
+green:2
+orange:D,E,F
+#initial
+++++++++
++  A   +
++0 1   +
++ CB   +
++  D   +
++  2   +
++ FE   +
+++++++++
+#goal
+++++++++
++     B+
++     A+
++021  C+
++      +
++      +
++   FED+
+++++++++
+#end

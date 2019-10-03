@@ -33,7 +33,7 @@ public class NoOpAction extends ApplicableAction {
     }
 
     @Override
-    public void draw(Graphics2D g, CanvasDetails canvasDetails, State oldState, State nextState, double interpolation) {
+    public void draw(Graphics2D g, CanvasDetails canvasDetails, State nextState, double interpolation) {
     }
 
     @Override

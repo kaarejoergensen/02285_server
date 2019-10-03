@@ -12,6 +12,7 @@ import shared.Action;
 import java.awt.*;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 public class MoveAction extends ApplicableAction {
     Coordinate newAgentCoordinate;
@@ -35,14 +36,14 @@ public class MoveAction extends ApplicableAction {
 
     @Override
     public void apply(State newState) {
-        newState.getAgent(this.agent.getId()).setCoordinate(this.newAgentCoordinate);
+        Optional<Agent> newAgent = newState.getAgentAt(this.agent.getCoordinate());
+        newAgent.ifPresent(value -> newState.updateAgent(value, this.newAgentCoordinate));
     }
 
     @Override
-    public void draw(Graphics2D g, CanvasDetails canvasDetails, State oldState, State nextState, double interpolation) {
-        Agent nextAgent = nextState.getAgent(this.agent.getId());
-        this.agent.drawArmMove(g, canvasDetails, nextAgent.getCoordinate(), interpolation);
-        this.agent.draw(g, canvasDetails, nextAgent.getCoordinate(), interpolation);
+    public void draw(Graphics2D g, CanvasDetails canvasDetails, State nextState, double interpolation) {
+        this.agent.drawArmMove(g, canvasDetails, this.newAgentCoordinate, interpolation);
+        this.agent.draw(g, canvasDetails, this.newAgentCoordinate, interpolation);
     }
 
     @Override

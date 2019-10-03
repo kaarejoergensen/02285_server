@@ -37,7 +37,7 @@ public interface IApplicableAction {
 
     void apply(State newState);
 
-    void draw(Graphics2D g, CanvasDetails canvasDetails, State oldState, State nextState, double interpolation);
+    void draw(Graphics2D g, CanvasDetails canvasDetails, State nextState, double interpolation);
 
     List<Object> getAffectedObjects();
 }

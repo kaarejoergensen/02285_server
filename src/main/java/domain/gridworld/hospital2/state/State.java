@@ -11,23 +11,23 @@ import org.javatuples.Pair;
 import shared.Action;
 
 import java.awt.*;
+import java.util.List;
 import java.util.Map;
 import java.util.*;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @ToString
 public class State {
-    private Map<String, Agent> agents;
-    private Map<String, Box> boxes;
+    private Map<Coordinate, Agent> agents;
+    private Map<Coordinate, Box> boxes;
 
     @Getter private Set<IApplicableAction> actionsToNextState;
     @Getter private Set<Object> staticObjects;
 
     @Setter @Getter private long stateTime;
 
-    public State(Map<String, Agent> agents, Map<String, Box> boxes) {
+    public State(Map<Coordinate, Agent> agents, Map<Coordinate, Box> boxes) {
         this.agents = agents;
         this.boxes = boxes;
         this.actionsToNextState = new HashSet<>();
@@ -42,39 +42,35 @@ public class State {
         return this.boxes.values();
     }
 
-    public Box getBox(String id) {
-        return this.boxes.get(id);
+    public Optional<Agent> getAgentAt(Coordinate coordinate) {
+        return this.agents.containsKey(coordinate) ? Optional.of(this.agents.get(coordinate)) : Optional.empty();
     }
 
-    public Agent getAgent(String id) {
-        return this.agents.get(id);
+    public Optional<Box> getBoxAt(Coordinate coordinate) {
+        return this.boxes.containsKey(coordinate) ? Optional.of(this.boxes.get(coordinate)) : Optional.empty();
     }
 
-    private Predicate<Object> getPred(Coordinate coordinate) {
-        return o -> o.getCoordinate().equals(coordinate);
+    public void updateAgent(Agent agent, Coordinate newCoordinate) {
+        this.agents.remove(agent.getCoordinate());
+        agent.setCoordinate(newCoordinate);
+        this.agents.put(agent.getCoordinate(), agent);
+    }
+
+    public void updateBox(Box box, Coordinate newCoordinate) {
+        this.boxes.remove(box.getCoordinate());
+        box.setCoordinate(newCoordinate);
+        this.boxes.put(box.getCoordinate(), box);
     }
 
     public boolean isCellFree(Coordinate coordinate) {
         return this.getBoxAt(coordinate).isEmpty() && this.getAgentAt(coordinate).isEmpty();
     }
 
-    public Optional<Box> getBoxAt(Coordinate coordinate) {
-        return this.getObjectAt(this.boxes, coordinate);
-    }
-
-    public Optional<Agent> getAgentAt(Coordinate coordinate) {
-        return this.getObjectAt(this.agents, coordinate);
-    }
-
-    private <T extends Object> Optional<T> getObjectAt(Map<String, T> map, Coordinate coordinate) {
-        return map.values().stream().filter(getPred(coordinate)).findFirst();
-    }
-
     private State copyOf() {
-        Map<String, Agent> agents = new HashMap<>();
-        this.agents.values().forEach(a -> agents.put(a.getId(), (Agent) a.clone()));
-        Map<String, Box> boxes = new HashMap<>();
-        this.boxes.values().forEach(b -> boxes.put(b.getId(), (Box) b.clone()));
+        Map<Coordinate, Agent> agents = new HashMap<>();
+        this.agents.values().forEach(a -> agents.put(a.getCoordinate(), (Agent) a.clone()));
+        Map<Coordinate, Box> boxes = new HashMap<>();
+        this.boxes.values().forEach(b -> boxes.put(b.getCoordinate(), (Box) b.clone()));
         return new State(agents, boxes);
     }
 
@@ -85,10 +81,10 @@ public class State {
     public Pair<State, boolean[]> apply(Action[] jointAction, StaticState staticState) {
         boolean[] applicable = new boolean[this.agents.size()];
         IApplicableAction[] applicableActions = new IApplicableAction[this.agents.size()];
-
-        for (byte agentIndex = 0; agentIndex < this.agents.size(); agentIndex++) {
+        List<Agent> agentsSorted = this.getAgents().stream().sorted(Agent::compareTo).collect(Collectors.toList());
+        int agentIndex = 0;
+        for (Agent agent : agentsSorted) {
             Action action = jointAction[agentIndex];
-            Agent agent = this.getAgent("A" + agentIndex);
             applicableActions[agentIndex] = IApplicableAction.getInstance(action, agent, this);
 
             applicable[agentIndex] = applicableActions[agentIndex].isPreconditionsMet(this, staticState);
@@ -101,10 +97,11 @@ public class State {
                     applicable[prevAction] = false;
                 }
             }
+            agentIndex++;
         }
 
         State newState = this.copyOf();
-        for (int agentIndex = 0; agentIndex < jointAction.length; agentIndex++) {
+        for (agentIndex = 0; agentIndex < jointAction.length; agentIndex++) {
             if (!applicable[agentIndex]) continue;
             applicableActions[agentIndex].apply(newState);
             applicableActions[agentIndex].getAffectedObjects().forEach(o -> this.staticObjects.remove(o));
@@ -131,6 +128,6 @@ public class State {
     }
 
     public void drawDynamicObjects(Graphics2D g, CanvasDetails canvasDetails, State nextState, double interpolation) {
-        this.actionsToNextState.forEach(a -> a.draw(g, canvasDetails, this, nextState, interpolation));
+        this.actionsToNextState.forEach(a -> a.draw(g, canvasDetails, nextState, interpolation));
     }
 }

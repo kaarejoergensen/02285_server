@@ -303,8 +303,8 @@ public class StateParser {
         this.staticState.setMap(new Map(map));
         this.staticState.setNumAgents((byte) agents.size());
 
-        var boxMap = boxes.stream().collect(Collectors.toMap(Box::getId, Function.identity()));
-        var agentMap = agents.stream().collect(Collectors.toMap(Agent::getId, Function.identity()));
+        var boxMap = boxes.stream().collect(Collectors.toMap(Box::getCoordinate, Function.identity()));
+        var agentMap = agents.stream().collect(Collectors.toMap(Agent::getCoordinate, Function.identity()));
         this.state = new State(agentMap, boxMap);
 
         if (agents.isEmpty()) {
