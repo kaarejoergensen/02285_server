@@ -31,11 +31,15 @@ class GUIHandler {
 
     void drawStateBackground(Graphics2D g, State currentState) {
         this.staticState.drawSolvedGoals(g, this.canvasDetails, currentState);
-        currentState.drawStaticObjects(g, this.canvasDetails);
+        if (currentState.getStateTime() != 0.0) currentState.drawStaticObjects(g, this.canvasDetails);
     }
 
     void drawStateTransition(Graphics2D g, State currentState, State nextState, double interpolation) {
         this.staticState.drawGoalsUnsolvedInNextState(g, this.canvasDetails, currentState, nextState);
-        currentState.drawDynamicObjects(g, this.canvasDetails, nextState, interpolation);
+        if (currentState.getStateTime() != 0.0) {
+            currentState.drawDynamicObjects(g, this.canvasDetails, nextState, interpolation);
+        } else {
+            currentState.drawAllObjects(g, this.canvasDetails, nextState, interpolation);
+        }
     }
 }

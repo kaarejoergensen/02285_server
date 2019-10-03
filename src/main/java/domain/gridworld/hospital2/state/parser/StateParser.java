@@ -48,7 +48,6 @@ public class StateParser {
         this.boxColors = new HashMap<>();
 
         this.staticState = new StaticState();
-        this.state = new State(new HashMap<>(), new HashMap<>(), new HashSet<>(), new HashSet<>(), 0);
     }
 
     public void parse() throws IOException, ParseException {
@@ -276,7 +275,7 @@ public class StateParser {
                         throw new ParseException(String.format("Agent '%s' has no color specified.", c),
                                 levelReader.getLineNumber());
                     }
-                    agents.add(new Agent(id, c, numRows, col, agentColor));
+                    agents.add(new Agent(id, c, new Coordinate(numRows, col), agentColor));
                 } else if ('A' <= c && c <= 'Z') {
                     // Box.
                     String id = "B" + c + "" + numRows + "" + col;
@@ -285,7 +284,7 @@ public class StateParser {
                         throw new ParseException(String.format("Box '%s' has no color specified.", c),
                                 levelReader.getLineNumber());
                     }
-                    boxes.add(new Box(id, c, numRows, col, boxColor));
+                    boxes.add(new Box(id, c, new Coordinate(numRows, col), boxColor));
                 } else if (c != '+' && c != ' ') {
                     throw new ParseException(String.format("Invalid character '%s' in column %s.", c, col),
                             levelReader.getLineNumber());
@@ -304,10 +303,9 @@ public class StateParser {
         this.staticState.setMap(new Map(map));
         this.staticState.setNumAgents((byte) agents.size());
 
-        this.state.setBoxes(boxes.stream().collect(Collectors.toMap(Box::getId, Function.identity())));
-        this.state.setMovedBoxes(boxes.stream().map(Object::getId).collect(Collectors.toSet()));
-        this.state.setAgents(agents.stream().collect(Collectors.toMap(Agent::getId, Function.identity())));
-        this.state.setMovedAgents(agents.stream().map(Object::getId).collect(Collectors.toSet()));
+        var boxMap = boxes.stream().collect(Collectors.toMap(Box::getId, Function.identity()));
+        var agentMap = agents.stream().collect(Collectors.toMap(Agent::getId, Function.identity()));
+        this.state = new State(agentMap, boxMap);
 
         if (agents.isEmpty()) {
             throw new ParseException("Level contains no agents.", levelReader.getLineNumber());
@@ -368,15 +366,16 @@ public class StateParser {
             short col = 0;
             for (; col < line.length(); ++col) {
                 char c = line.charAt(col);
+                Coordinate coordinate = new Coordinate(row, col);
                 if (c == '+') {
                     // Wall.
-                    if (!this.staticState.getMap().isWall(row, col)) {
+                    if (!this.staticState.getMap().isWall(coordinate)) {
                         // Which doesn't match a wall in the initial state.
                         throw new ParseException(
                                 String.format("Initial state has no wall at column %d, but goal state does.", col),
                                 levelReader.getLineNumber());
                     }
-                } else if (this.staticState.getMap().isWall(row, col)) {
+                } else if (this.staticState.getMap().isWall(coordinate)) {
                     // Missing wall compared to the initial state.
                     throw new ParseException(
                             String.format("Goal state not matching initial state's wall on column %d.", col),
@@ -394,11 +393,11 @@ public class StateParser {
                         throw new ParseException(String.format("Agent '%s' appears multiple times in goal state.", c),
                                 levelReader.getLineNumber());
                     }
-                    agentGoals.add(new Goal(id, c, row, col, null));
+                    agentGoals.add(new Goal(id, c, coordinate, null));
                 } else if ('A' <= c && c <= 'Z') {
                     // Box.
                     String id = "BA" + (c - 'A') + row + "" + col;
-                    boxGoals.add(new Goal(id, c, row, col, null));
+                    boxGoals.add(new Goal(id, c, coordinate, null));
                 } else if (c != ' ') {
                     throw new ParseException(String.format("Invalid character '%s' in column %s.", c, col),
                             levelReader.getLineNumber());
@@ -406,7 +405,7 @@ public class StateParser {
             }
             // If the goal state line is shorter than the level width, we must check that no walls were omitted.
             for (; col < this.staticState.getNumCols(); ++col) {
-                if (this.staticState.getMap().isWall(row, col)) {
+                if (this.staticState.getMap().isWall(new Coordinate(row, col))) {
                     throw new ParseException(
                             String.format("Goal state not matching initial state's wall on column %s.", col),
                             levelReader.getLineNumber());
@@ -438,7 +437,7 @@ public class StateParser {
 
     //TODO: Implement properly
     private void checkObjectsEnclosedInWalls() throws ParseException {
-        Predicate<Object> pred = o -> !staticState.getMap().isCell(o.getRow(),o.getCol());
+        Predicate<Object> pred = o -> !staticState.getMap().isCell(o.getCoordinate());
         if (this.state.getAgents().stream().anyMatch(pred)
                 || this.state.getBoxes().stream().anyMatch(pred)
                 || this.staticState.getAgentGoals().stream().anyMatch(pred)

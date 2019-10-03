@@ -9,28 +9,34 @@ import java.awt.geom.AffineTransform;
 public class Agent extends Object {
     private ArmsContainer armsContainer;
 
-    public Agent(String id, char letter, short row, short col, Color color) {
-        super(id, letter, row, col, color);
+    public Agent(String id, char letter, Coordinate coordinate, Color color) {
+        super(id, letter, coordinate, color);
         this.armsContainer = new ArmsContainer(color);
     }
 
-    private Agent(String id, char letter, short row, short col, Color color, LetterTextContainer letterText, ArmsContainer armsContainer) {
-        super(id, letter, row, col, color, letterText);
+    private Agent(String id, char letter, Coordinate coordinate, Color color, LetterTextContainer letterText, ArmsContainer armsContainer) {
+        super(id, letter, coordinate, color, letterText);
         this.armsContainer = armsContainer;
     }
 
     @Override
     public java.lang.Object clone() {
-        return new Agent(id, letter, row, col, color, letterText, armsContainer);
+        return new Agent(id, letter, (Coordinate) coordinate.clone(), color, letterText, armsContainer);
+    }
+
+    @Override
+    public void draw(Graphics2D g, CanvasDetails canvasDetails, Coordinate newCoordinate, double interpolation, Color color) {
+        Color newColor = this.blendColors(this.color, color, interpolation);
+        super.draw(g, canvasDetails, newCoordinate, interpolation, newColor);
     }
 
     public void setArmsSize(CanvasDetails canvasDetails) {
         this.armsContainer.setArmsSize(canvasDetails);
     }
 
-    public void drawArmMove(Graphics2D g, CanvasDetails canvasDetails, Agent newAgent, double interpolation) {
-        Pair<Integer, Integer> oldCoordinates = this.calculateCoordinates(canvasDetails, this.row, this.col);
-        Pair<Integer, Integer> newCoordinates = this.calculateCoordinates(canvasDetails, newAgent.getRow(), newAgent.getCol());
+    public void drawArmMove(Graphics2D g, CanvasDetails canvasDetails, Coordinate newCoordinate, double interpolation) {
+        Pair<Integer, Integer> oldCoordinates = this.calculateCoordinates(canvasDetails, this.coordinate);
+        Pair<Integer, Integer> newCoordinates = this.calculateCoordinates(canvasDetails, newCoordinate);
 
         int interpolationTop = this.calculateInterpolation(oldCoordinates.getValue0(), newCoordinates.getValue0(), interpolation);
         int interpolationLeft = this.calculateInterpolation(oldCoordinates.getValue1(), newCoordinates.getValue1(), interpolation);
@@ -39,15 +45,24 @@ public class Agent extends Object {
                 oldCoordinates, newCoordinates);
     }
 
-    public void drawArmPullPush(Graphics2D g, CanvasDetails canvasDetails, Agent newAgent,
-                                Box oldBox, Box newBox, double interpolation) {
+    public void drawArmPullPush(Graphics2D g, CanvasDetails canvasDetails, Coordinate newAgentCoordinate,
+                                Coordinate oldBoxCoordinate, Coordinate newBoxCoordinate, double interpolation) {
         Pair<Integer, Integer> agentCoordinates = this.calculateInterpolationCoordinates(
-                canvasDetails, this.row, this.col, newAgent.getRow(), newAgent.getCol(), interpolation);
+                canvasDetails, this.coordinate, newAgentCoordinate, interpolation);
         Pair<Integer, Integer> boxCoordinates = this.calculateInterpolationCoordinates(canvasDetails,
-                oldBox.getRow(), oldBox.getCol(), newBox.getRow(), newBox.getCol(), interpolation);
+                oldBoxCoordinate, newBoxCoordinate, interpolation);
 
         this.armsContainer.drawArm(g, canvasDetails, ArmsContainer.Type.PUSHPULL, agentCoordinates.getValue0(),
                 agentCoordinates.getValue1(), agentCoordinates, boxCoordinates);
+    }
+
+    public void drawArmPaint(Graphics2D g, CanvasDetails canvasDetails, Coordinate boxCoordinate,
+                             Color oldColor, Color newColor, double interpolation) {
+        Pair<Integer, Integer> agentCoordinates = this.calculateCoordinates(canvasDetails, this.coordinate);
+        Pair<Integer, Integer> boxCoordinates = this.calculateCoordinates(canvasDetails, boxCoordinate);
+        Color blendColor = this.blendColors(oldColor, newColor, interpolation);
+        this.armsContainer.drawArm(g, canvasDetails, ArmsContainer.Type.PUSHPULL, agentCoordinates.getValue0(),
+                agentCoordinates.getValue1(), agentCoordinates, boxCoordinates, blendColor);
     }
 
     public static class ArmsContainer {
@@ -88,19 +103,26 @@ public class Agent extends Object {
 
         void drawArm(Graphics2D g, CanvasDetails canvasDetails, Type type, int top, int left,
                      Pair<Integer, Integer> oldCoordinates, Pair<Integer, Integer> newCoordinates) {
-            double direction = this.calculateArmDirection(oldCoordinates, newCoordinates);
-
-            this.drawArm(g, canvasDetails, type == Type.MOVE ? this.agentArmMove : this.agentArmPullPush, top, left, direction);
+            this.drawArm(g, canvasDetails, type, top, left, oldCoordinates, newCoordinates, this.armColor);
         }
 
-        private void drawArm(Graphics2D g, CanvasDetails canvasDetails, Polygon armShape, int top, int left, double direction) {
+        void drawArm(Graphics2D g, CanvasDetails canvasDetails, Type type, int top, int left,
+                     Pair<Integer, Integer> oldCoordinates, Pair<Integer, Integer> newCoordinates, Color color) {
+            double direction = this.calculateArmDirection(oldCoordinates, newCoordinates);
+
+            this.drawArm(g, canvasDetails, type == Type.MOVE ? this.agentArmMove : this.agentArmPullPush,
+                    top, left, direction, color);
+        }
+
+        private void drawArm(Graphics2D g, CanvasDetails canvasDetails, Polygon armShape,
+                             int top, int left, double direction, Color color) {
             int armTop = top + canvasDetails.getCellSize() / 2;
             int armLeft = left + canvasDetails.getCellSize() / 2;
             this.calculateArmTransform(armTop, armLeft, direction);
             g.setTransform(this.agentArmTransform);
 
             // Fill the arm
-            g.setColor(this.armColor);
+            g.setColor(color);
             g.fillPolygon(armShape);
 
             // Arm outline.
