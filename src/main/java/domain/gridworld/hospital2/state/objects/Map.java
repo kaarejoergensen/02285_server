@@ -12,16 +12,16 @@ import java.util.List;
 public class Map {
     private List<List<Boolean>> map;
 
-    public boolean isCell(int row, int col) {
-        return this.isPartOfMap(row, col) && map.get(row).get(col);
+    public boolean isCell(Coordinate coordinate) {
+        return this.isPartOfMap(coordinate) && map.get(coordinate.getRow()).get(coordinate.getCol());
     }
 
-    public boolean isWall(int row, int col) {
-        return this.isPartOfMap(row, col) && !map.get(row).get(col);
+    public boolean isWall(Coordinate coordinate) {
+        return this.isPartOfMap(coordinate) && !map.get(coordinate.getRow()).get(coordinate.getCol());
     }
 
-    private boolean isPartOfMap(int row, int col) {
-        return row < map.size() && col < map.get(row).size();
+    private boolean isPartOfMap(Coordinate coordinate) {
+        return coordinate.getRow() < map.size() && coordinate.getCol() < map.get(coordinate.getRow()).size();
     }
 
     private int getNumRows() {
@@ -58,7 +58,7 @@ public class Map {
             int top = canvasDetails.getOriginTop() + row * canvasDetails.getCellSize();
             for (short col = 0; col < this.getNumCols(row); ++col) {
                 int left = canvasDetails.getOriginLeft() + col * canvasDetails.getCellSize();
-                if (this.isWall(row, col)) {
+                if (this.isWall(new Coordinate(row, col))) {
                     g.setColor(Farge.WallColor.color);
                     g.fillRect(left, top, canvasDetails.getCellSize(), canvasDetails.getCellSize());
                 } else {

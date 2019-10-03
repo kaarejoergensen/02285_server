@@ -28,15 +28,15 @@ public class StaticState {
     }
 
     private boolean isSolved(State state, Goal goal) {
-        return this.isSolved(state, goal.getCol(), goal.getRow(), goal.getLetter());
+        return this.isSolved(state, goal.getCoordinate(), goal.getLetter());
     }
 
-    private boolean isSolved(State state, short col, short row, char letter) {
+    private boolean isSolved(State state, Coordinate coordinate, char letter) {
         Optional<? extends Object> object;
         if (isAgentGoal(letter)) {
-            object = state.getAgentAt(col, row);
+            object = state.getAgentAt(coordinate);
         } else {
-            object = state.getBoxAt(col, row);
+            object = state.getBoxAt(coordinate);
         }
         return object.isPresent() && object.get().getLetter() == letter;
     }

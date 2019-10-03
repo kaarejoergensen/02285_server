@@ -2,6 +2,7 @@ package domain.gridworld.hospital2.runner;
 
 import client.Timeout;
 import domain.gridworld.hospital2.state.State;
+import domain.gridworld.hospital2.state.objects.StaticState;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -13,6 +14,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.CharacterCodingException;
+import java.util.Arrays;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -76,10 +78,10 @@ class RunnerHelper {
     }
 
     static void exchangeActions(BufferedReader clientReader, BufferedWriter clientWriter, BufferedWriter logWriter,
-                                byte numAgents, Timeout timeout, long startNS, List<State> states, boolean allowDiscardingPastStates) throws RunException {
+                                StaticState staticState, Timeout timeout, long startNS, List<State> states, boolean allowDiscardingPastStates) throws RunException {
         clientLogger.debug("Beginning action/comment message exchanges.");
         long numMessages = 0;
-        Action[] jointAction = new Action[numAgents];
+        Action[] jointAction = new Action[staticState.getNumAgents()];
         String clientMsg;
         try {
             logWriter.write("#actions" + System.lineSeparator());
@@ -125,7 +127,7 @@ class RunnerHelper {
             } else {
                 // Parse action string.
                 String[] actionMsg = clientMsg.split(";");
-                if (actionMsg.length != numAgents) {
+                if (actionMsg.length != staticState.getNumAgents()) {
                     clientLogger.error("Invalid number of agents in joint action:");
                     clientLogger.error(clientMsg);
                     continue;
@@ -141,8 +143,7 @@ class RunnerHelper {
 
                 // Execute action.
                 long actionTime = System.nanoTime() - startNS;
-                boolean[] result = execute(jointAction, actionTime, states, allowDiscardingPastStates);
-
+                boolean[] result = execute(jointAction, actionTime, states, staticState, allowDiscardingPastStates);
                 // Write response.
                 try {
                     clientWriter.write(result[0] ? "true" : "false");
@@ -174,11 +175,12 @@ class RunnerHelper {
      * Execute a joint action.
      * Returns a boolean array with success for each agent.
      */
-    static boolean[] execute(Action[] jointAction, long actionTime, List<State> states, boolean allowDiscardingPastStates) {
+    static boolean[] execute(Action[] jointAction, long actionTime, List<State> states,
+                             StaticState staticState, boolean allowDiscardingPastStates) {
         State state = states.get(states.size() - 1);
 
         // Create new state with applicable and non-conflicting actions.
-        Pair<State, boolean[]> result = state.apply(jointAction);
+        Pair<State, boolean[]> result = state.apply(jointAction, staticState);
         result.getValue0().setStateTime(actionTime);
 
         if (allowDiscardingPastStates) {

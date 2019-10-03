@@ -1,0 +1,58 @@
+package domain.gridworld.hospital2.state.actions.impl;
+
+import domain.gridworld.hospital2.state.State;
+import domain.gridworld.hospital2.state.objects.Agent;
+import domain.gridworld.hospital2.state.objects.Box;
+import domain.gridworld.hospital2.state.objects.Coordinate;
+import domain.gridworld.hospital2.state.objects.Object;
+import domain.gridworld.hospital2.state.objects.ui.CanvasDetails;
+import shared.Action;
+
+import java.awt.*;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+public abstract class MoveBoxAction extends MoveAction {
+    protected Box box;
+    Coordinate newBoxCoordinate;
+
+    MoveBoxAction(Action action, Agent agent, State state) {
+        super(action, agent);
+        Coordinate boxCoordinate = this.getBoxCoordinate();
+        this.box = state.getBoxAt(boxCoordinate).orElse(null);
+        if (this.box != null) {
+            this.newBoxCoordinate = this.getNewBoxCoordinate();
+        }
+    }
+
+    abstract Coordinate getBoxCoordinate();
+
+    abstract Coordinate getNewBoxCoordinate();
+
+    @Override
+    public List<Coordinate> getPostCoordinates() {
+        return Stream.of(this.newAgentCoordinate, this.newBoxCoordinate).collect(Collectors.toList());
+    }
+
+    @Override
+    public void apply(State newState) {
+        super.apply(newState);
+        newState.getBox(this.box.getId()).setCoordinate(this.newBoxCoordinate);
+    }
+
+    @Override
+    public void draw(Graphics2D g, CanvasDetails canvasDetails, State oldState, State nextState, double interpolation) {
+        Agent nextAgent = nextState.getAgent(this.agent.getId());
+        Box nextBox = nextState.getBox(this.box.getId());
+        this.agent.drawArmPullPush(g, canvasDetails, nextAgent.getCoordinate(), this.box.getCoordinate(),
+                nextBox.getCoordinate(), interpolation);
+        this.agent.draw(g, canvasDetails, nextAgent.getCoordinate(), interpolation);
+        this.box.draw(g, canvasDetails, nextBox.getCoordinate(), interpolation);
+    }
+
+    @Override
+    public List<Object> getAffectedObjects() {
+        return Stream.of(this.agent, this.box).collect(Collectors.toList());
+    }
+}

@@ -71,14 +71,13 @@ public enum Action {
     }
 
     private String generateName(){
+        if (type.equals(ActionType.NoOp)) return type.name();
         StringBuilder stringBuilder = new StringBuilder(type.name());
-        if(agentMoveDirection != MoveDirection.NONE){
-            stringBuilder.append("(").append(agentMoveDirection.getLetter());
-            if(boxMoveDirection != MoveDirection.NONE){
-                stringBuilder.append(", ").append(boxMoveDirection.getLetter());
-            }
-            stringBuilder.append(")");
+        stringBuilder.append("(").append(agentMoveDirection.getLetter());
+        if(boxMoveDirection != MoveDirection.NONE){
+            stringBuilder.append(", ").append(boxMoveDirection.getLetter());
         }
+        stringBuilder.append(")");
         return stringBuilder.toString();
     }
 
@@ -120,7 +119,7 @@ public enum Action {
         EAST("E",0, 1),
         SOUTH("S",1, 0),
         WEST("W", 0, -1),
-        NONE("", 0,0);
+        NONE("None", 0,0);
 
         private String letter;
         private final short deltaRow;
