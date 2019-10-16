@@ -1,5 +1,6 @@
 package searchclient;
 
+import org.deeplearning4j.rl4j.space.Encodable;
 import shared.Action;
 import shared.Farge;
 
@@ -8,7 +9,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Random;
 
-public class State {
+public class State implements Encodable {
     private static final Random RNG = new Random(1);
 
     // Contains the (row, col) pair and color for each agent indexed by agent number.
@@ -57,7 +58,7 @@ public class State {
      * Constructs the state resulting from applying jointAction in parent.
      * Precondition: Joint action must be applicable and non-conflicting in parent state.
      */
-    private State(State parent, Action[] jointAction) {
+    public State(State parent, Action[] jointAction) {
         // Copy parent.
         this.agentRows = Arrays.copyOf(parent.agentRows, parent.agentRows.length);
         this.agentCols = Arrays.copyOf(parent.agentCols, parent.agentCols.length);
@@ -189,7 +190,7 @@ public class State {
         return expandedStates;
     }
 
-    private boolean isApplicable(int agent, Action action) {
+    public boolean isApplicable(int agent, Action action) {
         int agentRow = this.agentRows[agent];
         int agentCol = this.agentCols[agent];
         Farge agentColors = this.agentColors[agent];
@@ -393,4 +394,73 @@ public class State {
         return s.toString();
     }
 
+    @Override
+    public double[] toArray() {
+        double[] arrayState = new double[this.walls.length * this.walls[0].length * 6];
+        int i = 0;
+        for (boolean[] walls : this.walls) {
+            for (boolean wall : walls) {
+                arrayState[i++] = (wall ? 1 : 0);
+            }
+        }
+        for (char[] boxes : this.boxes) {
+            for (char box : boxes) {
+                arrayState[i++] = Character.getNumericValue(box);
+            }
+        }
+        for (char[] boxes : this.boxes) {
+            for (char box : boxes) {
+                arrayState[i++] = (box != 0 ? this.boxColors[box - 'A'].ordinal() : -1);
+            }
+        }
+        for (char[] goals : this.goals) {
+            for (char goal : goals) {
+                arrayState[i++] = Character.getNumericValue(goal);
+            }
+        }
+        int[][] agents = new int[this.walls.length][this.walls[0].length];
+        for (int agentIndex = 0; agentIndex < this.agentRows.length; agentIndex++) {
+            agents[this.agentRows[agentIndex]][this.agentCols[agentIndex]] = (agentIndex + 1);
+        }
+        for (int[] agentRow : agents) {
+            for (int agent : agentRow) {
+                arrayState[i++] = agent;
+            }
+        }
+        for (int[] agentRow : agents) {
+            for (int agent : agentRow) {
+                arrayState[i++] = (agent != 0 ? this.agentColors[agent - 1].ordinal() : -1);
+            }
+        }
+        return arrayState;
+    }
+
+    public State reset() {
+        State original = this;
+        while (original.parent != null) {
+            original = original.parent;
+        }
+        return original;
+    }
+
+    public int reward() {
+        int reward = 0;
+        for (int row = 1; row < this.goals.length - 1; row ++) {
+            for (int col = 1; col < this.goals[row].length - 1; col++) {
+                char g = this.goals[row][col];
+                if (g > 0) {
+                    char b = this.boxes[row][col];
+                    if (b > 0 && Character.toLowerCase(b) == Character.toLowerCase(g)) {
+                        reward++;
+                    } else if (g >= '0' && g <= '9') {
+                        int a = Character.getNumericValue(g);
+                        if (agentRows[a] == row && agentCols[a] == col) {
+                            reward++;
+                        }
+                    }
+                }
+            }
+        }
+        return reward;
+    }
 }

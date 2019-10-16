@@ -1,6 +1,7 @@
 package searchclient;
 
 import searchclient.level.Level;
+import searchclient.rl.Train;
 import shared.Action;
 import shared.Farge;
 
@@ -13,7 +14,7 @@ import java.util.HashSet;
 import java.util.Locale;
 
 public class SearchClient {
-    public static State parseLevel(BufferedReader serverMessages) throws IOException {
+    public static Level parseLevel(BufferedReader serverMessages) throws IOException {
         // We can assume that the level file is conforming to specification, since the server verifies this.
         Level level = new Level(serverMessages);
 
@@ -26,7 +27,7 @@ public class SearchClient {
 
         System.err.println(level);
 
-        return level.toState();
+        return level;
     }
 
     /**
@@ -70,6 +71,14 @@ public class SearchClient {
         }
     }
 
+    public static void train(State initialState) {
+        try {
+            Train.train(initialState);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private static void printSearchStatus(long startTime, HashSet<State> explored, Frontier frontier) {
         String statusTemplate = "#Explored: %,8d, #Frontier: %,8d, #Generated: %,8d, Time: %3.3f s\n%s\n";
         double elapsedTime = (System.nanoTime() - startTime) / 1_000_000_000d;
@@ -86,7 +95,8 @@ public class SearchClient {
 
         // Parse the level.
         BufferedReader serverMessages = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.US_ASCII));
-        State initialState = SearchClient.parseLevel(serverMessages);
+        Level initialLevel = SearchClient.parseLevel(serverMessages);
+        State initialState = initialLevel.toState();
 
         // Select search strategy.
         Frontier frontier;
@@ -125,6 +135,8 @@ public class SearchClient {
             System.err.println("Defaulting to BFS search. Use arguments -bfs, -dfs, -astar, -wastar, or -greedy to " +
                     "set the search strategy.");
         }
+
+        SearchClient.train(initialState);
 
         // Search for a plan.
         Action[][] plan;

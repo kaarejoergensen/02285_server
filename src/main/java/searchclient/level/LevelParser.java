@@ -135,7 +135,6 @@ public class LevelParser {
             ++row;
             line = file.readLine();
             if(print_debugger) System.err.println(line);
-
         }
     }
 
