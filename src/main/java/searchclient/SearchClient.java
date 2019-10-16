@@ -137,6 +137,7 @@ public class SearchClient {
         }
 
         SearchClient.train(initialState);
+        if ("a".equals("a")) System.exit(0);
 
         // Search for a plan.
         Action[][] plan;
