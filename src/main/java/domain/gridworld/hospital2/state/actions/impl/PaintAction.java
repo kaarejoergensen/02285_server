@@ -20,7 +20,7 @@ import java.util.stream.Stream;
 
 public class PaintAction extends ApplicableAction {
     private Box box;
-    private Color newColor;
+    private Box.NextColor newColor;
 
     public PaintAction(Action action, Agent agent, State state) {
         super(action, agent);
@@ -28,7 +28,7 @@ public class PaintAction extends ApplicableAction {
                 agent.getCoordinate().getRow() + action.getBoxDeltaRow(),
                 agent.getCoordinate().getCol() + action.getBoxDeltaCol());
         this.box = state.getBoxAt(boxCoordinate).orElse(null);
-        if (this.box != null) this.newColor = Farge.next(this.box.getColor()).color;
+        if (this.box != null) this.newColor = this.box.getNextColor();
     }
 
     @Override
@@ -44,14 +44,17 @@ public class PaintAction extends ApplicableAction {
     @Override
     public void apply(State newState) {
         Optional<Box> newBox = newState.getBoxAt(this.box.getCoordinate());
-        newBox.ifPresent(value -> value.setColor(this.newColor));
+        newBox.ifPresent(box -> {
+            box.setColor(this.newColor.getColor());
+            box.setNextColor(this.newColor.getNext());
+        });
     }
 
     @Override
     public void draw(Graphics2D g, CanvasDetails canvasDetails, State nextState, double interpolation) {
-        this.agent.drawArmPaint(g, canvasDetails, this.box.getCoordinate(), this.box.getColor(), this.newColor, interpolation);
+        this.agent.drawArmPaint(g, canvasDetails, this.box.getCoordinate(), this.box.getColor(), this.newColor.getColor(), interpolation);
         this.agent.draw(g, canvasDetails, this.agent.getCoordinate(), interpolation);
-        this.box.draw(g, canvasDetails, this.box.getCoordinate(), interpolation, newColor);
+        this.box.draw(g, canvasDetails, this.box.getCoordinate(), interpolation, newColor.getColor());
     }
 
     @Override

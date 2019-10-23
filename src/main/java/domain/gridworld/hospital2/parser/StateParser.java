@@ -11,6 +11,7 @@ import domain.gridworld.hospital2.state.objects.*;
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.javatuples.Pair;
 import shared.Action;
 import shared.Farge;
 
@@ -31,9 +32,8 @@ public class StateParser {
 
     private Path domainFile;
     private boolean isReplay;
-    private HashMap<String, CustomColor> agentColors;
-    private HashMap<String, CustomColor> boxColors;
-    private HashMap<String, CustomColor> nextColorMap;
+    private HashMap<String, Color> agentColors;
+    private HashMap<String, Box.NextColor> boxColors;
 
     @Getter private StaticState staticState;
     @Getter private State state;
@@ -50,7 +50,6 @@ public class StateParser {
 
         this.agentColors = new HashMap<>();
         this.boxColors = new HashMap<>();
-        this.nextColorMap = new HashMap<>();
 
         this.staticState = new StaticState();
     }
@@ -166,6 +165,8 @@ public class StateParser {
 
     private String parseColorsSection(LevelReader levelReader)
             throws IOException, ParseException {
+        List<Pair<Color, String[]>> pairList = new ArrayList<>();
+
         String line;
         while (true) {
             line = levelReader.readLine();
@@ -194,7 +195,23 @@ public class StateParser {
             }
 
             String[] symbols = split[1].split(",");
-            for (String symbol : symbols) {
+            pairList.add(Pair.with(farge.color, symbols));
+        }
+
+        Box.NextColor previous = null, first = null;
+        for (Pair<Color, String[]> objects : pairList) {
+            Color color = objects.getValue0();
+            Box.NextColor nextColor;
+            if (previous != null) {
+                nextColor = previous.getNext();
+            } else {
+                nextColor = new Box.NextColor();
+                first = nextColor;
+            }
+            nextColor.setColor(color);
+            nextColor.setNext(new Box.NextColor());
+            previous = nextColor;
+            for (String symbol : objects.getValue1()) {
                 symbol = symbol.strip();
                 if (symbol.isEmpty()) {
                     throw new ParseException("Missing agent or box specifier between commas.",
@@ -211,20 +228,22 @@ public class StateParser {
                         throw new ParseException(String.format("Agent '%s' already has a color specified.", s),
                                 levelReader.getLineNumber());
                     }
-                    this.agentColors.put(id, new CustomColor(farge.color));
+                    this.agentColors.put(id, color);
                 } else if ('A' <= s && s <= 'Z') {
                     String id = "B" + (s - 'A');
                     if (this.boxColors.containsKey(id)) {
                         throw new ParseException(String.format("Box '%s' already has a color specified.", s),
                                 levelReader.getLineNumber());
                     }
-                    this.boxColors.put(id, new CustomColor(farge.color));
+                    this.boxColors.put(id, previous);
                 } else {
                     throw new ParseException(String.format("Invalid agent or box symbol: '%s'.", s),
                             levelReader.getLineNumber());
                 }
             }
         }
+        assert previous != null;
+        previous.setNext(first);
 
         return line;
     }
@@ -278,7 +297,7 @@ public class StateParser {
                                 String.format("Agent '%s' appears multiple times in initial state.", c),
                                 levelReader.getLineNumber());
                     }
-                    Color agentColor = this.agentColors.get(id).getCurrent();
+                    Color agentColor = this.agentColors.get(id);
                     if (agentColor == null) {
                         throw new ParseException(String.format("Agent '%s' has no color specified.", c),
                                 levelReader.getLineNumber());
@@ -287,7 +306,7 @@ public class StateParser {
                 } else if ('A' <= c && c <= 'Z') {
                     // Box.
                     String id = "B" + c + "" + numRows + "" + col;
-                    Color boxColor = this.boxColors.get("B" + (c - 'A')).getCurrent();
+                    Box.NextColor boxColor = this.boxColors.get("B" + (c - 'A'));
                     if (boxColor == null) {
                         throw new ParseException(String.format("Box '%s' has no color specified.", c),
                                 levelReader.getLineNumber());
