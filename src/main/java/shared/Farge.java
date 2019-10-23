@@ -35,8 +35,6 @@ public enum Farge {
         this.color = color;
     }
 
-    private static Object[] clientFarger = EnumSet.range(Blue, Brown).toArray();
-
     //TODO: Rename this class - doesn't make sense to call it colors. dankColors måske?
     public static Farge getFromRGB(Color color){
         for(Farge c : values()){
@@ -71,14 +69,4 @@ public enum Farge {
                 return null;
         }
     }
-
-    public static Farge next(Farge current){
-        int nextIndex = current.ordinal() + 1;
-        return (Farge) clientFarger[nextIndex % clientFarger.length];
-    }
-
-    public static Farge next(Color color){
-        return next(Objects.requireNonNull(getFromRGB(color)));
-    }
-
 }
