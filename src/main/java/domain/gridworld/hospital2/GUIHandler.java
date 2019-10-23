@@ -2,7 +2,7 @@ package domain.gridworld.hospital2;
 
 import domain.gridworld.hospital2.state.State;
 import domain.gridworld.hospital2.state.objects.StaticState;
-import domain.gridworld.hospital2.state.objects.ui.CanvasDetails;
+import domain.gridworld.hospital2.state.objects.CanvasDetails;
 import lombok.Data;
 
 import java.awt.*;

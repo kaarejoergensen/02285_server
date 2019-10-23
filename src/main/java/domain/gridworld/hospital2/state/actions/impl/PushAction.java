@@ -1,7 +1,7 @@
 package domain.gridworld.hospital2.state.actions.impl;
 
 import domain.gridworld.hospital2.state.State;
-import domain.gridworld.hospital2.state.objects.Agent;
+import domain.gridworld.hospital2.state.objects.stateobjects.Agent;
 import domain.gridworld.hospital2.state.objects.Coordinate;
 import domain.gridworld.hospital2.state.objects.StaticState;
 import shared.Action;

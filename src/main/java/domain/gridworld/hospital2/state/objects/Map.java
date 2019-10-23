@@ -1,6 +1,5 @@
 package domain.gridworld.hospital2.state.objects;
 
-import domain.gridworld.hospital2.state.objects.ui.CanvasDetails;
 import lombok.AllArgsConstructor;
 import shared.Farge;
 

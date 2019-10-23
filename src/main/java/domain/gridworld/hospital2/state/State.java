@@ -1,9 +1,11 @@
 package domain.gridworld.hospital2.state;
 
 import domain.gridworld.hospital2.state.actions.IApplicableAction;
-import domain.gridworld.hospital2.state.objects.Object;
+import domain.gridworld.hospital2.state.objects.stateobjects.Agent;
+import domain.gridworld.hospital2.state.objects.stateobjects.Box;
+import domain.gridworld.hospital2.state.objects.stateobjects.Object;
 import domain.gridworld.hospital2.state.objects.*;
-import domain.gridworld.hospital2.state.objects.ui.CanvasDetails;
+import domain.gridworld.hospital2.state.objects.CanvasDetails;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;

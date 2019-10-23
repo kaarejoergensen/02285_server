@@ -1,6 +1,6 @@
 package domain.gridworld.hospital2.state.actions;
 
-import domain.gridworld.hospital2.state.objects.Agent;
+import domain.gridworld.hospital2.state.objects.stateobjects.Agent;
 import domain.gridworld.hospital2.state.objects.Coordinate;
 import lombok.AllArgsConstructor;
 import shared.Action;

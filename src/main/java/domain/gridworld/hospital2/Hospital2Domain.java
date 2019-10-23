@@ -5,8 +5,7 @@ import domain.Domain;
 import domain.ParseException;
 import domain.gridworld.hospital2.runner.Hospital2Runner;
 import domain.gridworld.hospital2.runner.RunException;
-import domain.gridworld.hospital2.state.parser.StateParser;
-import shared.Action;
+import domain.gridworld.hospital2.parser.StateParser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

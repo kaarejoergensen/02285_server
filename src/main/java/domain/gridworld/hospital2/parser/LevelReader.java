@@ -1,4 +1,4 @@
-package domain.gridworld.hospital2.state.parser;
+package domain.gridworld.hospital2.parser;
 
 import java.io.IOException;
 import java.io.LineNumberReader;

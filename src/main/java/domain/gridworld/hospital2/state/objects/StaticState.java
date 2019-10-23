@@ -1,7 +1,8 @@
 package domain.gridworld.hospital2.state.objects;
 
 import domain.gridworld.hospital2.state.State;
-import domain.gridworld.hospital2.state.objects.ui.CanvasDetails;
+import domain.gridworld.hospital2.state.objects.stateobjects.Goal;
+import domain.gridworld.hospital2.state.objects.stateobjects.Object;
 import lombok.Data;
 
 import java.awt.*;
@@ -13,9 +14,9 @@ public class StaticState {
     private String levelName;
     private String clientName;
 
-    short numRows;
-    short numCols;
-    byte numAgents;
+    private short numRows;
+    private short numCols;
+    private byte numAgents;
 
     private Map map;
     private List<Goal> agentGoals;

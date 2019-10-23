@@ -2,12 +2,12 @@ package domain.gridworld.hospital2.state.actions.impl;
 
 import domain.gridworld.hospital2.state.State;
 import domain.gridworld.hospital2.state.actions.ApplicableAction;
-import domain.gridworld.hospital2.state.objects.Agent;
-import domain.gridworld.hospital2.state.objects.Box;
+import domain.gridworld.hospital2.state.objects.stateobjects.Agent;
+import domain.gridworld.hospital2.state.objects.stateobjects.Box;
 import domain.gridworld.hospital2.state.objects.Coordinate;
-import domain.gridworld.hospital2.state.objects.Object;
+import domain.gridworld.hospital2.state.objects.stateobjects.Object;
 import domain.gridworld.hospital2.state.objects.StaticState;
-import domain.gridworld.hospital2.state.objects.ui.CanvasDetails;
+import domain.gridworld.hospital2.state.objects.CanvasDetails;
 import shared.Action;
 import shared.Farge;
 

@@ -1,6 +1,7 @@
-package domain.gridworld.hospital2.state.objects;
+package domain.gridworld.hospital2.state.objects.stateobjects;
 
-import domain.gridworld.hospital2.state.objects.ui.CanvasDetails;
+import domain.gridworld.hospital2.state.objects.Coordinate;
+import domain.gridworld.hospital2.state.objects.CanvasDetails;
 import org.javatuples.Pair;
 import shared.Farge;
 

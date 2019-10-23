@@ -1,4 +1,4 @@
-package domain.gridworld.hospital2.state.objects.ui;
+package domain.gridworld.hospital2.state.objects;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

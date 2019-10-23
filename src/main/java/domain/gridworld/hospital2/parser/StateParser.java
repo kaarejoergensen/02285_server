@@ -1,8 +1,12 @@
-package domain.gridworld.hospital2.state.parser;
+package domain.gridworld.hospital2.parser;
 
 import domain.ParseException;
 import domain.gridworld.hospital2.state.State;
-import domain.gridworld.hospital2.state.objects.Object;
+import domain.gridworld.hospital2.state.objects.StaticState;
+import domain.gridworld.hospital2.state.objects.stateobjects.Agent;
+import domain.gridworld.hospital2.state.objects.stateobjects.Box;
+import domain.gridworld.hospital2.state.objects.stateobjects.Goal;
+import domain.gridworld.hospital2.state.objects.stateobjects.Object;
 import domain.gridworld.hospital2.state.objects.*;
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
@@ -16,7 +20,6 @@ import java.nio.charset.MalformedInputException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
