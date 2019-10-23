@@ -441,8 +441,6 @@ public class StateParser {
             ++row;
         }
 
-        this.staticState.setAgentGoals(agentGoals);
-        this.staticState.setBoxGoals(boxGoals);
         this.staticState.setAllGoals(Stream.concat(agentGoals.stream(), boxGoals.stream()).collect(Collectors.toList()));
 
         return line;
@@ -467,8 +465,7 @@ public class StateParser {
         Predicate<Object> pred = o -> !staticState.getMap().isCell(o.getCoordinate());
         if (this.state.getAgents().stream().anyMatch(pred)
                 || this.state.getBoxes().stream().anyMatch(pred)
-                || this.staticState.getAgentGoals().stream().anyMatch(pred)
-                || this.staticState.getBoxGoals().stream().anyMatch(pred)) {
+                || this.staticState.getAllGoals().stream().anyMatch(pred)) {
             throw new ParseException("One or more objects not enclosed in walls");
         }
     }

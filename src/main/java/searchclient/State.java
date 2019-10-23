@@ -26,9 +26,9 @@ public class State {
     // this.walls[row][col] is true if there's a wall at (row, col).
     public boolean[][] walls;
     public char[][] boxes;
-    public Farge[] boxColors;
+    public Farge[] allColors;
+    public int[] boxColors;
     public char[][] goals;
-    public int[] nextFargeMappingTable;
 
 
     public final State parent;
@@ -42,17 +42,17 @@ public class State {
      * Arguments are not copied, and therefore should not be modified after being passed in.
      */
     public State(int[] agentRows, int[] agentCols, Farge[] agentColors, boolean[][] walls,
-                 char[][] boxes, Farge[] boxColors, char[][] goals, int[] nextFargeMappingTable) {
+                 char[][] boxes, Farge[] allColors, int[] boxColors, char[][] goals) {
         this.agentRows = agentRows;
         this.agentCols = agentCols;
         this.agentColors = agentColors;
         this.walls = walls;
         this.boxes = boxes;
+        this.allColors = allColors;
         this.boxColors = boxColors;
         this.goals = goals;
         this.parent = null;
         this.jointAction = null;
-        this.nextFargeMappingTable = nextFargeMappingTable;
         this.g = 0;
     }
 
@@ -70,8 +70,8 @@ public class State {
         for (int i = 0; i < parent.boxes.length; i++) {
             this.boxes[i] = Arrays.copyOf(parent.boxes[i], parent.boxes[i].length);
         }
+        this.allColors = parent.allColors;
         this.boxColors = Arrays.copyOf(parent.boxColors, parent.boxColors.length);
-        this.nextFargeMappingTable = parent.nextFargeMappingTable;
         this.goals = parent.goals;
         this.parent = parent;
         this.jointAction = Arrays.copyOf(jointAction, jointAction.length);
@@ -113,7 +113,11 @@ public class State {
                 case Paint:
                     char index = this.boxAt(this.agentRows[agent] + action.getBoxDeltaRow(),
                             this.agentCols[agent] + action.getBoxDeltaCol());
-                    boxColors[index - 'A'] = this.boxColors[nextFargeMappingTable[index - 'A']];
+                    int newIndex = (this.boxColors[index - 'A'] + 1) % this.allColors.length;
+                    if (this.allColors[newIndex].equals(Farge.Grey)) {
+                        newIndex = (newIndex + 1) % allColors.length;
+                    }
+                    boxColors[index - 'A'] = newIndex;
                     break;
 
             }
@@ -215,7 +219,7 @@ public class State {
                 boxRow = agentRow + action.getAgentDeltaRow();
                 boxCol = agentCol + action.getAgentDeltaCol();
                 box = this.boxAt(boxRow, boxCol);
-                if (box == 0 || !agentColors.equals(this.boxColors[box - 'A'])) {
+                if (box == 0 || !agentColors.equals(allColors[boxColors[box - 'A']])) {
                     return false;
                 }
                 destinationRow = boxRow + action.getBoxDeltaRow();
@@ -226,7 +230,7 @@ public class State {
                 boxRow = agentRow + action.getBoxDeltaRow();
                 boxCol = agentCol + action.getBoxDeltaCol();
                 box = this.boxAt(boxRow, boxCol);
-                if (box == 0 || !agentColors.equals(this.boxColors[box - 'A'])) {
+                if (box == 0 || !agentColors.equals(allColors[boxColors[box - 'A']])) {
                     return false;
                 }
                 destinationRow = agentRow + action.getAgentDeltaRow();

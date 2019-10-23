@@ -110,6 +110,16 @@ public abstract class Object implements Cloneable, Comparable {
         return this.id.compareTo(((Object) o).getId());
     }
 
+    @Override
+    public int hashCode() {
+        return this.id.hashCode();
+    }
+
+    @Override
+    public boolean equals(java.lang.Object obj) {
+        return obj instanceof Object && this.id.equals(((Object)obj).getId());
+    }
+
     @Getter
     @Setter
     @NoArgsConstructor

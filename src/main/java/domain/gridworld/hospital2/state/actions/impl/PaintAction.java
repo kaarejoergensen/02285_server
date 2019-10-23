@@ -28,7 +28,7 @@ public class PaintAction extends ApplicableAction {
                 agent.getCoordinate().getRow() + action.getBoxDeltaRow(),
                 agent.getCoordinate().getCol() + action.getBoxDeltaCol());
         this.box = state.getBoxAt(boxCoordinate).orElse(null);
-        if (this.box != null) this.newColor = this.box.getNextColor();
+        if (this.box != null) this.newColor = this.box.getNextColor().getNext();
     }
 
     @Override
@@ -46,7 +46,7 @@ public class PaintAction extends ApplicableAction {
         Optional<Box> newBox = newState.getBoxAt(this.box.getCoordinate());
         newBox.ifPresent(box -> {
             box.setColor(this.newColor.getColor());
-            box.setNextColor(this.newColor.getNext());
+            box.setNextColor(this.newColor);
         });
     }
 

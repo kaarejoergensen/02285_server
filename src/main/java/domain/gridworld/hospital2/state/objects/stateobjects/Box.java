@@ -6,7 +6,8 @@ import lombok.*;
 
 import java.awt.*;
 
-@Data
+@Getter
+@Setter
 public class Box extends Object {
     private NextColor nextColor;
 

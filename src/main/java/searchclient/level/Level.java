@@ -12,15 +12,12 @@ public class Level {
     public int[] agentCols;
     public Farge[] agentColors;
 
-
-
     //TOOD: Finne en annen løsning på dette
     public int numAgents;
 
     public char[][] boxes;
-    public Farge[] boxColors;
-
-    public int[] nextFargeMappingTable;
+    public Farge[] allColors;
+    public int[] boxColors;
 
     public boolean[][] walls;
 
@@ -44,8 +41,7 @@ public class Level {
         parse = new LevelParser(file,this);
 
         agentColors = new Farge[MAX_AGENTS];
-        boxColors = new Farge[BOX_COLORS];
-        nextFargeMappingTable = new int[BOX_COLORS];
+        boxColors = new int[BOX_COLORS];
 
         agentRows = new int[MAX_AGENTS];
         agentCols = new int[MAX_AGENTS];
@@ -71,7 +67,7 @@ public class Level {
     }
 
     public State toState(){
-        return new State(agentRows, agentCols, agentColors, walls, boxes, boxColors, goals, nextFargeMappingTable);
+        return new State(agentRows, agentCols, agentColors, walls, boxes, allColors, boxColors, goals);
     }
 
 

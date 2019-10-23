@@ -52,20 +52,19 @@ public class LevelParser {
             colorList.add(Farge.fromString(split[0].strip()));
             entitiesList.add(split[1].split(","));
 
-
             line = file.readLine();
         }
-
+        level.allColors = new Farge[colorList.size()];
         for (int i = 0; i < colorList.size(); i++) {
             Farge colors = colorList.get(i);
             String[] entities = entitiesList.get(i);
+            level.allColors[i] = colors;
             for (String entity : entities) {
                 char c = entity.strip().charAt(0);
                 if ('0' <= c && c <= '9') {
                     level.agentColors[c - '0'] = colors;
                 } else if ('A' <= c && c <= 'Z') {
-                    level.boxColors[c - 'A'] = colors;
-                    level.nextFargeMappingTable[c - 'A'] = (i + 1) % colorList.size();
+                    level.boxColors[c - 'A'] = i;
                 }
             }
         }
