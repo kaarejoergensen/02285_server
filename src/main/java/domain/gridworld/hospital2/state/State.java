@@ -127,10 +127,7 @@ public class State {
     }
 
     public void drawStaticObjects(Graphics2D g, CanvasDetails canvasDetails) {
-        this.staticObjects.forEach(o -> {
-            System.out.println("Static: " + o.getLetter());
-            o.draw(g, canvasDetails);
-        });
+        this.staticObjects.forEach(o -> o.draw(g, canvasDetails));
         System.out.println();
     }
 
