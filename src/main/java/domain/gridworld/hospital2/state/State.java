@@ -11,6 +11,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.javatuples.Pair;
 import shared.Action;
+import shared.Farge;
 
 import java.awt.*;
 import java.util.List;

@@ -31,8 +31,9 @@ public class StateParser {
 
     private Path domainFile;
     private boolean isReplay;
-    private HashMap<String, Color> agentColors;
-    private HashMap<String, Color> boxColors;
+    private HashMap<String, CustomColor> agentColors;
+    private HashMap<String, CustomColor> boxColors;
+    private HashMap<String, CustomColor> nextColorMap;
 
     @Getter private StaticState staticState;
     @Getter private State state;
@@ -49,6 +50,7 @@ public class StateParser {
 
         this.agentColors = new HashMap<>();
         this.boxColors = new HashMap<>();
+        this.nextColorMap = new HashMap<>();
 
         this.staticState = new StaticState();
     }
@@ -164,15 +166,16 @@ public class StateParser {
 
     private String parseColorsSection(LevelReader levelReader)
             throws IOException, ParseException {
+        String line;
         while (true) {
-            String line = levelReader.readLine();
+            line = levelReader.readLine();
             if (line == null) {
                 throw new ParseException("Expected more color lines or end of color section, but reached end of file.",
                         levelReader.getLineNumber());
             }
 
             if (line.length() > 0 && line.charAt(0) == '#') {
-                return line;
+                break;
             }
 
             String[] split = line.split(":");
@@ -208,20 +211,22 @@ public class StateParser {
                         throw new ParseException(String.format("Agent '%s' already has a color specified.", s),
                                 levelReader.getLineNumber());
                     }
-                    this.agentColors.put(id, farge.color);
+                    this.agentColors.put(id, new CustomColor(farge.color));
                 } else if ('A' <= s && s <= 'Z') {
                     String id = "B" + (s - 'A');
                     if (this.boxColors.containsKey(id)) {
                         throw new ParseException(String.format("Box '%s' already has a color specified.", s),
                                 levelReader.getLineNumber());
                     }
-                    this.boxColors.put(id, farge.color);
+                    this.boxColors.put(id, new CustomColor(farge.color));
                 } else {
                     throw new ParseException(String.format("Invalid agent or box symbol: '%s'.", s),
                             levelReader.getLineNumber());
                 }
             }
         }
+
+        return line;
     }
 
     private String parseInitialSection(LevelReader levelReader)
@@ -273,7 +278,7 @@ public class StateParser {
                                 String.format("Agent '%s' appears multiple times in initial state.", c),
                                 levelReader.getLineNumber());
                     }
-                    Color agentColor = this.agentColors.get(id);
+                    Color agentColor = this.agentColors.get(id).getCurrent();
                     if (agentColor == null) {
                         throw new ParseException(String.format("Agent '%s' has no color specified.", c),
                                 levelReader.getLineNumber());
@@ -282,7 +287,7 @@ public class StateParser {
                 } else if ('A' <= c && c <= 'Z') {
                     // Box.
                     String id = "B" + c + "" + numRows + "" + col;
-                    Color boxColor = this.boxColors.get("B" + (c - 'A'));
+                    Color boxColor = this.boxColors.get("B" + (c - 'A')).getCurrent();
                     if (boxColor == null) {
                         throw new ParseException(String.format("Box '%s' has no color specified.", c),
                                 levelReader.getLineNumber());

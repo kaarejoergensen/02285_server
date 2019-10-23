@@ -14,7 +14,7 @@ public class Coordinate implements Cloneable {
     }
 
     @Override
-    protected java.lang.Object clone() {
+    public java.lang.Object clone() {
         return new Coordinate(this.row, this.col);
     }
 }

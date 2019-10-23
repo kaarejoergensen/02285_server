@@ -4,8 +4,10 @@ import shared.Farge;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.InputMismatchException;
+import java.util.List;
 
 public class LevelParser {
 
@@ -37,28 +39,39 @@ public class LevelParser {
         checkArgument("#colors", file.readLine());
 
         String line = file.readLine();
-        String debug_log = "";
+        StringBuilder debug_log = new StringBuilder();
+
+        List<Farge> colorList = new ArrayList<>();
+        List<String[]> entitiesList = new ArrayList<>();
 
         while (!line.startsWith("#")) {
             file.mark(BUFFER_SIZE);
-            debug_log += line + " ";
+            debug_log.append(line).append(" ");
 
             String[] split = line.split(":");
-            Farge colors = Farge.fromString(split[0].strip());
-            String[] entities = split[1].split(",");
+            colorList.add(Farge.fromString(split[0].strip()));
+            entitiesList.add(split[1].split(","));
+
+
+            line = file.readLine();
+        }
+
+        for (int i = 0; i < colorList.size(); i++) {
+            Farge colors = colorList.get(i);
+            String[] entities = entitiesList.get(i);
             for (String entity : entities) {
                 char c = entity.strip().charAt(0);
                 if ('0' <= c && c <= '9') {
                     level.agentColors[c - '0'] = colors;
                 } else if ('A' <= c && c <= 'Z') {
                     level.boxColors[c - 'A'] = colors;
+                    level.nextFargeMappingTable[c - 'A'] = (i + 1) % colorList.size();
                 }
             }
-            line = file.readLine();
         }
 
         if(print_debugger){
-            System.err.println("Colors Read: " +  debug_log );
+            System.err.println("Colors Read: " +  debug_log.toString() );
         }
     }
 

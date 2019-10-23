@@ -5,14 +5,15 @@ hospital2
 #colors
 Blue:0,A,C
 Red:1,B
+Blue:D
 #initial
 ++++++++
-+0A    +
++0AD   +
 +1B    +
 ++++++++
 #goal
 ++++++++
 +0    B+
-+1    A+
++1   DA+
 ++++++++
 #end

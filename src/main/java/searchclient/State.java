@@ -28,6 +28,8 @@ public class State {
     public char[][] boxes;
     public Farge[] boxColors;
     public char[][] goals;
+    public int[] nextFargeMappingTable;
+
 
     public final State parent;
     public final Action[] jointAction;
@@ -40,7 +42,7 @@ public class State {
      * Arguments are not copied, and therefore should not be modified after being passed in.
      */
     public State(int[] agentRows, int[] agentCols, Farge[] agentColors, boolean[][] walls,
-                 char[][] boxes, Farge[] boxColors, char[][] goals) {
+                 char[][] boxes, Farge[] boxColors, char[][] goals, int[] nextFargeMappingTable) {
         this.agentRows = agentRows;
         this.agentCols = agentCols;
         this.agentColors = agentColors;
@@ -50,6 +52,7 @@ public class State {
         this.goals = goals;
         this.parent = null;
         this.jointAction = null;
+        this.nextFargeMappingTable = nextFargeMappingTable;
         this.g = 0;
     }
 
@@ -68,6 +71,7 @@ public class State {
             this.boxes[i] = Arrays.copyOf(parent.boxes[i], parent.boxes[i].length);
         }
         this.boxColors = Arrays.copyOf(parent.boxColors, parent.boxColors.length);
+        this.nextFargeMappingTable = parent.nextFargeMappingTable;
         this.goals = parent.goals;
         this.parent = parent;
         this.jointAction = Arrays.copyOf(jointAction, jointAction.length);
@@ -109,7 +113,7 @@ public class State {
                 case Paint:
                     char index = this.boxAt(this.agentRows[agent] + action.getBoxDeltaRow(),
                             this.agentCols[agent] + action.getBoxDeltaCol());
-                    boxColors[index - 'A'] = Farge.next(boxColors[index - 'A']);
+                    boxColors[index - 'A'] = this.boxColors[nextFargeMappingTable[index - 'A']];
                     break;
 
             }

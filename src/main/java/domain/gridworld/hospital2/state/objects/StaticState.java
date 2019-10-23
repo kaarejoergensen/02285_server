@@ -22,6 +22,7 @@ public class StaticState {
     private List<Goal> agentGoals;
     private List<Goal> boxGoals;
     private List<Goal> allGoals;
+    private int[] nextBoxColorMappingTable;
 
     public boolean isSolved(State state) {
         return this.agentGoals.stream().allMatch(a -> this.isSolved(state, a))
