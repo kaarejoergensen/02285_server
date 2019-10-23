@@ -241,7 +241,6 @@ public class State {
                     boxRow = agentRow + action.getBoxDeltaRow();
                     boxCol = agentCol + action.getBoxDeltaCol();
                     box = this.boxAt(boxRow, boxCol);
-
                     return box != 0;
                 }
                 return false;
@@ -292,6 +291,11 @@ public class State {
                     destinationRows[agent] = agentRow + action.getAgentDeltaRow();
                     destinationCols[agent] = agentCol + action.getAgentDeltaCol();
                     break;
+                case Paint:
+                    boxRow = agentRow + action.getBoxDeltaRow();
+                    boxCol = agentCol + action.getBoxDeltaCol();
+                    boxRows[agent] = boxRow;
+                    boxCols[agent] = boxCol;
                 default:
                     break;
             }
