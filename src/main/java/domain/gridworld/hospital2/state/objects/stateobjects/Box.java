@@ -2,23 +2,16 @@ package domain.gridworld.hospital2.state.objects.stateobjects;
 
 import domain.gridworld.hospital2.state.objects.Coordinate;
 import domain.gridworld.hospital2.state.objects.CanvasDetails;
-import lombok.*;
 
 import java.awt.*;
 
-@Getter
-@Setter
 public class Box extends Object {
-    private NextColor nextColor;
-
-    public Box(String id, char letter, Coordinate coordinate, NextColor nextColor) {
-        super(id, letter, coordinate, nextColor.color);
-        this.nextColor = nextColor;
+    public Box(String id, char letter, Coordinate coordinate, Color color) {
+        super(id, letter, coordinate, color);
     }
 
-    private Box(String id, char letter, Coordinate coordinate, NextColor nextColor, LetterTextContainer letterText) {
-        super(id, letter, coordinate, nextColor.color, letterText);
-        this.nextColor = nextColor;
+    private Box(String id, char letter, Coordinate coordinate, Color color, LetterTextContainer letterText) {
+        super(id, letter, coordinate, color, letterText);
     }
 
     @Override
@@ -29,20 +22,6 @@ public class Box extends Object {
 
     @Override
     public java.lang.Object clone() {
-        return new Box(id, letter, (Coordinate) coordinate.clone(), nextColor, letterText);
-    }
-
-    @Getter
-    @Setter
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class NextColor {
-        private Color color;
-        private NextColor next;
-
-        @Override
-        public String toString() {
-            return "Color: " + color + " Next color: " + next.getColor();
-        }
+        return new Box(id, letter, (Coordinate) coordinate.clone(), color, letterText);
     }
 }

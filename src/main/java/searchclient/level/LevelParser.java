@@ -41,36 +41,26 @@ public class LevelParser {
         String line = file.readLine();
         StringBuilder debug_log = new StringBuilder();
 
-        List<Farge> colorList = new ArrayList<>();
-        List<String[]> entitiesList = new ArrayList<>();
-
         while (!line.startsWith("#")) {
             file.mark(BUFFER_SIZE);
             debug_log.append(line).append(" ");
 
             String[] split = line.split(":");
-            colorList.add(Farge.fromString(split[0].strip()));
-            entitiesList.add(split[1].split(","));
-
-            line = file.readLine();
-        }
-        level.allColors = new Farge[colorList.size()];
-        for (int i = 0; i < colorList.size(); i++) {
-            Farge colors = colorList.get(i);
-            String[] entities = entitiesList.get(i);
-            level.allColors[i] = colors;
+            Farge colors = Farge.fromString(split[0].strip());
+            String[] entities = split[1].split(",");
             for (String entity : entities) {
                 char c = entity.strip().charAt(0);
                 if ('0' <= c && c <= '9') {
                     level.agentColors[c - '0'] = colors;
                 } else if ('A' <= c && c <= 'Z') {
-                    level.boxColors[c - 'A'] = i;
+                    level.boxColors[c - 'A'] = colors;
                 }
             }
+            line = file.readLine();
         }
 
         if(print_debugger){
-            System.err.println("Colors Read: " +  debug_log.toString() );
+            System.err.println("Colors Read: " +  debug_log );
         }
     }
 

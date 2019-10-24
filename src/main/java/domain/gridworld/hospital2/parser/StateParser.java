@@ -11,7 +11,6 @@ import domain.gridworld.hospital2.state.objects.*;
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.javatuples.Pair;
 import shared.Action;
 import shared.Farge;
 
@@ -33,7 +32,7 @@ public class StateParser {
     private Path domainFile;
     private boolean isReplay;
     private HashMap<String, Color> agentColors;
-    private HashMap<String, Box.NextColor> boxColors;
+    private HashMap<String, Color> boxColors;
 
     @Getter private StaticState staticState;
     @Getter private State state;
@@ -165,18 +164,15 @@ public class StateParser {
 
     private String parseColorsSection(LevelReader levelReader)
             throws IOException, ParseException {
-        List<Pair<Color, String[]>> pairList = new ArrayList<>();
-
-        String line;
         while (true) {
-            line = levelReader.readLine();
+            String line = levelReader.readLine();
             if (line == null) {
                 throw new ParseException("Expected more color lines or end of color section, but reached end of file.",
                         levelReader.getLineNumber());
             }
 
             if (line.length() > 0 && line.charAt(0) == '#') {
-                break;
+                return line;
             }
 
             String[] split = line.split(":");
@@ -195,23 +191,7 @@ public class StateParser {
             }
 
             String[] symbols = split[1].split(",");
-            pairList.add(Pair.with(farge.color, symbols));
-        }
-
-        Box.NextColor previous = null, first = null;
-        for (Pair<Color, String[]> objects : pairList) {
-            Color color = objects.getValue0();
-            Box.NextColor nextColor;
-            if (previous != null) {
-                nextColor = previous.getNext();
-            } else {
-                nextColor = new Box.NextColor();
-                first = nextColor;
-            }
-            nextColor.setColor(color);
-            nextColor.setNext(new Box.NextColor());
-            previous = nextColor;
-            for (String symbol : objects.getValue1()) {
+            for (String symbol : symbols) {
                 symbol = symbol.strip();
                 if (symbol.isEmpty()) {
                     throw new ParseException("Missing agent or box specifier between commas.",
@@ -228,24 +208,20 @@ public class StateParser {
                         throw new ParseException(String.format("Agent '%s' already has a color specified.", s),
                                 levelReader.getLineNumber());
                     }
-                    this.agentColors.put(id, color);
+                    this.agentColors.put(id, farge.color);
                 } else if ('A' <= s && s <= 'Z') {
                     String id = "B" + (s - 'A');
                     if (this.boxColors.containsKey(id)) {
                         throw new ParseException(String.format("Box '%s' already has a color specified.", s),
                                 levelReader.getLineNumber());
                     }
-                    this.boxColors.put(id, previous);
+                    this.boxColors.put(id, farge.color);
                 } else {
                     throw new ParseException(String.format("Invalid agent or box symbol: '%s'.", s),
                             levelReader.getLineNumber());
                 }
             }
         }
-        assert previous != null;
-        previous.setNext(first);
-
-        return line;
     }
 
     private String parseInitialSection(LevelReader levelReader)
@@ -306,7 +282,7 @@ public class StateParser {
                 } else if ('A' <= c && c <= 'Z') {
                     // Box.
                     String id = "B" + c + "" + numRows + "" + col;
-                    Box.NextColor boxColor = this.boxColors.get("B" + (c - 'A'));
+                    Color boxColor = this.boxColors.get("B" + (c - 'A'));
                     if (boxColor == null) {
                         throw new ParseException(String.format("Box '%s' has no color specified.", c),
                                 levelReader.getLineNumber());
@@ -464,8 +440,7 @@ public class StateParser {
     private void checkObjectsEnclosedInWalls() throws ParseException {
         Predicate<Object> pred = o -> !staticState.getMap().isCell(o.getCoordinate());
         if (this.state.getAgents().stream().anyMatch(pred)
-                || this.state.getBoxes().stream().anyMatch(pred)
-                || this.staticState.getAllGoals().stream().anyMatch(pred)) {
+                || this.state.getBoxes().stream().anyMatch(pred)) {
             throw new ParseException("One or more objects not enclosed in walls");
         }
     }

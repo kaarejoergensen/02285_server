@@ -1,6 +1,8 @@
 package shared;
 
 
+import lombok.Getter;
+
 import java.awt.*;
 import java.util.*;
 import java.util.List;
@@ -34,6 +36,9 @@ public enum Farge {
     Farge(Color color){
         this.color = color;
     }
+
+    @Getter
+    private static Object[] clientFarger = EnumSet.range(Blue, Brown).toArray();
 
     //TODO: Rename this class - doesn't make sense to call it colors. dankColors måske?
     public static Farge getFromRGB(Color color){
