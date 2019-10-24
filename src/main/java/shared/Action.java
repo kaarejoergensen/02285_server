@@ -2,72 +2,46 @@ package shared;
 
 import lombok.Getter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 @Getter
-public enum Action {
-
-    NoOp(ActionType.NoOp, MoveDirection.NONE,  MoveDirection.NONE),
-
-    MoveN(ActionType.Move, MoveDirection.NORTH, MoveDirection.NONE),
-    MoveS(ActionType.Move, MoveDirection.SOUTH, MoveDirection.NONE),
-    MoveE(ActionType.Move, MoveDirection.EAST, MoveDirection.NONE),
-    MoveW(ActionType.Move, MoveDirection.WEST, MoveDirection.NONE),
-
-    //PUSH
-    PushNN(ActionType.Push, MoveDirection.NORTH, MoveDirection.NORTH),
-    PushNE(ActionType.Push, MoveDirection.NORTH, MoveDirection.EAST),
-    PushNW(ActionType.Push, MoveDirection.NORTH, MoveDirection.WEST),
-
-    PushSS(ActionType.Push, MoveDirection.SOUTH, MoveDirection.SOUTH),
-    PushSE(ActionType.Push, MoveDirection.SOUTH, MoveDirection.EAST),
-    PushSW(ActionType.Push, MoveDirection.SOUTH, MoveDirection.WEST),
-
-    PushEE(ActionType.Push, MoveDirection.EAST, MoveDirection.EAST),
-    PushEN(ActionType.Push, MoveDirection.EAST, MoveDirection.NORTH),
-    PushES(ActionType.Push, MoveDirection.EAST, MoveDirection.SOUTH),
-
-    PushWW(ActionType.Push, MoveDirection.WEST, MoveDirection.WEST),
-    PushWN(ActionType.Push, MoveDirection.WEST, MoveDirection.NORTH),
-    PushWS(ActionType.Push, MoveDirection.WEST, MoveDirection.SOUTH),
-
-
-    //Pull
-    PullNS(ActionType.Pull, MoveDirection.NORTH, MoveDirection.SOUTH),
-    PullNE(ActionType.Pull, MoveDirection.NORTH, MoveDirection.EAST),
-    PullNW(ActionType.Pull, MoveDirection.NORTH, MoveDirection.WEST),
-
-
-    PullSN(ActionType.Pull, MoveDirection.SOUTH, MoveDirection.NORTH),
-    PullSE(ActionType.Pull, MoveDirection.SOUTH, MoveDirection.EAST),
-    PullSW(ActionType.Pull, MoveDirection.SOUTH, MoveDirection.WEST),
-
-    PullEN(ActionType.Pull, MoveDirection.EAST, MoveDirection.NORTH),
-    PullES(ActionType.Pull, MoveDirection.EAST, MoveDirection.SOUTH),
-    PullEW(ActionType.Pull, MoveDirection.EAST, MoveDirection.WEST),
-
-    PullWN(ActionType.Pull, MoveDirection.WEST, MoveDirection.NORTH),
-    PullWS(ActionType.Pull, MoveDirection.WEST, MoveDirection.SOUTH),
-    PullWE(ActionType.Pull, MoveDirection.WEST, MoveDirection.EAST),
-
-
-    //Paint
-    PaintN(ActionType.Paint, MoveDirection.NONE, MoveDirection.NORTH),
-    PaintS(ActionType.Paint, MoveDirection.NONE, MoveDirection.SOUTH),
-    PaintE(ActionType.Paint, MoveDirection.NONE, MoveDirection.EAST),
-    PaintW(ActionType.Paint, MoveDirection.NONE, MoveDirection.WEST);
-
+public class Action {
+    @Getter
+    private static final List<Action> allActions = generateALlActions();
 
     private String name;
     private final ActionType type;
-    private final MoveDirection agentMoveDirection;
-    private final MoveDirection boxMoveDirection;
+    private MoveDirection agentMoveDirection = MoveDirection.NONE;
+    private MoveDirection boxMoveDirection = MoveDirection.NONE;
 
-    Action(ActionType type, MoveDirection agentMoveDirection, MoveDirection boxMoveDirection) {
+    private Farge color;
+
+    private Action(ActionType type, MoveDirection agentMoveDirection, MoveDirection boxMoveDirection) {
         this.type = type;
         this.agentMoveDirection = agentMoveDirection;
         this.boxMoveDirection = boxMoveDirection;
-        //Setting name for enum
-        name = generateName();
+        this.name = this.generateName();
+    }
+
+    private Action(ActionType type) {
+        this.type = type;
+        this.name = this.generateName();
+    }
+
+    private Action(ActionType type, MoveDirection agentMoveDirection) {
+        this.type = type;
+        this.agentMoveDirection = agentMoveDirection;
+        this.name = this.generateName();
+    }
+
+
+    private Action(ActionType type, MoveDirection boxMoveDirection, Farge color) {
+        this.type = type;
+        this.boxMoveDirection = boxMoveDirection;
+        this.color = color;
+        this.name = this.generateName();
     }
 
     private String generateName(){
@@ -76,6 +50,9 @@ public enum Action {
         stringBuilder.append("(").append(agentMoveDirection.getLetter());
         if(boxMoveDirection != MoveDirection.NONE){
             stringBuilder.append(", ").append(boxMoveDirection.getLetter());
+        }
+        if (color != null) {
+            stringBuilder.append(", ").append(color.name());
         }
         stringBuilder.append(")");
         return stringBuilder.toString();
@@ -99,10 +76,61 @@ public enum Action {
     }
 
     public static Action parse(String action) {
-        for(Action a: Action.values()){
+        for(Action a: allActions){
             if(a.getName().equals(action)) return a;
         }
-        return NoOp;
+        return generateNoOp();
+    }
+
+    public static List<Action> generateALlActions() {
+        List<Action> actions = new ArrayList<>();
+        actions.add(generateNoOp());
+        actions.addAll(generateMove());
+        actions.addAll(generatePush());
+        actions.addAll(generatePull());
+        actions.addAll(generatePaint());
+        return actions;
+    }
+
+    public static Action generateNoOp() {
+        return new Action(ActionType.NoOp);
+    }
+
+    public static List<Action> generateMove() {
+        List<Action> actions = new ArrayList<>();
+        for (MoveDirection moveDirection : MoveDirection.values()) {
+            actions.add(new Action(ActionType.Move, moveDirection));
+        }
+        return actions;
+    }
+
+    public static List<Action> generatePush() {
+        return generatePullOrPush(ActionType.Push);
+    }
+
+    public static List<Action> generatePull() {
+        return generatePullOrPush(ActionType.Pull);
+    }
+
+    private static List<Action> generatePullOrPush(ActionType type) {
+        List<Action> actions = new ArrayList<>();
+        for (MoveDirection moveDirection : MoveDirection.values()) {
+            for (MoveDirection moveDirection1 : MoveDirection.values()) {
+                if (moveDirection.equals(moveDirection1)) continue;
+                actions.add(new Action(type, moveDirection, moveDirection1));
+            }
+        }
+        return actions;
+    }
+
+    public static List<Action> generatePaint() {
+        List<Action> actions = new ArrayList<>();
+        for (MoveDirection moveDirection : MoveDirection.values()) {
+            for (Object farge : Farge.getClientFarger()) {
+                actions.add(new Action(ActionType.Paint, moveDirection, (Farge) farge));
+            }
+        }
+        return actions;
     }
 
     public enum ActionType {
