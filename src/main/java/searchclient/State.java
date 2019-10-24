@@ -44,7 +44,7 @@ public class State {
         this.agentRows = agentRows;
         this.agentCols = agentCols;
         this.agentColors = agentColors;
-        this.agentFarges = Arrays.stream(agentColors).filter(Objects::nonNull).collect(Collectors.toSet());
+        this.agentFarges = EnumSet.copyOf(Arrays.stream(agentColors).filter(Objects::nonNull).collect(Collectors.toList()));
         this.walls = walls;
         this.boxes = boxes;
         this.boxColors = boxColors;
