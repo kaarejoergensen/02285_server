@@ -1,5 +1,7 @@
 package searchclient;
 
+import lombok.Getter;
+import lombok.Setter;
 import shared.Action;
 import shared.Farge;
 
@@ -8,6 +10,9 @@ import java.util.stream.Collectors;
 
 public class State {
     private static final Random RNG = new Random(1);
+
+    @Getter private int visitCount = 0;
+    @Setter @Getter private int winScore = 0;
 
     // Contains the (row, col) pair and color for each agent indexed by agent number.
     public int[] agentRows;
@@ -30,6 +35,7 @@ public class State {
 
 
     public final State parent;
+    public final List<State> children = new ArrayList<>();
     public final Action[] jointAction;
     private final int g;
 
@@ -72,6 +78,7 @@ public class State {
         this.boxColors = Arrays.copyOf(parent.boxColors, parent.boxColors.length);
         this.goals = parent.goals;
         this.parent = parent;
+        parent.children.add(this);
         this.jointAction = Arrays.copyOf(jointAction, jointAction.length);
         this.g = parent.g + 1;
 
@@ -116,6 +123,21 @@ public class State {
 
             }
         }
+    }
+
+    public State getRandomChildState() {
+        int noOfPossibleMoves = this.children.size();
+        int selectRandom = (int) (Math.random() * noOfPossibleMoves);
+        return this.children.get(selectRandom);
+    }
+
+    public State getChildWithMaxScore() {
+        return Collections.max(this.children, Comparator.comparing(State::getVisitCount));
+    }
+
+    public void addScore(int score) {
+        if (this.winScore != Integer.MIN_VALUE)
+            this.winScore += score;
     }
 
     public int g() {
