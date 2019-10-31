@@ -7,7 +7,7 @@ import java.util.Map;
 public class MonteCarloTreeSearch {
     private static final int WIN_SCORE = 10;
 
-    private final int MCTS_LOOP_ITERATIONS = 1000;
+    private final int MCTS_LOOP_ITERATIONS = 100000;
     private final int GOAL_SEARCH_LIMIT = 90;
 
     private Map<Integer, State> generatedStates = new HashMap<>();
