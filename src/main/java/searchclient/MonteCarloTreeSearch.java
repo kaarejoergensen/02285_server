@@ -1,12 +1,14 @@
 package searchclient;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class MonteCarloTreeSearch {
     private static final int WIN_SCORE = 10;
 
     private final int MCTS_LOOP_ITERATIONS = 1000;
-    private final int GOAL_SEARCH_LIMIT = 1000;
+    private final int GOAL_SEARCH_LIMIT = 90;
 
     private Map<Integer, State> generatedStates = new HashMap<>();
 
@@ -24,7 +26,6 @@ public class MonteCarloTreeSearch {
                 nodeToExplore = promisingNode.getRandomChildState();
             }
             boolean solved = simulateRandomPayout(nodeToExplore);
-            if (solved) System.err.println("SOLVED");
              // Phase 4 - Update
             backPropagation(nodeToExplore, solved);
         }
@@ -36,7 +37,7 @@ public class MonteCarloTreeSearch {
         //System.err.println("Starting selectPromisingNode");
         State node = rootNode;
         while (node.children.size() != 0) {
-            node = node.children.get(new Random().nextInt(node.children.size()));
+            node = UCT.findBestNodeWithUCT(node);
         }
         //System.err.println("SelectPromisingNode done");
         return node;
