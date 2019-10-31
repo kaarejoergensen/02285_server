@@ -70,11 +70,46 @@ public class SearchClient {
         }
     }
 
+    public static Action[][] search2(State initialState) {
+        long startTime = System.nanoTime();
+        int explored = 0;
+
+        System.err.format("Starting mcts.\n");
+        MonteCarloTreeSearch monteCarloTreeSearch = new MonteCarloTreeSearch();
+        State leafState = initialState;
+        while (true) {
+            leafState = monteCarloTreeSearch.findNextMove(leafState);
+            printSearchStatus(startTime, explored);
+            System.err.println(numberOfNodes(initialState));
+
+            if (leafState.isGoalState()) {
+                printSearchStatus(startTime, explored);
+                return leafState.extractPlan();
+            }
+
+            ++explored;
+        }
+    }
+
+    private static int numberOfNodes(State state) {
+        int i = 1;
+        if (state.children.size() > 0) {
+            i += state.children.stream().mapToInt(SearchClient::numberOfNodes).sum();
+        }
+        return i;
+    }
+
     private static void printSearchStatus(long startTime, HashSet<State> explored, Frontier frontier) {
         String statusTemplate = "#Explored: %,8d, #Frontier: %,8d, #Generated: %,8d, Time: %3.3f s\n%s\n";
         double elapsedTime = (System.nanoTime() - startTime) / 1_000_000_000d;
         System.err.format(statusTemplate, explored.size(), frontier.size(), explored.size() + frontier.size(),
                 elapsedTime, Memory.stringRep());
+    }
+
+    private static void printSearchStatus(long startTime, int explored) {
+        String statusTemplate = "#Explored: %,8d, Time: %3.3f s\n%s\n";
+        double elapsedTime = (System.nanoTime() - startTime) / 1_000_000_000d;
+        System.err.format(statusTemplate, explored, elapsedTime, Memory.stringRep());
     }
 
 
@@ -127,9 +162,10 @@ public class SearchClient {
         }
 
         // Search for a plan.
-        Action[][] plan;
+        Action[][] plan = null;
         try {
-            plan = SearchClient.search(initialState, frontier);
+            //plan = SearchClient.search(initialState, frontier);
+            plan = SearchClient.search2(initialState);
         } catch (OutOfMemoryError ex) {
             System.err.println("Maximum memory usage exceeded.");
             plan = null;

@@ -1,11 +1,17 @@
 package searchclient;
 
-import java.util.List;
+import java.util.*;
 
 public class MonteCarloTreeSearch {
+    private static final int WIN_SCORE = 10;
+
+    private final int MCTS_LOOP_ITERATIONS = 1000;
+    private final int GOAL_SEARCH_LIMIT = 1000;
+
+    private Map<Integer, State> generatedStates = new HashMap<>();
 
     public State findNextMove(State state) {
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < MCTS_LOOP_ITERATIONS; i++) {
             // Phase 1 - Selection
             State promisingNode = selectPromisingNode(state);
             // Phase 2 - Expansion
@@ -13,63 +19,65 @@ public class MonteCarloTreeSearch {
                 expandNode(promisingNode);
 
             // Phase 3 - Simulation
-            Node nodeToExplore = promisingNode;
-            if (promisingNode.getChildArray().size() > 0) {
-                nodeToExplore = promisingNode.getRandomChildNode();
+            State nodeToExplore = promisingNode;
+            if (promisingNode.children.size() > 0) {
+                nodeToExplore = promisingNode.getRandomChildState();
             }
-            int playoutResult = simulateRandomPayout(nodeToExplore);
-            // Phase 4 - Update
-            backPropagation(nodeToExplore, playoutResult);
+            boolean solved = simulateRandomPayout(nodeToExplore);
+            if (solved) System.err.println("SOLVED");
+             // Phase 4 - Update
+            backPropagation(nodeToExplore, solved);
         }
 
-        Node winnerNode = rootNode.getChildWithMaxScore();
-        return winnerNode.getState().getBoard();
+        return state.getChildWithMaxScore();
     }
 
     private State selectPromisingNode(State rootNode) {
+        //System.err.println("Starting selectPromisingNode");
         State node = rootNode;
         while (node.children.size() != 0) {
-            node = UCT.findBestNodeWithUCT(node);
+            node = node.children.get(new Random().nextInt(node.children.size()));
         }
+        //System.err.println("SelectPromisingNode done");
         return node;
     }
 
-    private void expandNode(State state) {
-        List<State> possibleStates = node.getState().
-        possibleStates.forEach(state -> {
-            Node newNode = new Node(state);
-            newNode.setParent(node);
-            newNode.getState().setPlayerNo(node.getState().getOpponent());
-            node.getChildArray().add(newNode);
-        });
+    private void expandNode(State root) {
+        //System.err.println("Starting expandNode");
+        List<State> expandedStates = root.getExpandedStates();
+        //for (State state : expandedStates) {
+        //    if (this.generatedStates.containsKey(state.hashCode())) {
+        //        root.children.add(this.generatedStates.get(state.hashCode()));
+        //    } else {
+         //       root.children.add(state);
+         //       this.generatedStates.put(state.hashCode(), state);
+          //  }
+       // }
+        root.children.addAll(root.getExpandedStates());
+        //System.err.println("ExpandNode done");
     }
 
-    private void backPropagation(Node nodeToExplore, int playerNo) {
-        Node tempNode = nodeToExplore;
+    private void backPropagation(State nodeToExplore, boolean solved) {
+       // System.err.println("Starting backPropagation");
+        State tempNode = nodeToExplore;
         while (tempNode != null) {
-            tempNode.getState().incrementVisit();
-            if (tempNode.getState().getPlayerNo() == playerNo)
-                tempNode.getState().addScore(WIN_SCORE);
-            tempNode = tempNode.getParent();
+            tempNode.incrementVisitCount();
+            if (solved) tempNode.addScore(WIN_SCORE);
+            tempNode = tempNode.parent;
         }
+       // System.err.println("BackPropagation done");
     }
 
-    private int simulateRandomPayout(Node node) {
-        Node tempNode = new Node(node);
-        State tempState = tempNode.getState();
-        int boardStatus = tempState.getBoard().checkStatus();
-
-        if (boardStatus == opponent) {
-            tempNode.getParent().getState().setWinScore(Integer.MIN_VALUE);
-            return boardStatus;
+    private boolean simulateRandomPayout(State node) {
+       // System.err.println("Starting simulateRandomPayout");
+        State tempNode = node;
+        int i = 0;
+        while (!tempNode.isGoalState() && i < GOAL_SEARCH_LIMIT) {
+            tempNode = tempNode.makeRandomMove();
+            i++;
         }
-        while (boardStatus == Board.IN_PROGRESS) {
-            tempState.togglePlayer();
-            tempState.randomPlay();
-            boardStatus = tempState.getBoard().checkStatus();
-        }
-
-        return boardStatus;
+        //System.err.println("SimulateRandomPayout done");
+        return tempNode.isGoalState();
     }
 
 }

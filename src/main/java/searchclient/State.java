@@ -78,7 +78,7 @@ public class State {
         this.boxColors = Arrays.copyOf(parent.boxColors, parent.boxColors.length);
         this.goals = parent.goals;
         this.parent = parent;
-        parent.children.add(this);
+        //parent.children.add(this);
         this.jointAction = Arrays.copyOf(jointAction, jointAction.length);
         this.g = parent.g + 1;
 
@@ -138,6 +138,15 @@ public class State {
     public void addScore(int score) {
         if (this.winScore != Integer.MIN_VALUE)
             this.winScore += score;
+    }
+
+    public void incrementVisitCount() {
+        this.visitCount++;
+    }
+
+    public State makeRandomMove() {
+        List<State> expandedStates = this.getExpandedStates();
+        return expandedStates.size() > 0 ? expandedStates.get(0) : null;
     }
 
     public int g() {
