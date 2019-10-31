@@ -116,7 +116,7 @@ public class Action {
         List<Action> actions = new ArrayList<>();
         for (MoveDirection moveDirection : MoveDirection.values()) {
             for (MoveDirection moveDirection1 : MoveDirection.values()) {
-                if (moveDirection.equals(moveDirection1)) continue;
+                if (type.equals(ActionType.Pull) && moveDirection.equals(moveDirection1)) continue;
                 actions.add(new Action(type, moveDirection, moveDirection1));
             }
         }
