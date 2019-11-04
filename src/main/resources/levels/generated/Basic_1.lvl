@@ -1,13 +1,16 @@
+#domain
+hospital2
+Basic_1
 #Initial
 +++++
 +   +
-+   +
-+A0 +
++0  +
++A  +
 +++++
 #Goal
 +++++
-+  A+
-+ 0 +
 +   +
++0  +
++  A+
 +++++
 

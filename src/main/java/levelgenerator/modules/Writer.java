@@ -1,4 +1,4 @@
-package levelgenerator;
+package levelgenerator.modules;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -15,8 +15,6 @@ public class Writer {
     }
 
     public void toFile(String lvldata, String name){
-        //Format Number to string
-        String formatted = String.format("%03d", name);
         //Create file to the correct destination
         File tmpFile = new File(path +  folder + "/" + name + ".lvl");
         //I like to say, that you're my only fear

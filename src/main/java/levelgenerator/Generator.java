@@ -1,13 +1,8 @@
 package levelgenerator;
 
-import searchclient.level.Level;
+import levelgenerator.modules.Writer;
 
-import java.awt.*;
 import java.io.IOException;
-import java.util.concurrent.ThreadLocalRandom;
-
-import java.io.InputStream;
-import java.io.InputStreamReader;
 
 public class Generator {
 

@@ -1,20 +1,26 @@
 package levelgenerator;
 
+import levelgenerator.pglAlgorithms.Basic;
+import shared.Farge;
+
 import java.awt.*;
+import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class RandomLevel {
     //Info
     private int count;
 
-    private Complexity c;
+    public Complexity c;
 
     //Level
     public char[][] walls;
-
     public char[][] initStateElements;
     public char[][] goalStateElements;
 
+    //Colors
+    public char[][] colors;
 
 
 
@@ -24,65 +30,16 @@ public class RandomLevel {
         switch (complexityCode){
             case 1:
                 c = Complexity.Basic;
-                generateBasicLevel();
+                colors = new char[Farge.getClientFarger().length][c.boxes + c.agents];
+                System.out.println(Arrays.deepToString(colors));
+                new Basic(this);
                 break;
             default:
                throw new IllegalArgumentException(complexityCode + " is not a valid code. Input require a number between 1-10");
         }
-        generateBasicLevel();
     }
 
 
-
-
-    private void generateBasicLevel(){
-        walls = new char[c.width][c.height];
-        initStateElements = new char[c.width][c.height];
-        goalStateElements = new char[c.width][c.height];
-        createFrame();
-        //Create the intital state
-        randomlyPlaceAgentAndBoxes(initStateElements);
-        //Create the inital state
-        randomlyPlaceAgentAndBoxes(goalStateElements);
-    }
-
-    public void createFrame(){
-        for(int y = 0; y < c.height; y++){
-            if(y == 0 || y == c.height -1){
-                for(int x = 0; x < c.width ; x++){
-                    walls[x][y] = '+';
-                }
-            }else{
-                walls[0][y] = '+';
-                walls[c.width-1][y] = '+';
-                for(int x = 1 ; x < c.width-1; x++) walls[x][y] = ' ';
-            }
-        }
-    }
-
-    public void randomlyPlaceAgentAndBoxes(char[][] state){
-        for(int i = 48; i < (48 + c.agents) ; i++){
-            while(true){
-                Point rndPoint = getRandomCoordinate();
-                if(state[rndPoint.x][rndPoint.y] == 0 && walls[rndPoint.x][rndPoint.y] == ' '){
-                    state[rndPoint.x][rndPoint.y] = (char)i;
-                    break;
-                }
-
-            }
-        }
-
-        for(int i = 65; i < (65 + c.boxes); i++){
-            while(true){
-                Point rndPoint = getRandomCoordinate();
-                if(state[rndPoint.x][rndPoint.y] == 0 && walls[rndPoint.x][rndPoint.y] == ' '){
-                    state[rndPoint.x][rndPoint.y] = (char)i;
-                    break;
-                }
-
-            }
-        }
-    }
 
     public Point getRandomCoordinate(){
         int x = ThreadLocalRandom.current().nextInt(1, c.height );
