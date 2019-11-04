@@ -1,11 +1,13 @@
 package levelgenerator;
 
+import searchclient.level.Level;
+
 import java.awt.*;
 import java.io.IOException;
-import java.lang.reflect.Array;
-import java.math.BigInteger;
-import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
+
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 public class Generator {
 
@@ -16,15 +18,34 @@ public class Generator {
     public final int WIDTH = 5;
     public final int HEIGHT = 5;
 
-    //
-
+    //Level
     public char[][] walls;
 
     public char[][] initStateElements;
     public char[][] goalStateElements;
 
-    public void createFrame(){
+    //Modules
+    private LevelTester levelTester;
+    private Writer writer;
 
+    public Generator(){
+        //Init stuff
+        walls = new char[WIDTH][HEIGHT];
+        initStateElements = new char[WIDTH][HEIGHT];
+        goalStateElements = new char[WIDTH][HEIGHT];
+        //Start Creating the thing
+        createFrame();
+        //Create the intital state
+        randomlyPlaceAgentAndBoxes(initStateElements);
+        //Create the inital state
+        randomlyPlaceAgentAndBoxes(goalStateElements);
+        writer = new Writer("generated");
+        //LevelTester t = new LevelTester("greedy", "120", "./src/main/resources/levels/fred/");
+
+        writer.toFile(levelToString());
+    }
+
+    public void createFrame(){
         for(int y = 0; y < HEIGHT; y++){
             if(y == 0 || y == HEIGHT-1){
                 for(int x = 0; x < WIDTH ; x++){
@@ -44,20 +65,6 @@ public class Generator {
     //TODO: Smart måte å lage dette på
     public boolean ensureSolveable(){
         return true;
-    }
-
-    public Generator(){
-        //Init stuff
-        walls = new char[WIDTH][HEIGHT];
-        initStateElements = new char[WIDTH][HEIGHT];
-        goalStateElements = new char[WIDTH][HEIGHT];
-        //Start Creating the thing
-        createFrame();
-        //Create the intital state
-        randomlyPlaceAgentAndBoxes(initStateElements);
-        //Create the inital state
-        randomlyPlaceAgentAndBoxes(goalStateElements);
-        printLevel(true,true);
     }
 
     public int getCellCount(){
@@ -101,14 +108,9 @@ public class Generator {
     }
 
 
-
-
-
-    public static void main(String[] args)
-            throws IOException {
+    public static void main(String[] args)throws IOException {
         System.out.println("Generator Initated");
         Generator g = new Generator();
-
     }
 
     public void printWalls(){
@@ -120,44 +122,34 @@ public class Generator {
         }
     }
 
-    public void printLevel(boolean inital, boolean goal){
-        if (inital) {
-            System.out.println("#Initial");
-            for(int x = 0; x < WIDTH; x++){
-                for(int y = 0; y< HEIGHT; y++){
-                    if(walls[x][y] == '+'){
-                        System.out.print(walls[x][y]);
-                        continue;
-                    }else if(initStateElements[x][y] != 0){
-                        System.out.print(initStateElements[x][y]);
-                    }
-                    else{
-                        System.out.print(' ');
-                    }
-
-                }
-                System.out.println();
-            }
-        }
-        if (goal) {
-            System.out.println("#Goal");
-            for(int x = 0; x < WIDTH; x++){
-                for(int y = 0; y< HEIGHT; y++){
-                    if(walls[x][y] == '+'){
-                        System.out.print(walls[x][y]);
-                        continue;
-                    }else if(goalStateElements[x][y] != 0){
-                        System.out.print(goalStateElements[x][y]);
-                    }
-                    else{
-                        System.out.print(' ');
-                    }
-
-                }
-                System.out.println();
-            }
-        }
+    public String levelToString(){
+        String out = "";
+        out += "#Initial" + System.lineSeparator();
+        out += stateToString(initStateElements);
+        out += "#Goal" + System.lineSeparator();
+        out += stateToString(goalStateElements);
+        return out;
     }
+
+    public String stateToString(char[][] state){
+        String out = "";
+        for(int x = 0; x < WIDTH; x++){
+            for(int y = 0; y< HEIGHT; y++){
+                if(walls[x][y] == '+'){
+                    out += walls[x][y];
+                    continue;
+                }else if(state[x][y] != 0){
+                    out += state[x][y];
+                }
+                else{
+                    out += ' ';
+                }
+            }
+            out += System.lineSeparator();
+        }
+        return out;
+    }
+
 
 
 
