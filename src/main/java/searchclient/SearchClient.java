@@ -1,14 +1,17 @@
 package searchclient;
 
 import searchclient.level.Level;
+import searchclient.mcts.MonteCarloTreeSearch;
+import searchclient.mcts.backpropagation.impl.AdditiveBackpropagation;
+import searchclient.mcts.expansion.impl.AllActionsExpansion;
+import searchclient.mcts.selection.impl.UCTSelection;
+import searchclient.mcts.simulation.impl.RandomSimulation;
 import shared.Action;
-import shared.Farge;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
 
@@ -72,31 +75,18 @@ public class SearchClient {
 
     public static Action[][] search2(State initialState) {
         long startTime = System.nanoTime();
-        int explored = 0;
 
         System.err.format("Starting mcts.\n");
-        MonteCarloTreeSearch monteCarloTreeSearch = new MonteCarloTreeSearch();
-        State leafState = initialState;
+        MonteCarloTreeSearch monteCarloTreeSearch = new MonteCarloTreeSearch(new UCTSelection(), new AllActionsExpansion(),
+                new RandomSimulation(), new AdditiveBackpropagation());
+        State state = initialState;
         while (true) {
-            leafState = monteCarloTreeSearch.findNextMove(leafState);
-            printSearchStatus(startTime, explored);
-            System.err.println(numberOfNodes(initialState));
-
-            if (leafState.isGoalState()) {
-                printSearchStatus(startTime, explored);
-                return leafState.extractPlan();
+            state = monteCarloTreeSearch.findNextMove(state);
+            printSearchStatus(startTime, monteCarloTreeSearch.getExpandedNodes().size());
+            if (state.isGoalState()) {
+                return state.extractPlan();
             }
-
-            ++explored;
         }
-    }
-
-    private static int numberOfNodes(State state) {
-        int i = 1;
-        if (state.children.size() > 0) {
-            i += state.children.stream().mapToInt(SearchClient::numberOfNodes).sum();
-        }
-        return i;
     }
 
     private static void printSearchStatus(long startTime, HashSet<State> explored, Frontier frontier) {
@@ -156,7 +146,7 @@ public class SearchClient {
                             "-greedy to set the search strategy.");
             }
         } else {
-            frontier = new FrontierBestFirst(new HeuristicGreedy(initialState));
+            frontier = new FrontierBFS();
             System.err.println("Defaulting to BFS search. Use arguments -bfs, -dfs, -astar, -wastar, or -greedy to " +
                     "set the search strategy.");
         }
@@ -164,7 +154,7 @@ public class SearchClient {
         // Search for a plan.
         Action[][] plan = null;
         try {
-            //plan = SearchClient.search(initialState, frontier);
+//            plan = SearchClient.search(initialState, frontier);
             plan = SearchClient.search2(initialState);
         } catch (OutOfMemoryError ex) {
             System.err.println("Maximum memory usage exceeded.");
