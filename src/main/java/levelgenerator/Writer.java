@@ -26,6 +26,7 @@ public class Writer {
         try(PrintWriter out = new PrintWriter(tmpFile)){
             out.println(lvldata);
             System.out.println("Level: " + levelNumber + " written to folder '" + path  + folder + "'");
+            levelNumber++;
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }

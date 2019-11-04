@@ -28,21 +28,25 @@ public class Generator {
     private LevelTester levelTester;
     private Writer writer;
 
-    public Generator(){
-        //Init stuff
+    public Generator(int amountOfLevels){
+        writer = new Writer("generated");
+
+        for(int i = 0 ; i < amountOfLevels; i++){
+            generateLevel();
+            //LevelTester t = new LevelTester("greedy", "120", "./src/main/resources/levels/fred/");
+            writer.toFile(levelToString());
+        }
+    }
+
+    private void generateLevel(){
         walls = new char[WIDTH][HEIGHT];
         initStateElements = new char[WIDTH][HEIGHT];
         goalStateElements = new char[WIDTH][HEIGHT];
-        //Start Creating the thing
         createFrame();
         //Create the intital state
         randomlyPlaceAgentAndBoxes(initStateElements);
         //Create the inital state
         randomlyPlaceAgentAndBoxes(goalStateElements);
-        writer = new Writer("generated");
-        //LevelTester t = new LevelTester("greedy", "120", "./src/main/resources/levels/fred/");
-
-        writer.toFile(levelToString());
     }
 
     public void createFrame(){
@@ -58,8 +62,6 @@ public class Generator {
             }
         }
     }
-
-
 
 
     //TODO: Smart måte å lage dette på
@@ -110,7 +112,7 @@ public class Generator {
 
     public static void main(String[] args)throws IOException {
         System.out.println("Generator Initated");
-        Generator g = new Generator();
+        Generator g = new Generator(10);
     }
 
     public void printWalls(){
