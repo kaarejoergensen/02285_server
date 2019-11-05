@@ -2,7 +2,7 @@ package levelgenerator;
 
 public enum Complexity {
 
-    Basic("Basic", 5,5, 1, 1, 1);
+    Easy_1("Easy_1", 5,5, 1, 1, 1);
 
     public final String label;
     public final int width;
@@ -20,6 +20,17 @@ public enum Complexity {
         this.agents = agents;
         this.boxes = boxes;
         this.colors = colors;
+    }
+
+    public String getLabel(){
+        return this.label;
+    }
+
+    public static Complexity fromString(String string){
+        for(Complexity c : Complexity.values()){
+            if(c.getLabel().equalsIgnoreCase(string)) return c;
+        }
+        return null;
     }
 
 

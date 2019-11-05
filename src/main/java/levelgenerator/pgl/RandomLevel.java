@@ -1,18 +1,22 @@
-package levelgenerator;
+package levelgenerator.pgl;
 
-import levelgenerator.pglAlgorithms.Basic;
+import levelgenerator.Complexity;
+import levelgenerator.pgl.Basic;
 import shared.Farge;
 
 import java.awt.*;
-import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class RandomLevel {
+public abstract class RandomLevel implements PGL{
     //Info
-    private int count;
+    private int levelNumber;
+    public Complexity complexity;
 
-    public Complexity c;
+
+    //Canvas
+    public int width;
+    public int height;
 
     //Level
     public char[][] walls;
@@ -24,33 +28,32 @@ public class RandomLevel {
 
 
 
-    public RandomLevel(int complexityCode, int count){
-        this.count = count;
+    public RandomLevel(Complexity c, int levelNumber){
+        this.levelNumber = levelNumber;
+        this.complexity = c;
+        this.width = c.width;
+        this.height = c.height;
 
-        switch (complexityCode){
-            case 1:
-                c = Complexity.Basic;
-                colors = new char[Farge.getClientFarger().length][c.boxes + c.agents];
-                System.out.println(Arrays.deepToString(colors));
-                new Basic(this);
-                break;
-            default:
-               throw new IllegalArgumentException(complexityCode + " is not a valid code. Input require a number between 1-10");
-        }
+
+        walls = new char[c.width][c.height];
+        initStateElements = new char[c.width][c.height];
+        goalStateElements = new char[c.width][c.height];
+
     }
 
 
 
+
     public Point getRandomCoordinate(){
-        int x = ThreadLocalRandom.current().nextInt(1, c.height );
-        int y = ThreadLocalRandom.current().nextInt(1,  c.width );
+        int x = ThreadLocalRandom.current().nextInt(1, height );
+        int y = ThreadLocalRandom.current().nextInt(1,  width );
         return new Point(x,y);
     }
 
     public int getCellCount(){
         int cellCount = 0;
-        for(int x = 0; x < c.width; x++){
-            for(int y = 0; y< c.height; y++){
+        for(int x = 0; x < width; x++){
+            for(int y = 0; y< height; y++){
                 if(walls[x][y] == '+');
             }
         }
@@ -59,7 +62,6 @@ public class RandomLevel {
 
     public String toString(){
         String out = "#domain" + System.lineSeparator() + "hospital2" + System.lineSeparator() + getName() + System.lineSeparator();
-
         out += "#Initial" + System.lineSeparator();
         out += stateToString(initStateElements);
         out += "#Goal" + System.lineSeparator();
@@ -69,8 +71,8 @@ public class RandomLevel {
 
     public String stateToString(char[][] state){
         String out = "";
-        for(int x = 0; x < c.width; x++){
-            for(int y = 0; y< c.height; y++){
+        for(int x = 0; x < width; x++){
+            for(int y = 0; y< height; y++){
                 if(walls[x][y] == '+'){
                     out += walls[x][y];
                     continue;
@@ -87,7 +89,7 @@ public class RandomLevel {
     }
 
     public String getName(){
-        return c.label + "_" + count;
+        return levelNumber + "_" + getAlgorithmName() + "_" + complexity.label;
     }
 
 
