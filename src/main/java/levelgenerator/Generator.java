@@ -34,7 +34,7 @@ public class Generator {
 
     public static void main(String[] args)throws IOException {
         System.out.println("Generator Initated");
-        Generator g = new Generator(10, "basic", Complexity.fromString("easy_1"));
+        Generator g = new Generator(1, "basic", Complexity.fromString("easy_1"));
     }
 
     /*

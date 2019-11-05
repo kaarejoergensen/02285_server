@@ -5,6 +5,7 @@ import levelgenerator.pgl.Basic;
 import shared.Farge;
 
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -24,7 +25,9 @@ public abstract class RandomLevel implements PGL{
     public char[][] goalStateElements;
 
     //Colors
-    public char[][] colors;
+    public char[][] elementColors;
+    public ArrayList<Farge> fargeList;
+
 
 
 
@@ -39,8 +42,66 @@ public abstract class RandomLevel implements PGL{
         initStateElements = new char[c.width][c.height];
         goalStateElements = new char[c.width][c.height];
 
+        fargeList = Farge.clientFargerToList();
+        elementColors = new char[Farge.getClientFarger().length][c.boxes + c.agents];
+
+        randomAssignAvailableColors();
+        System.out.println(fargeList);
+        assignAgentsToColors();
+        assignBoxesToColors();
+        System.out.println(Arrays.deepToString(elementColors));
+    }
+    /*
+    public randomlyAssignElementsToColors(){
+        int index = ThreadLocalRandom.current().nextInt(0, fargeList.size());
+        for(int i = 0; i < complexity.colors; i++){
+
+        }
+    }
+    */
+
+    public void assignAgentsToColors(){
+        //First make sure every color have at least one agent
+        int i = 0;
+        for(; i < fargeList.size(); i++){
+            int indexInFarge = fargeList.get(i).ordinal();
+            elementColors[indexInFarge][0] = (char)(i + '0');
+        }
+        //Then random distribute the rest
+        //Pick a random color, and proceed to add next agent into that one
+        for(; i < complexity.agents; i++){
+            randomAllocateElementToColor((char)(i + '0'));
+        }
     }
 
+
+    public void assignBoxesToColors(){
+        for(int i = 65; i <  65 + complexity.boxes;i++){
+            randomAllocateElementToColor((char)i);
+        }
+    }
+
+    private void randomAllocateElementToColor(char c){
+        int indexInFarge = fargeList.get(ThreadLocalRandom.current().nextInt(0, fargeList.size())).ordinal();
+        for(int j = 0; j < (complexity.agents + complexity.boxes); j++){
+            if(elementColors[indexInFarge][j] == '\0'){
+                elementColors[indexInFarge][j] = (c);
+                break;
+            }
+        }
+    }
+
+
+    public void randomAssignAvailableColors(){
+        int maxColors = fargeList.size();
+        //TODO: Dette skal fikses når wizard baner skal kunne genereres
+        int colorCount = complexity.colors > complexity.agents ? complexity.agents : complexity.colors;
+
+        for(int i = colorCount; i < maxColors; i++){
+            int removeIndex = ThreadLocalRandom.current().nextInt(0, fargeList.size());
+            fargeList.remove(removeIndex);
+        }
+    }
 
 
 
