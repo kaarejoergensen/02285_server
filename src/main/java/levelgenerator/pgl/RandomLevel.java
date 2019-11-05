@@ -2,6 +2,7 @@ package levelgenerator.pgl;
 
 import levelgenerator.Complexity;
 import levelgenerator.pgl.Basic;
+import org.apache.logging.log4j.util.Strings;
 import shared.Farge;
 
 import java.awt.*;
@@ -123,12 +124,28 @@ public abstract class RandomLevel implements PGL{
 
     public String toString(){
         String out = "#domain" + System.lineSeparator() + "hospital2" + System.lineSeparator() + getName() + System.lineSeparator();
+        //Color Section
+        out += "#Colors" + System.lineSeparator();
+        for(Farge f: fargeList){
+            out += f.name() + ":" ;
+            int indexFarge = fargeList.get(ThreadLocalRandom.current().nextInt(0, fargeList.size())).ordinal();
+            StringBuilder sb = new StringBuilder();
+            for(char c : elementColors[indexFarge]){
+                if(c == '\0') break;
+                sb.append(c).append(',');
+            }
+            out += sb.toString().substring(0, sb.length() - 1) + System.lineSeparator();
+        }
+
+
         out += "#Initial" + System.lineSeparator();
         out += stateToString(initStateElements);
         out += "#Goal" + System.lineSeparator();
         out += stateToString(goalStateElements);
         return out;
     }
+
+
 
     public String stateToString(char[][] state){
         String out = "";
