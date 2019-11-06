@@ -1,16 +1,23 @@
 package levelgenerator.pgl;
 
 import levelgenerator.Complexity;
+import shared.Action.MoveDirection;
 
 import java.awt.*;
 
 interface PGL {
 
-    public Point getRandomCoordinate();
-    public int getCellCount();
+    Point getRandomCoordinate();
+    int getCellCount();
 
-    public String toString();
-    public String stateToString(char[][] state);
-    public String getName();
-    public String getAlgorithmName();
+    boolean isFrame(Point p);
+    boolean isWall(Point p);
+    Point getNewPoint(Point p, MoveDirection direction);
+
+    char[] elementsToArray();
+
+    String toString();
+    String stateToString(char[][] state);
+    String getName();
+    String getAlgorithmName();
 }

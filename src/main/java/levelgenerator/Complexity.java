@@ -2,8 +2,10 @@ package levelgenerator;
 
 public enum Complexity {
 
-    Easy_1("Easy_1", 5,5, 2, 5, 2),
-    Easy_2("Easy_2", 8,8, 1, 3, 1);
+    Easy_1("Easy_1", 5,5, 1, 1, 1),
+    Easy_2("Easy_2", 8,8, 1, 3, 1),
+    Easy_3("Easy_3", 10,10, 1, 5, 1);
+
 
     public final String label;
     public final int width;

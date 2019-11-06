@@ -164,8 +164,8 @@ public class SearchClient {
         // Search for a plan.
         Action[][] plan = null;
         try {
-            //plan = SearchClient.search(initialState, frontier);
-            plan = SearchClient.search2(initialState);
+            plan = SearchClient.search(initialState, frontier);
+            //plan = SearchClient.search2(initialState);
         } catch (OutOfMemoryError ex) {
             System.err.println("Maximum memory usage exceeded.");
             plan = null;

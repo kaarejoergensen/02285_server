@@ -1,8 +1,7 @@
 package levelgenerator.pgl;
 
 import levelgenerator.Complexity;
-import levelgenerator.pgl.Basic;
-import org.apache.logging.log4j.util.Strings;
+import shared.Action;
 import shared.Farge;
 
 import java.awt.*;
@@ -44,29 +43,32 @@ public abstract class RandomLevel implements PGL{
         goalStateElements = new char[c.width][c.height];
 
         fargeList = Farge.clientFargerToList();
-        elementColors = new char[Farge.getClientFarger().length][c.boxes + c.agents];
-
         randomAssignAvailableColors();
+        elementColors = new char[fargeList.size()][c.boxes + c.agents];
+
         System.out.println(fargeList);
         assignAgentsToColors();
         assignBoxesToColors();
         System.out.println(Arrays.deepToString(elementColors));
     }
-    /*
-    public randomlyAssignElementsToColors(){
-        int index = ThreadLocalRandom.current().nextInt(0, fargeList.size());
-        for(int i = 0; i < complexity.colors; i++){
 
+    //Må bli kalt før colorlisten
+    public void randomAssignAvailableColors(){
+        int maxColors = fargeList.size();
+        //TODO: Dette skal fikses når wizard baner skal kunne genereres
+        int colorCount = complexity.colors > complexity.agents ? complexity.agents : complexity.colors;
+
+        for(int i = colorCount; i < maxColors; i++){
+            int removeIndex = ThreadLocalRandom.current().nextInt(0, fargeList.size());
+            fargeList.remove(removeIndex);
         }
     }
-    */
 
     public void assignAgentsToColors(){
         //First make sure every color have at least one agent
         int i = 0;
         for(; i < fargeList.size(); i++){
-            int indexInFarge = fargeList.get(i).ordinal();
-            elementColors[indexInFarge][0] = (char)(i + '0');
+            elementColors[i][0] = (char)(i + '0');
         }
         //Then random distribute the rest
         //Pick a random color, and proceed to add next agent into that one
@@ -83,7 +85,7 @@ public abstract class RandomLevel implements PGL{
     }
 
     private void randomAllocateElementToColor(char c){
-        int indexInFarge = fargeList.get(ThreadLocalRandom.current().nextInt(0, fargeList.size())).ordinal();
+        int indexInFarge = ThreadLocalRandom.current().nextInt(0, fargeList.size());
         for(int j = 0; j < (complexity.agents + complexity.boxes); j++){
             if(elementColors[indexInFarge][j] == '\0'){
                 elementColors[indexInFarge][j] = (c);
@@ -93,24 +95,49 @@ public abstract class RandomLevel implements PGL{
     }
 
 
-    public void randomAssignAvailableColors(){
-        int maxColors = fargeList.size();
-        //TODO: Dette skal fikses når wizard baner skal kunne genereres
-        int colorCount = complexity.colors > complexity.agents ? complexity.agents : complexity.colors;
 
-        for(int i = colorCount; i < maxColors; i++){
-            int removeIndex = ThreadLocalRandom.current().nextInt(0, fargeList.size());
-            fargeList.remove(removeIndex);
+
+    public void fillLevelWithWalls(){
+        for(int y = 0; y < height; y++){
+            for(int x = 0; x < width ; x++){
+                walls[x][y] = '+';
+            }
         }
     }
 
 
-
     public Point getRandomCoordinate(){
-        int x = ThreadLocalRandom.current().nextInt(1, height );
-        int y = ThreadLocalRandom.current().nextInt(1,  width );
+        int x = ThreadLocalRandom.current().nextInt(1, height-1 );
+        int y = ThreadLocalRandom.current().nextInt(1,  width-1 );
         return new Point(x,y);
     }
+
+    public boolean isWall(Point p){
+        return  walls[p.y][p.x] == '+';
+    }
+
+    public boolean isFrame(Point p){
+        return p.x == 0 || p.x == (width-1) || p.y == 0 || p.y == (height-1);
+    }
+
+    public Point getNewPoint(Point p, Action.MoveDirection direction){
+        return new Point(p.x + direction.getDeltaCol(), p.y + direction.getDeltaRow());
+    }
+
+    public char[] elementsToArray(){
+        char[] elements = new char[complexity.agents + complexity.boxes];
+        int i = 0;
+        for(char[] a : elementColors){
+            for(char c : a){
+                if(c != '\0'){
+                    elements[i] = c;
+                    i++;
+                }
+            }
+        }
+        return elements;
+    }
+
 
     public int getCellCount(){
         int cellCount = 0;
@@ -122,15 +149,19 @@ public abstract class RandomLevel implements PGL{
         return cellCount;
     }
 
+    public int getTotalSpace(){
+        return (width-2) * (height-2);
+    }
+
     public String toString(){
-        String out = "#domain" + System.lineSeparator() + "hospital2" + System.lineSeparator() + getName() + System.lineSeparator();
+        String out = "#domain" + System.lineSeparator() + "hospital2" + System.lineSeparator() + "#levelname" + System.lineSeparator() +  getName() + System.lineSeparator();
         //Color Section
-        out += "#Colors" + System.lineSeparator();
-        for(Farge f: fargeList){
-            out += f.name() + ":" ;
-            int indexFarge = fargeList.get(ThreadLocalRandom.current().nextInt(0, fargeList.size())).ordinal();
+        out += "#colors" + System.lineSeparator();
+        for(int i = 0; i < fargeList.size(); i++){
+            Farge temp = fargeList.get(i);
+            out += temp.name() + ":" ;
             StringBuilder sb = new StringBuilder();
-            for(char c : elementColors[indexFarge]){
+            for(char c : elementColors[i]){
                 if(c == '\0') break;
                 sb.append(c).append(',');
             }
@@ -138,10 +169,11 @@ public abstract class RandomLevel implements PGL{
         }
 
 
-        out += "#Initial" + System.lineSeparator();
+        out += "#initial" + System.lineSeparator();
         out += stateToString(initStateElements);
-        out += "#Goal" + System.lineSeparator();
+        out += "#goal" + System.lineSeparator();
         out += stateToString(goalStateElements);
+        out += "#end";
         return out;
     }
 
