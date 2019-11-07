@@ -26,12 +26,12 @@ public class Basic extends RandomLevel{
         for(int y = 0; y < height; y++){
             if(y == 0 || y == height -1){
                 for(int x = 0; x < width ; x++){
-                    walls[x][y] = '+';
+                    walls[y][x] = '+';
                 }
             }else{
-                walls[0][y] = '+';
-                walls[width-1][y] = '+';
-                for(int x = 1 ; x < width-1; x++) walls[x][y] = ' ';
+                walls[y][0] = '+';
+                walls[y][width-1] = '+';
+                for(int x = 1 ; x < width-1; x++) walls[y][x] = ' ';
             }
         }
     }
@@ -40,8 +40,8 @@ public class Basic extends RandomLevel{
         for(int i = 48; i < (48 + complexity.agents) ; i++){
             while(true){
                 Point rndPoint = getRandomCoordinate();
-                if(state[rndPoint.x][rndPoint.y] == 0 && walls[rndPoint.x][rndPoint.y] == ' '){
-                    state[rndPoint.x][rndPoint.y] = (char)i;
+                if(state[rndPoint.y][rndPoint.x] == 0 && walls[rndPoint.y][rndPoint.x] == ' '){
+                    state[rndPoint.y][rndPoint.x] = (char)i;
                     break;
                 }
 
@@ -51,8 +51,8 @@ public class Basic extends RandomLevel{
         for(int i = 65; i < (65 + complexity.boxes); i++){
             while(true){
                 Point rndPoint = getRandomCoordinate();
-                if(state[rndPoint.x][rndPoint.y] == 0 && walls[rndPoint.x][rndPoint.y] == ' '){
-                    state[rndPoint.x][rndPoint.y] = (char)i;
+                if(state[rndPoint.y][rndPoint.x] == 0 && walls[rndPoint.y][rndPoint.x] == ' '){
+                    state[rndPoint.y][rndPoint.x] = (char)i;
                     break;
                 }
 

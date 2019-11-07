@@ -32,6 +32,7 @@ public abstract class RandomLevel implements PGL{
 
 
     public RandomLevel(Complexity c, int levelNumber){
+
         this.levelNumber = levelNumber;
         this.complexity = c;
         this.width = c.width;
@@ -40,6 +41,8 @@ public abstract class RandomLevel implements PGL{
         walls = new char[c.height][c.width];
         initStateElements = new char[c.height][c.width];
         goalStateElements = new char[c.height][c.width];
+
+        validateInput();
 
         fargeList = Farge.clientFargerToList();
         randomAssignAvailableColors();
@@ -144,9 +147,9 @@ public abstract class RandomLevel implements PGL{
 
     public int getCellCount(){
         int cellCount = 0;
-        for(int x = 0; x < width; x++){
-            for(int y = 0; y< height; y++){
-                if(walls[x][y] == '+');
+        for(int y = 0; y < height; y++){
+            for(int x = 0; y< width; x++){
+                if(walls[y][x] == '+');
             }
         }
         return cellCount;
@@ -184,8 +187,8 @@ public abstract class RandomLevel implements PGL{
 
     public String stateToString(char[][] state){
         String out = "";
-        for(int x = 0; x < width; x++){
-            for(int y = 0; y< height; y++){
+        for(int y = 0; y < height; y++){
+            for(int x = 0; x< width; x++){
                 if(walls[y][x] == '+'){
                     out += walls[y][x];
                     continue;
@@ -208,6 +211,11 @@ public abstract class RandomLevel implements PGL{
     public String getName(){
         return levelNumber + "_" + getAlgorithmName() + "_" + complexity.label;
     }
+
+    public void validateInput(){
+        if(height < 3 || width < 3) throw new IllegalArgumentException("Height and Width have to be larger than 4");
+    }
+
 
 
 }

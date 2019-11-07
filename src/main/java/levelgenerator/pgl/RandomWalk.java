@@ -26,8 +26,8 @@ public class RandomWalk extends RandomLevel{
         paths = new ArrayList<>();
 
         fillLevelWithWalls();
-        //Pick a random point and start walking to create a room
 
+        //Pick a random point and start walking to create a room
         Point chosenPoint;
 
         while(paths.size() < (getTotalSpace()*MINIMUM_SPACE)){
@@ -42,8 +42,6 @@ public class RandomWalk extends RandomLevel{
             doTheWalk(chosenPoint);
 
         }
-
-        //System.out.println(paths);
 
         distributeElements(initStateElements);
         distributeElements(goalStateElements);
@@ -71,7 +69,7 @@ public class RandomWalk extends RandomLevel{
     }
 
     private Point getRandomPointFromPath(){
-        return paths.get(ThreadLocalRandom.current().nextInt(0, paths.size()-1));
+        return paths.size() == 1 ? paths.get(0) : paths.get(ThreadLocalRandom.current().nextInt(0, paths.size() - 1));
     }
 
     private void distributeElements(char[][] state){

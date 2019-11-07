@@ -1,17 +1,17 @@
 #domain
 hospital2
 #levelname
-0_RandomWalk_Easy_2
+0_Basic_Easy_2
 #colors
-Orange:0,A,B,C
+Brown:0,A,B,C
 #initial
 +++++++++++++++
-++++   BC0 ++++
-+++++  A   ++++
++    A  B     +
++C     0      +
 +++++++++++++++
 #goal
 +++++++++++++++
-++++     A0++++
-+++++   BC ++++
++    0        +
++A   C      B +
 +++++++++++++++
 #end
