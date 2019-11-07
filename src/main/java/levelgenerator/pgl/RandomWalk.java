@@ -63,10 +63,11 @@ public class RandomWalk extends RandomLevel{
             setPointToPath(newPoint);
             doTheWalk(newPoint);
         }
-        return;
+
     }
 
     private void setPointToPath(Point p){
+        System.out.println(p);
         walls[p.y][p.x] = ' ';
         paths.add(p);
     }

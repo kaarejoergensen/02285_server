@@ -37,19 +37,16 @@ public abstract class RandomLevel implements PGL{
         this.width = c.width;
         this.height = c.height;
 
-
-        walls = new char[c.width][c.height];
-        initStateElements = new char[c.width][c.height];
-        goalStateElements = new char[c.width][c.height];
+        walls = new char[c.height][c.width];
+        initStateElements = new char[c.height][c.width];
+        goalStateElements = new char[c.height][c.width];
 
         fargeList = Farge.clientFargerToList();
         randomAssignAvailableColors();
         elementColors = new char[fargeList.size()][c.boxes + c.agents];
 
-        System.out.println(fargeList);
         assignAgentsToColors();
         assignBoxesToColors();
-        System.out.println(Arrays.deepToString(elementColors));
     }
 
     //Må bli kalt før colorlisten
@@ -100,20 +97,26 @@ public abstract class RandomLevel implements PGL{
     public void fillLevelWithWalls(){
         for(int y = 0; y < height; y++){
             for(int x = 0; x < width ; x++){
-                walls[x][y] = '+';
+                walls[y][x] = '+';
             }
         }
     }
 
 
     public Point getRandomCoordinate(){
-        int x = ThreadLocalRandom.current().nextInt(1, height-1 );
-        int y = ThreadLocalRandom.current().nextInt(1,  width-1 );
+        int y = ThreadLocalRandom.current().nextInt(1, height-1 );
+        int x = ThreadLocalRandom.current().nextInt(1,  width-1 );
         return new Point(x,y);
     }
 
     public boolean isWall(Point p){
-        return  walls[p.y][p.x] == '+';
+        try {
+            return walls[p.y][p.x] == '+';
+        }catch(ArrayIndexOutOfBoundsException e){
+            System.out.println(e + System.lineSeparator());
+            System.out.println(wallsToString());
+        }
+        return true;
     }
 
     public boolean isFrame(Point p){
@@ -183,11 +186,11 @@ public abstract class RandomLevel implements PGL{
         String out = "";
         for(int x = 0; x < width; x++){
             for(int y = 0; y< height; y++){
-                if(walls[x][y] == '+'){
-                    out += walls[x][y];
+                if(walls[y][x] == '+'){
+                    out += walls[y][x];
                     continue;
-                }else if(state[x][y] != 0){
-                    out += state[x][y];
+                }else if(state[y][x] != 0){
+                    out += state[y][x];
                 }
                 else{
                     out += ' ';
@@ -196,6 +199,10 @@ public abstract class RandomLevel implements PGL{
             out += System.lineSeparator();
         }
         return out;
+    }
+
+    public String wallsToString(){
+        return stateToString(walls);
     }
 
     public String getName(){
