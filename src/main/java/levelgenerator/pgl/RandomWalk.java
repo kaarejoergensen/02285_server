@@ -39,10 +39,8 @@ public class RandomWalk extends RandomLevel{
                 chosenPoint = getRandomPointFromPath();
             }
 
-            for(MoveDirection md : MoveDirection.values()){
-                Point newPoint = getNewPoint(chosenPoint, md);
-                doTheWalk(chosenPoint);
-            }
+            doTheWalk(chosenPoint);
+
         }
 
         //System.out.println(paths);

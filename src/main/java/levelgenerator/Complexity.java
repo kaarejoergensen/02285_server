@@ -4,7 +4,7 @@ public enum Complexity {
 
     Easy_1("Easy_1", 5,5, 1, 1, 1),
     Easy_2("Easy_2", 300,10, 1, 3, 1),
-    Easy_3("Easy_3", 40,20, 5, 15, 5);
+    Easy_3("Easy_3", 20,20, 5, 15, 5);
 
 
     public final String label;

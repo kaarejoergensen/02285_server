@@ -38,7 +38,7 @@ public class Generator {
 
     public static void main(String[] args)throws IOException {
         System.out.println("Generator Initated");
-        Generator g = new Generator(1, "randomwalk", Complexity.fromString("easy_2"));
+        Generator g = new Generator(1, "randomwalk", Complexity.fromString("easy_3"));
     }
 
 }
