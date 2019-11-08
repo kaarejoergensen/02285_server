@@ -1,13 +1,12 @@
 package levelgenerator;
 
 import levelgenerator.modules.Writer;
-import levelgenerator.pgl.Basic;
+import levelgenerator.pgl.Basic.Basic;
+import levelgenerator.pgl.Dungeon.Dungeon;
 import levelgenerator.pgl.RandomLevel;
-import levelgenerator.pgl.RandomWalk;
-import shared.Farge;
+import levelgenerator.pgl.RandomWalk.RandomWalk;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 public class Generator {
 
@@ -27,6 +26,9 @@ public class Generator {
                 case "randomwalk":
                     pgl = new RandomWalk(complexity, i);
                     break;
+                case "dungeon":
+                    pgl = new Dungeon(complexity, i);
+                    break;
                     
             }
             writer.toFile(pgl.toString(), pgl.getName());
@@ -38,7 +40,7 @@ public class Generator {
 
     public static void main(String[] args)throws IOException {
         System.out.println("Generator Initated");
-        Generator g = new Generator(1, "basic", Complexity.fromString("easy_2"));
+        new Generator(1, "dungeon", Complexity.fromString("easy_3"));
     }
 
 }

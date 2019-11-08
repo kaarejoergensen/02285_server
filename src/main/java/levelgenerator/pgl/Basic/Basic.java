@@ -1,10 +1,11 @@
-package levelgenerator.pgl;
+package levelgenerator.pgl.Basic;
 
 import levelgenerator.Complexity;
+import levelgenerator.pgl.RandomLevel;
 
 import java.awt.*;
 
-public class Basic extends RandomLevel{
+public class Basic extends RandomLevel {
 
     /*
         Logic for the basic generator.

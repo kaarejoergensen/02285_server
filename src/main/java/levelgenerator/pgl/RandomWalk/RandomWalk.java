@@ -1,6 +1,7 @@
-package levelgenerator.pgl;
+package levelgenerator.pgl.RandomWalk;
 
 import levelgenerator.Complexity;
+import levelgenerator.pgl.RandomLevel;
 import shared.Action.MoveDirection;
 
 import java.awt.*;
@@ -8,11 +9,13 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class RandomWalk extends RandomLevel{
+public class RandomWalk extends RandomLevel {
 
     /*
-        Logic for the basic generator.
-        No additional walls, just agents and boxes in an open space
+        Logic for the Random Walk Algorithm.
+        Fill whole level with walls.
+        Pick a random spot, and start walking in random directions until reaching another path or edge
+        Repeat until Minimum Space is reached
      */
 
     //At least MINIMUM_SPACE of the map have to be path
