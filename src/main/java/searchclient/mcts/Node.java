@@ -1,6 +1,7 @@
 package searchclient.mcts;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import searchclient.State;
 
 import java.util.ArrayList;
@@ -8,7 +9,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 public class Node {
     private int visitCount = 0;
     private int winScore = 0;
@@ -49,8 +51,7 @@ public class Node {
     }
 
     public void addScore(int score) {
-        if (this.winScore != Integer.MIN_VALUE)
-            this.winScore += score;
+        this.winScore += score;
     }
 
     public void incrementVisitCount() {
@@ -60,5 +61,24 @@ public class Node {
     public Node makeRandomMove() {
         List<State> expandedStates = this.state.getExpandedStates();
         return expandedStates.size() > 0 ? new Node(expandedStates.get(0), this) : null;
+    }
+
+    public void removeChild(Node child) {
+        this.children.remove(child);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof Node && this.state.equals(((Node) obj).state);
+    }
+
+    @Override
+    public int hashCode() {
+        return this.state.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "[visitCount: " + visitCount + ", winScore: " + winScore + ", countToRoot: " + countToRoot + "]";
     }
 }

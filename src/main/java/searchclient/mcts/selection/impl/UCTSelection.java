@@ -6,7 +6,7 @@ import searchclient.mcts.selection.Selection;
 import java.util.Collections;
 import java.util.Comparator;
 
-public class UCTSelection implements Selection {
+public class UCTSelection extends Selection {
     @Override
     public Node selectPromisingNode(Node rootNode) {
         Node node = rootNode;
@@ -17,16 +17,17 @@ public class UCTSelection implements Selection {
     }
 
     private Node findBestNodeWithUCT(Node node) {
-        int parentVisit = node.getVisitCount();
-        return Collections.max(
-                node.getChildren(),
-                Comparator.comparing(c -> this.uctValue(parentVisit, c.getWinScore(), c.getVisitCount())));
+        return Collections.max(node.getChildren(), Comparator.comparing(this::uctValue));
     }
 
-    private double uctValue(int totalVisit, double nodeWinScore, int nodeVisit) {
-        if (nodeVisit == 0) {
-            return Integer.MAX_VALUE;
-        }
-        return (nodeWinScore / (double) nodeVisit) + 1.41 * Math.sqrt(Math.log(totalVisit) / (double) nodeVisit);
+    private double uctValue(Node node) {
+        int parentVisit = node.getParent() == null ? 0 : node.getParent().getVisitCount();
+        if (parentVisit == 0) return Integer.MAX_VALUE;
+        return (node.getWinScore() / (double) parentVisit) + 1.41 * Math.sqrt(Math.log(parentVisit) / (double) node.getVisitCount());
+    }
+
+    @Override
+    public int compare(Node node1, Node node2) {
+        return Math.negateExact((int) (this.uctValue(node1) - this.uctValue(node2)));
     }
 }

@@ -10,7 +10,7 @@ public class AllActionsExpansion implements Expansion {
     @Override
     public List<Node> expandNode(Node root) {
         List<Node> expandedStates = root.getState().getExpandedStates().stream().
-                map(state -> new Node(state, root.getCountToRoot() + 1)).collect(Collectors.toList());
+                map(state -> new Node(state, root)).collect(Collectors.toList());
         root.getChildren().addAll(expandedStates);
         return expandedStates;
     }

@@ -7,12 +7,15 @@ import searchclient.mcts.expansion.Expansion;
 import searchclient.mcts.selection.Selection;
 import searchclient.mcts.simulation.Simulation;
 
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Data
 public class MonteCarloTreeSearch {
-    private static final int MCTS_LOOP_ITERATIONS = 10000;
+    private static final int MCTS_LOOP_ITERATIONS = 100000;
 
     final private Selection selection;
     final private Expansion expansion;
@@ -21,18 +24,18 @@ public class MonteCarloTreeSearch {
 
     Set<Node> expandedNodes = new HashSet<>();
 
-    public State findNextMove(Node node) {
+    public State findNextMove(Node root) {
         for (int i = 0; i < MCTS_LOOP_ITERATIONS; i++) {
-            Node promisingNode = this.selection.selectPromisingNode(node);
+            Node promisingNode = this.selection.selectPromisingNode(root);
 
             if (!promisingNode.getState().isGoalState())
                 this.expandedNodes.addAll(this.expansion.expandNode(promisingNode));
 
-            boolean solved = this.simulation.simulatePlayout(promisingNode);
+            int score = this.simulation.simulatePlayout(promisingNode);
 
-            this.backpropagation.backpropagate(promisingNode, solved);
+            this.backpropagation.backpropagate(score, promisingNode, root);
         }
 
-        return node.getChildWithMaxScore().getState();
+        return root.getChildWithMaxScore().getState();
     }
 }

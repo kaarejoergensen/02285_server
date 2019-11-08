@@ -1,10 +1,16 @@
 package searchclient;
 
+import searchclient.level.DistanceMap;
 import searchclient.level.Level;
 import searchclient.mcts.MonteCarloTreeSearch;
+import searchclient.mcts.Node;
+import searchclient.mcts.OneTree;
 import searchclient.mcts.backpropagation.impl.AdditiveBackpropagation;
 import searchclient.mcts.expansion.impl.AllActionsExpansion;
+import searchclient.mcts.expansion.impl.AllActionsNoDuplicateExpansion;
+import searchclient.mcts.selection.impl.RandomSelection;
 import searchclient.mcts.selection.impl.UCTSelection;
+import searchclient.mcts.simulation.impl.AllPairsShortestPath;
 import searchclient.mcts.simulation.impl.RandomSimulation;
 import shared.Action;
 
@@ -14,6 +20,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Random;
 
 public class SearchClient {
     public static State parseLevel(BufferedReader serverMessages) throws IOException {
@@ -26,6 +33,7 @@ public class SearchClient {
         level.initiateMapDependentArrays();
         level.parse.initialState();
         level.parse.goalState();
+        level.distanceMap = new DistanceMap(level.goalNodes);
 
         System.err.println(level);
 
@@ -77,11 +85,11 @@ public class SearchClient {
         long startTime = System.nanoTime();
 
         System.err.format("Starting mcts.\n");
-        MonteCarloTreeSearch monteCarloTreeSearch = new MonteCarloTreeSearch(new UCTSelection(), new AllActionsExpansion(),
+        MonteCarloTreeSearch monteCarloTreeSearch = new MonteCarloTreeSearch(new RandomSelection(), new AllActionsExpansion(),
                 new RandomSimulation(), new AdditiveBackpropagation());
         State state = initialState;
         while (true) {
-            state = monteCarloTreeSearch.findNextMove(state);
+            state = monteCarloTreeSearch.findNextMove(new Node(state));
             printSearchStatus(startTime, monteCarloTreeSearch.getExpandedNodes().size());
             if (state.isGoalState()) {
                 return state.extractPlan();
@@ -155,10 +163,12 @@ public class SearchClient {
         Action[][] plan = null;
         try {
 //            plan = SearchClient.search(initialState, frontier);
-            plan = SearchClient.search2(initialState);
+//            plan = SearchClient.search2(initialState);
+            OneTree oneTree = new OneTree(new UCTSelection(), new AllActionsNoDuplicateExpansion(),
+                    new AllPairsShortestPath(initialState), new AdditiveBackpropagation());
+            plan = oneTree.solve(new Node(initialState));
         } catch (OutOfMemoryError ex) {
             System.err.println("Maximum memory usage exceeded.");
-            plan = null;
         }
 
         // Print plan to server.

@@ -4,10 +4,8 @@ import shared.Farge;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.InputMismatchException;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class LevelParser {
 
@@ -77,7 +75,7 @@ public class LevelParser {
             line = file.readLine();
         }
         if(print_debugger) System.err.println("Map Details Determined. Height:[" + height + "] Width:[" + width + "]");
-        level.setMapDetails(height,width);
+        level.setMapDetails(height, width);
     }
 
     public void initialState() throws IOException{
@@ -86,7 +84,7 @@ public class LevelParser {
         requireArraysInitialized();
 
         level.numAgents = 0;
-
+        level.tiles = new LevelNode[level.width][level.height];
         String line = file.readLine();
         if(print_debugger)System.err.println(line);
         int row = 0;
@@ -103,6 +101,18 @@ public class LevelParser {
                 } else if (c == '+') {
                     level.walls[row][col] = true;
                 }
+                if (c != '+') {
+                    LevelNode node = new LevelNode(new Coordinate(row, col));
+                    level.tiles[row][col] = node;
+                    if (row > 0 && level.tiles[row - 1][col] != null) {
+                        node.addEdge(level.tiles[row - 1][col]);
+                        level.tiles[row - 1][col].addEdge(node);
+                    }
+                    if (col > 0 && level.tiles[row][col - 1] != null) {
+                        node.addEdge(level.tiles[row][col - 1]);
+                        level.tiles[row][col - 1].addEdge(node);
+                    }
+                }
             }
 
             ++row;
@@ -112,7 +122,6 @@ public class LevelParser {
 
         level.agentRows = Arrays.copyOf(level.agentRows, level.numAgents);
         level.agentCols = Arrays.copyOf(level.agentCols, level.numAgents);
-
     }
 
     public void goalState() throws IOException {
@@ -131,6 +140,7 @@ public class LevelParser {
 
                 if (('0' <= c && c <= '9') || ('A' <= c && c <= 'Z')) {
                     level.goals[row][col] = c;
+                    level.goalNodes.add(level.tiles[row][col]);
                 }
             }
 

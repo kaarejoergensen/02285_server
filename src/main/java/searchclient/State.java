@@ -1,5 +1,6 @@
 package searchclient;
 
+import searchclient.level.DistanceMap;
 import shared.Action;
 import shared.Farge;
 
@@ -9,6 +10,7 @@ import java.util.stream.Collectors;
 public class State {
     private static final Random RNG = new Random(1);
 
+    public DistanceMap distanceMap;
     // Contains the (row, col) pair and color for each agent indexed by agent number.
     public int[] agentRows;
     public int[] agentCols;
@@ -39,8 +41,9 @@ public class State {
      * Constructs an initial state.
      * Arguments are not copied, and therefore should not be modified after being passed in.
      */
-    public State(int[] agentRows, int[] agentCols, Farge[] agentColors, boolean[][] walls,
+    public State(DistanceMap distanceMap, int[] agentRows, int[] agentCols, Farge[] agentColors, boolean[][] walls,
                  char[][] boxes, Farge[] boxColors, char[][] goals) {
+        this.distanceMap = distanceMap;
         this.agentRows = agentRows;
         this.agentCols = agentCols;
         this.agentColors = agentColors;
@@ -60,6 +63,7 @@ public class State {
      */
     private State(State parent, Action[] jointAction) {
         // Copy parent.
+        this.distanceMap = parent.distanceMap;
         this.agentRows = Arrays.copyOf(parent.agentRows, parent.agentRows.length);
         this.agentCols = Arrays.copyOf(parent.agentCols, parent.agentCols.length);
         this.agentColors = parent.agentColors;
@@ -136,7 +140,7 @@ public class State {
                 }
             }
         }
-        return false;
+        return true;
     }
 
     public ArrayList<State> getExpandedStates() {

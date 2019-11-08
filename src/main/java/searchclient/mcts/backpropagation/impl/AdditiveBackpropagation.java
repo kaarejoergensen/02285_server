@@ -7,11 +7,11 @@ public class AdditiveBackpropagation implements Backpropagation {
     private static final int WIN_SCORE = 10;
 
     @Override
-    public void backpropagate(Node nodeToExplore, boolean solved) {
+    public void backpropagate(int score, Node nodeToExplore, Node root) {
         Node tempNode = nodeToExplore;
-        while (tempNode != null) {
+        while (tempNode != null && !tempNode.equals(root)) {
             tempNode.incrementVisitCount();
-            if (solved) tempNode.addScore(WIN_SCORE);
+            tempNode.addScore(score);
             tempNode = tempNode.getParent();
         }
     }

@@ -49,10 +49,10 @@ public class Action {
         StringBuilder stringBuilder = new StringBuilder(type.name());
         stringBuilder.append("(").append(agentMoveDirection.getLetter());
         if(boxMoveDirection != MoveDirection.NONE){
-            stringBuilder.append(", ").append(boxMoveDirection.getLetter());
+            stringBuilder.append(",").append(boxMoveDirection.getLetter());
         }
         if (color != null) {
-            stringBuilder.append(", ").append(color.name());
+            stringBuilder.append(",").append(color.name());
         }
         stringBuilder.append(")");
         return stringBuilder.toString();
