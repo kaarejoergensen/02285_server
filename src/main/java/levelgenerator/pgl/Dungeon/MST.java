@@ -35,7 +35,7 @@ public class MST {
     public void addEdge(Room src, Room dest, int distance){
         allRooms.add(Stream.of(src.toString()).collect(Collectors.toCollection(HashSet::new)));
         allRooms.add(Stream.of(dest.toString()).collect(Collectors.toCollection(HashSet::new)));
-        primEdges.add(new Edge(src, dest, src.getDistance(dest)));
+        //primEdges.add(new Edge(src, dest, src.getDistance(dest)));
         selectedRoom = src.getId();
     }
 

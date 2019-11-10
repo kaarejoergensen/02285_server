@@ -32,6 +32,8 @@ public class Dungeon extends RandomLevel {
     private ArrayList<Room> rooms;
     private ArrayList<Edge> edges;
 
+    private ArrayList<Edge> nonConnected;
+
     //MST Stuff
 
 
@@ -56,20 +58,57 @@ public class Dungeon extends RandomLevel {
         //Convert rooms to tiles
         convertRoomToTiles();
         //Find an edge (hallway) for every room (centroid)
-        generateEdges();
+        createMinimumSpanningTree();
+        printCentroids();
+        printEdges();
+
         convertEdgesToTiles();
 
 
         System.out.println(wallsToString());
 
-        System.out.println("STOP");
         //Make a path to every room?
     }
 
-    public void generateEdges(){
+    private void createMinimumSpanningTree(){
+        //Lager
+        nonConnected = new ArrayList<>();
+        var rooms_copy  = new ArrayList<>(rooms);
+        while(rooms_copy.size() > 0){
+            //Plukke første i lista
+            var temp = rooms_copy.get(0);
+            //Fjerne fra listen
+            rooms_copy.remove(temp);
+            //Finne det rommet som er nærest
+            Room closest = null;
+            for(Room r : rooms_copy){
+                if(closest == null || temp.getDistance(r) < temp.getDistance(closest)){
+                    boolean exists = false;
+                    for(Edge e : edges){
+                        if(e.equals(new Edge(temp,r))){
+                            exists = true;
+                            break;
+                        }
+                    }
+                    if(!exists){
+                        closest = r;
+                    }
+                }
+            }
+            if(closest != null){
+                Edge newEdge = new Edge(temp, closest);
+                edges.add(newEdge);
+            }
+
+        }
+    }
+
+
+    //En algoritme for å
+    public void basicGenerateEdges(){
         for(int i = 0; i < rooms.size(); i++){
             Room dest = (i == (rooms.size()-1)) ? rooms.get(0) : rooms.get(i+1);
-            Edge temp = new Edge(rooms.get(i),dest, rooms.get(i).getDistance(dest));
+            Edge temp = new Edge(rooms.get(i),dest);
             edges.add(temp);
         }
     }
@@ -143,7 +182,7 @@ public class Dungeon extends RandomLevel {
                 }
             }
 
-            System.out.println("Done? " + tmp + " vs " + dest);
+            //System.out.println("Done? " + tmp + " vs " + dest);
 
         }
     }
