@@ -167,24 +167,46 @@ public class Dungeon extends RandomLevel {
             Point dest = e.dest.centre;
             Point tmp = new Point(e.src.centre.x, e.src.centre.y);
 
+            boolean prioritizeX = distanceBetweenPoints(dest.x, tmp.x) > distanceBetweenPoints(dest.y, tmp.y) ? true : false;
+
             while(!tmp.equals(dest)){
                 walls[tmp.y][tmp.x] = ' ';
 
-                if(tmp.x != dest.x){
-                    if(tmp.x > dest.x) tmp.x--;
-                    if(tmp.x < dest.x) tmp.x++;
-                    continue;
+                if(prioritizeX){
+                    if(tmp.x != dest.x){
+                        if(tmp.x > dest.x) tmp.x--;
+                        if(tmp.x < dest.x) tmp.x++;
+                        continue;
+                    }
+                    if(tmp.y != dest.y){
+                        if(tmp.y > dest.y) tmp.y--;
+                        if(tmp.y < dest.y) tmp.y++;
+                        continue;
+                    }
+                }else{
+                    if(tmp.y != dest.y){
+                        if(tmp.y > dest.y) tmp.y--;
+                        if(tmp.y < dest.y) tmp.y++;
+                        continue;
+                    }
+                    if(tmp.x != dest.x){
+                        if(tmp.x > dest.x) tmp.x--;
+                        if(tmp.x < dest.x) tmp.x++;
+                        continue;
+                    }
                 }
-                if(tmp.y != dest.y){
-                    if(tmp.y > dest.y) tmp.y--;
-                    if(tmp.y < dest.y) tmp.y++;
-                    continue;
-                }
+
             }
-
-            //System.out.println("Done? " + tmp + " vs " + dest);
-
         }
+    }
+
+    private int distanceBetweenPoints(int a, int b){
+        return Math.abs(a-b);
+    }
+
+    private void equalizePoints(int a, int b){
+        if(a > b) a++;
+        if(b > a) a--;
     }
 
     private void printCentroids(){
