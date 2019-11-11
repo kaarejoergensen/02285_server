@@ -1,6 +1,6 @@
 package searchclient.mcts.selection;
 
-import searchclient.mcts.Node;
+import searchclient.mcts.model.Node;
 
 import java.util.Comparator;
 

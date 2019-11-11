@@ -1,6 +1,6 @@
 package searchclient.mcts.expansion;
 
-import searchclient.mcts.Node;
+import searchclient.mcts.model.Node;
 
 import java.util.List;
 

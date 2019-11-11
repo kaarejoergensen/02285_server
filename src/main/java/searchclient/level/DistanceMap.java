@@ -7,18 +7,18 @@ import java.util.stream.Stream;
 public class DistanceMap {
     private Map<Coordinate, Map<Coordinate, Integer>> allGoalsDistanceMap;
 
-    public DistanceMap(List<LevelNode> goalNodes) {
-        this.allGoalsDistanceMap = new HashMap<>(goalNodes.size());
-        for (LevelNode goalNode : goalNodes) {
+    public DistanceMap(List<LevelNode> allNodes) {
+        this.allGoalsDistanceMap = new HashMap<>(allNodes.size());
+        for (LevelNode levelNode : allNodes) {
             Map<Coordinate, Integer> distanceMap = new HashMap<>();
             int distance = 1;
-            Deque<LevelNode> neighbourStack = Stream.of(goalNode).collect(Collectors.toCollection(ArrayDeque::new));
+            Deque<LevelNode> neighbourStack = Stream.of(levelNode).collect(Collectors.toCollection(ArrayDeque::new));
             while (!neighbourStack.isEmpty()) {
                 Deque<LevelNode> newLevelStack = new ArrayDeque<>();
                 LevelNode tempNode = neighbourStack.pollFirst();
                 while (tempNode != null) {
                     for (LevelNode neighbour : tempNode.getEdges()) {
-                        if (!distanceMap.containsKey(neighbour.getCoordinate()) && !neighbour.equals(goalNode)) {
+                        if (!distanceMap.containsKey(neighbour.getCoordinate()) && !neighbour.equals(levelNode)) {
                             distanceMap.put(neighbour.getCoordinate(), distance);
                             newLevelStack.add(neighbour);
                         }
@@ -28,7 +28,7 @@ public class DistanceMap {
                 neighbourStack = newLevelStack;
                 distance++;
             }
-            this.allGoalsDistanceMap.put(goalNode.getCoordinate(), distanceMap);
+            this.allGoalsDistanceMap.put(levelNode.getCoordinate(), distanceMap);
         }
     }
 

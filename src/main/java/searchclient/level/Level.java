@@ -4,13 +4,8 @@ import searchclient.State;
 import shared.Farge;
 
 import java.io.BufferedReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 public class Level {
-    public List<LevelNode> goalNodes;
-    public LevelNode[][] tiles;
     public DistanceMap distanceMap;
     //Map Data
     public int[] agentRows;
@@ -55,8 +50,6 @@ public class Level {
 
         numAgents = 0;
 
-        goalNodes = new ArrayList<>();
-
     }
 
     public void setMapDetails(int width, int height){
@@ -75,9 +68,4 @@ public class Level {
     public State toState(){
         return new State(distanceMap, agentRows, agentCols, agentColors, walls, boxes, boxColors, goals);
     }
-
-
-
-
-
 }

@@ -1,7 +1,7 @@
 package searchclient.mcts.simulation;
 
-import searchclient.mcts.Node;
+import searchclient.mcts.model.Node;
 
 public interface Simulation {
-    int simulatePlayout(Node node);
+    float simulatePlayout(Node node);
 }

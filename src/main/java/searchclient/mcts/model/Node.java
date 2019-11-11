@@ -1,4 +1,4 @@
-package searchclient.mcts;
+package searchclient.mcts.model;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -13,7 +13,7 @@ import java.util.List;
 @Setter
 public class Node {
     private int visitCount = 0;
-    private int winScore = 0;
+    private float winScore = 0;
     private int countToRoot;
     final private State state;
     private List<Node> children = new ArrayList<>();
@@ -50,7 +50,7 @@ public class Node {
         return Collections.max(this.children, Comparator.comparing(Node::getWinScore));
     }
 
-    public void addScore(int score) {
+    public void addScore(float score) {
         this.winScore += score;
     }
 

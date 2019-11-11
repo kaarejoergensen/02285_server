@@ -1,13 +1,12 @@
 package searchclient.mcts.backpropagation.impl;
 
-import searchclient.mcts.Node;
 import searchclient.mcts.backpropagation.Backpropagation;
+import searchclient.mcts.model.Node;
 
 public class AdditiveBackpropagation implements Backpropagation {
-    private static final int WIN_SCORE = 10;
 
     @Override
-    public void backpropagate(int score, Node nodeToExplore, Node root) {
+    public void backpropagate(float score, Node nodeToExplore, Node root) {
         Node tempNode = nodeToExplore;
         while (tempNode != null && !tempNode.equals(root)) {
             tempNode.incrementVisitCount();

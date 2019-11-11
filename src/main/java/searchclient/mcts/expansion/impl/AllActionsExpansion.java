@@ -1,7 +1,7 @@
 package searchclient.mcts.expansion.impl;
 
-import searchclient.mcts.Node;
 import searchclient.mcts.expansion.Expansion;
+import searchclient.mcts.model.Node;
 
 import java.util.List;
 import java.util.stream.Collectors;

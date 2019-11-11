@@ -3,22 +3,24 @@ package searchclient;
 import searchclient.level.Coordinate;
 import shared.Action;
 
-import java.nio.charset.CharsetDecoder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
 
 public abstract class Heuristic implements Comparator<State> {
-    private HashMap<Character, List<Location>> goals;
+    private HashMap<Character, List<Coordinate>> goals;
     public Heuristic(State initialState) {
         goals = new HashMap<>();
         for (int row = 1; row < initialState.goals.length - 1; row ++) {
             for (int col = 1; col < initialState.goals[row].length - 1; col++) {
                 char g = initialState.goals[row][col];
                 if (g > 0) {
-                    Location goal = new Location(row, col, 0);
+                    Coordinate goal = new Coordinate(row, col);
                     if (goals.containsKey(g)) {
                         goals.get(g).add(goal);
                     } else {
-                        List<Location> goalsList = new ArrayList<>();
+                        List<Coordinate> goalsList = new ArrayList<>();
                         goalsList.add(goal);
                         goals.put(g, goalsList);
                     }
@@ -29,53 +31,48 @@ public abstract class Heuristic implements Comparator<State> {
 
     public int h(State n) {
         int result = 0;
-        for (Action a : n.jointAction) {
-            result += a.getType().equals(Action.ActionType.NoOp) ? 0 : 1;
-        }
-        List<Location> boxes = new LinkedList<>();
         for (int row = 1; row < n.boxes.length - 1; row ++) {
             for (int col = 1; col < n.boxes[row].length - 1; col++) {
                 char b = n.boxes[row][col];
                 if (b > 0) {
                     if (goals.containsKey(b)) {
-                        List<Location> goalsList = goals.get(b);
-                        Location box = new Location(row, col, Integer.MAX_VALUE);
-                        boolean success = false;
-                        for (Location goal : goalsList) {
-                            if (goal.x == box.x && goal.y == box.y) {
-                                success = true;
+                        List<Coordinate> goalsList = goals.get(b);
+                        Coordinate box = new Coordinate(row, col);
+                        int finalDistance = Integer.MAX_VALUE;
+                        for (Coordinate goal : goalsList) {
+                            if (goal.getRow() == box.getRow() && goal.getCol() == box.getCol()) {
                                 break;
                             } else {
-                                int distance = n.distanceMap.getDistance(new Coordinate(box.x, box.y), new Coordinate(goal.x, goal.y));
-                                if (distance < box.distance) {
-                                    box.distance = distance;
+                                int distance = n.distanceMap.getDistance(box, goal);
+                                if (distance < finalDistance) {
+                                    finalDistance = distance;
                                 }
                             }
                         }
-                        if (!success) boxes.add(box);
+                        if (finalDistance != Integer.MAX_VALUE) {
+                            result += 2 * finalDistance;
+                            result += n.distanceMap.getDistance(new Coordinate(n.agentRows[0], n.agentCols[0]), box);
+                        }
                     }
                 }
             }
         }
 
-        if (boxes.isEmpty()) {
+        if (result == 0) {
             for (Character g : goals.keySet()) {
                 if ('0' <= g && g <= '9') {
                     int agentRow = n.agentRows[g - '0'];
                     int agentCol = n.agentCols[g - '0'];
-                    Location goal = goals.get(g).get(0);
-                    if (agentRow != goal.x || agentCol != goal.y) {
-                        int distance = n.distanceMap.getDistance(new Coordinate(agentRow, agentCol), new Coordinate(goal.x, goal.y));
-                        System.err.println("Goal: " + g + " Distance: " + distance);
+                    Coordinate goal = goals.get(g).get(0);
+                    if (agentRow != goal.getRow() || agentCol != goal.getCol()) {
+                        int distance = n.distanceMap.getDistance(new Coordinate(agentRow, agentCol), goal);
                         result += distance;
                     }
                 }
             }
-            return result;
         }
-        for (Location box : boxes) {
-            result += 100 * box.distance;
-            //result += Math.abs((Math.sqrt(Math.pow(n.agentRows[0] - box.x, 2) + Math.pow(n.agentCols[0] - box.y, 2))) - 1);
+        for (Action a : n.jointAction) {
+            result += a.getType().equals(Action.ActionType.NoOp) ? 0 : 1;
         }
         return result;
     }
@@ -87,17 +84,6 @@ public abstract class Heuristic implements Comparator<State> {
         return this.f(n1) - this.f(n2);
     }
 
-    public class Location {
-        public final int x;
-        public final int y;
-        public int distance;
-
-        public Location(int x, int y, int distance) {
-            this.x = x;
-            this.y = y;
-            this.distance = distance;
-        }
-    }
 }
 
 class HeuristicAStar extends Heuristic {

@@ -1,6 +1,6 @@
 package searchclient.mcts.selection.impl;
 
-import searchclient.mcts.Node;
+import searchclient.mcts.model.Node;
 import searchclient.mcts.selection.Selection;
 
 import java.util.Random;

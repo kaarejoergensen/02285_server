@@ -1,41 +1,26 @@
 package searchclient.mcts;
 
-import lombok.Data;
-import searchclient.State;
+import lombok.AllArgsConstructor;
+import searchclient.Memory;
 import searchclient.mcts.backpropagation.Backpropagation;
 import searchclient.mcts.expansion.Expansion;
+import searchclient.mcts.model.Node;
 import searchclient.mcts.selection.Selection;
 import searchclient.mcts.simulation.Simulation;
+import shared.Action;
 
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+@AllArgsConstructor
+public abstract class MonteCarloTreeSearch {
+    final protected Selection selection;
+    final protected Expansion expansion;
+    final protected Simulation simulation;
+    final protected Backpropagation backpropagation;
 
-@Data
-public class MonteCarloTreeSearch {
-    private static final int MCTS_LOOP_ITERATIONS = 100000;
+    public abstract Action[][] solve(Node root);
 
-    final private Selection selection;
-    final private Expansion expansion;
-    final private Simulation simulation;
-    final private Backpropagation backpropagation;
-
-    Set<Node> expandedNodes = new HashSet<>();
-
-    public State findNextMove(Node root) {
-        for (int i = 0; i < MCTS_LOOP_ITERATIONS; i++) {
-            Node promisingNode = this.selection.selectPromisingNode(root);
-
-            if (!promisingNode.getState().isGoalState())
-                this.expandedNodes.addAll(this.expansion.expandNode(promisingNode));
-
-            int score = this.simulation.simulatePlayout(promisingNode);
-
-            this.backpropagation.backpropagate(score, promisingNode, root);
-        }
-
-        return root.getChildWithMaxScore().getState();
+    protected void printSearchStatus(long startTime, int expandedNodes, int totalIterations) {
+        String statusTemplate = "#Expanded: %,8d, #Total iterations: %,8d, Time: %3.3f s\n%s\n";
+        double elapsedTime = (System.nanoTime() - startTime) / 1_000_000_000d;
+        System.err.format(statusTemplate, expandedNodes, totalIterations, elapsedTime, Memory.stringRep());
     }
 }

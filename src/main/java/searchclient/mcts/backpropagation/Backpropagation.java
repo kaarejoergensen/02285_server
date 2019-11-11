@@ -1,7 +1,7 @@
 package searchclient.mcts.backpropagation;
 
-import searchclient.mcts.Node;
+import searchclient.mcts.model.Node;
 
 public interface Backpropagation {
-    void backpropagate(int score, Node nodeToExplore, Node root);
+    void backpropagate(float score, Node nodeToExplore, Node root);
 }
