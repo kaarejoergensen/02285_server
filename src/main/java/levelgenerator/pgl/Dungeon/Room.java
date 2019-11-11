@@ -8,7 +8,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import lombok.Getter;
 import lombok.Setter;
 
-public class Room {
+public class Room{
     @Getter
     private String id;
 
@@ -85,5 +85,10 @@ public class Room {
     public String toString() {
         return this.getId().substring(0,3);
     }
+
+    public boolean isBigger(Room r){
+        return this.getArea() > r.getArea();
+    }
+
 
 }

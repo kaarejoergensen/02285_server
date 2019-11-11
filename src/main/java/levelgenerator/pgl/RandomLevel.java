@@ -257,6 +257,9 @@ public abstract class RandomLevel implements PGL{
 
     public void validateInput(){
         if(height < 3 || width < 3) throw new IllegalArgumentException("Height and Width have to be larger than 4");
+        if(complexity.boxes > 26) throw new IllegalArgumentException("Box limit is 26");
+        if(complexity.agents > 9) throw new IllegalArgumentException("Agent limit is 9");
+        if(complexity.agents > Farge.getClientFarger().length) throw new IllegalArgumentException("Max colors are" + Farge.getClientFarger().length);
     }
 
 

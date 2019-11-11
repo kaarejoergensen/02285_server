@@ -55,101 +55,56 @@ public class Dungeon extends RandomLevel {
         convertRoomToTiles();
         buildEdges();
 
-        System.out.println("Number of rooms: " + rooms.size() + System.lineSeparator() + "Edge count: " + edges.size());
 
         convertEdgesToTiles();
 
         addRoomNameInTiles(); //Debug
         System.out.println(wallsDebugString()); //Debug
-        printEdges(); //Debug
+        //printEdges(); //Debug
 
 
-        totallyRandomDistribution(initStateElements, true);
-        totallyRandomDistribution(goalStateElements, false);
+        totallyRandomElementDistribution(initStateElements);
+        totallyRandomElementDistribution(goalStateElements);
 
+        System.out.println("Dungeon Generated!"+ System.lineSeparator() + "Number of rooms: " + rooms.size() + System.lineSeparator() + "Edge count: " + edges.size());
     }
 
-    private void totallyRandomDistribution(char[][] state, boolean pickFromStart){
+    private void totallyRandomElementDistribution(char[][] state){
         var agents = agentsToArrayList();
         var boxes = boxesToArrayList();
+        var rooms_copy = new ArrayList<>(rooms);
 
-
-
-        while(agents.size() > 0 && boxes.size() > 0){
-            for(Room r : rooms){
-                if(agents.size() > 0){
-                    r.addElement(agents.get(0),state);
-                    agents.remove(0);
-                    continue;
-                }
-                if(boxes.size() > 0){
-                    r.addElement(boxes.get(0),state);
-                    boxes.remove(0);
-                    continue;
-                }
-                break;
+        //Agents
+        while(agents.size() > 0){
+            Room agentRoom = getBiggestRoom(rooms_copy);
+            int loop_indexer = (int) Math.floor(agentRoom.getArea() / 2);
+            while(agents.size() > 0 && loop_indexer > 0){
+                int rng = ThreadLocalRandom.current().nextInt(0,agents.size());
+                char temp = agents.get(rng);
+                agents.remove(rng);
+                agentRoom.addElement(temp, state);
             }
+            rooms_copy.remove(agentRoom);
+        }
+
+        //Box time
+        while(boxes.size() > 0){
+            int rng = ThreadLocalRandom.current().nextInt(0,rooms_copy.size());
+            Room picked_room = rooms_copy.get(rng);
+            char temp = boxes.get(0);
+            boxes.remove(0);
+            picked_room.addElement(temp,state);
         }
     }
 
-    private void distributeElements(char[][] state){
-
-        var agents = agentsToArrayList();
-        var boxes = boxesToArrayList();
-
-        for(int i = 0; i < rooms.size(); i++){
-            Room tempRoom = rooms.get(i);
-
-            int loop_indexer = (int) Math.floor(tempRoom.getArea() / 2);
-
-            //Agents
-            if(agents.size() != 0){
-                while(agents.size() > 0 && loop_indexer > 0){
-                    char temp = agents.get(0);
-                    agents.remove(0);
-                    tempRoom.addElement(temp, state);
-                    loop_indexer--;
-                }
-                continue;
-            }
-            //Boxes
-            if(boxes.size() != 0){
-                while(boxes.size() > 0 && loop_indexer > 0){
-                    char temp = boxes.get(0);
-                    boxes.remove(0);
-                    tempRoom.addElement(temp, state);
-                    loop_indexer--;
-                }
-            }
-
-        }
-    }
-
-    private int assignRoomTypes(){
-        //Derom det er færre enn 3 rom, ALL RANDOM
-        if(rooms.size() < 4){
-            return 0;
-        }
-        //Minst en type av hvert rom
-        rooms.get(0).setType(RoomType.AGENTS);
-        rooms.get(1).setType(RoomType.BOX);
-        rooms.get(2).setType(RoomType.BOX_GOALS);
-        int count = 3;
-        if(rooms.size() == 3) return count;
-
-        for(int i = 3; i < rooms.size(); i++){
-            double factor = 3 / rooms.size();
-            double rnd = ThreadLocalRandom.current().nextDouble(0,1);
-            if(factor > rnd){
-                count++;
-                int roomTypeRNG = ThreadLocalRandom.current().nextInt(0,1);
-                if(roomTypeRNG == 1)
-                    rooms.get(i).setType(RoomType.BOX);
-                else
-                    rooms.get(i).setType(RoomType.BOX_GOALS);
+    private Room getBiggestRoom(ArrayList<Room> rooms){
+        Room temp = null;
+        for(Room r  : rooms){
+            if(temp == null || temp.getArea() < r.getArea()){
+                temp = r;
             }
         }
-        return count;
+        return temp;
     }
 
 
@@ -294,7 +249,7 @@ public class Dungeon extends RandomLevel {
 
     private void printCentroids(){
         for(Room r : rooms){
-            System.out.println("Room: " + r + " Centroid: " + r.centre);
+            System.out.println("Room: " + r + " Centroid: " + r.centre + " Area: " + r.getArea());
         }
     }
 
