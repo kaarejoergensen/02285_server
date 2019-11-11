@@ -1,4 +1,4 @@
-package searchclient.mcts;
+package searchclient.mcts.search;
 
 import lombok.AllArgsConstructor;
 import searchclient.Memory;

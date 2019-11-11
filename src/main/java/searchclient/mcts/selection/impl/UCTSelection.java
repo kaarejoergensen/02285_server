@@ -23,7 +23,7 @@ public class UCTSelection extends Selection {
     private double uctValue(Node node) {
         int parentVisit = node.getParent() == null ? 0 : node.getParent().getVisitCount();
         if (parentVisit == 0) return Integer.MAX_VALUE;
-        return (node.getWinScore() / (double) parentVisit) + 1.41 * Math.sqrt(Math.log(parentVisit) / (double) node.getVisitCount());
+        return (node.getWinScore() / (double) parentVisit) + 0.05 * Math.sqrt(Math.log(parentVisit) / (double) node.getVisitCount());
     }
 
     @Override

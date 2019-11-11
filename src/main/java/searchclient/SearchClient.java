@@ -1,13 +1,16 @@
 package searchclient;
 
 import searchclient.level.Level;
-import searchclient.mcts.MonteCarloTreeSearch;
 import searchclient.mcts.backpropagation.impl.AdditiveBackpropagation;
 import searchclient.mcts.expansion.impl.AllActionsExpansion;
-import searchclient.mcts.impl.Basic;
+import searchclient.mcts.expansion.impl.AllActionsNoDuplicatesExpansion;
 import searchclient.mcts.model.Node;
+import searchclient.mcts.search.MonteCarloTreeSearch;
+import searchclient.mcts.search.impl.Basic;
+import searchclient.mcts.search.impl.OneTree;
 import searchclient.mcts.selection.impl.UCTSelection;
 import searchclient.mcts.simulation.impl.AllPairsShortestPath;
+import searchclient.mcts.simulation.impl.RandomSimulation;
 import shared.Action;
 
 import java.io.BufferedReader;
@@ -90,8 +93,7 @@ public class SearchClient {
 
 
 
-    public static void main(String[] args)
-            throws IOException {
+    public static void main(String[] args) throws IOException {
         // Send client name to server.
         System.out.println("SearchClient");
 
@@ -100,7 +102,8 @@ public class SearchClient {
         State initialState = SearchClient.parseLevel(serverMessages);
 
         // Select search strategy.
-        Frontier frontier;
+        Frontier frontier = null;
+        MonteCarloTreeSearch monteCarloTreeSearch = null;
         if (args.length > 0) {
             switch (args[0].toLowerCase(Locale.ROOT)) {
                 case "-bfs":
@@ -126,26 +129,32 @@ public class SearchClient {
                 case "-greedy":
                     frontier = new FrontierBestFirst(new HeuristicGreedy(initialState));
                     break;
+                case "-basic":
+                    monteCarloTreeSearch = new Basic(new UCTSelection(), new AllActionsExpansion(),
+                            new RandomSimulation(), new AdditiveBackpropagation());
+                    break;
+                    case "-onetree":
+                    monteCarloTreeSearch = new OneTree(new UCTSelection(), new AllActionsNoDuplicatesExpansion(),
+                            new AllPairsShortestPath(initialState), new AdditiveBackpropagation());
+                    break;
                 default:
-                    frontier = new FrontierBFS();
-                    System.err.println("Defaulting to BFS search. Use arguments -bfs, -dfs, -astar, -wastar, or " +
+                    frontier = new FrontierBestFirst(new HeuristicAStar(initialState));
+                    System.err.println("Defaulting to astar search. Use arguments -bfs, -dfs, -astar, -wastar, or " +
                             "-greedy to set the search strategy.");
             }
         } else {
-            frontier = new FrontierBFS();
-            System.err.println("Defaulting to BFS search. Use arguments -bfs, -dfs, -astar, -wastar, or -greedy to " +
+            frontier = new FrontierBestFirst(new HeuristicAStar(initialState));
+            System.err.println("Defaulting to astar search. Use arguments -bfs, -dfs, -astar, -wastar, or -greedy to " +
                     "set the search strategy.");
         }
 
         // Search for a plan.
         Action[][] plan = null;
         try {
-//            plan = SearchClient.search(initialState, frontier);
-            MonteCarloTreeSearch monteCarloTreeSearch = new Basic(new UCTSelection(), new AllActionsExpansion(),
-                    new AllPairsShortestPath(initialState), new AdditiveBackpropagation());
-//            MonteCarloTreeSearch monteCarloTreeSearch = new OneTree(new UCTSelection(), new AllActionsNoDuplicateExpansion(),
-//                    new AllPairsShortestPath(initialState), new AdditiveBackpropagation());
-            plan = monteCarloTreeSearch.solve(new Node(initialState));
+            if (monteCarloTreeSearch == null)
+                plan = SearchClient.search(initialState, frontier);
+            else
+                plan = monteCarloTreeSearch.solve(new Node(initialState));
         } catch (OutOfMemoryError ex) {
             System.err.println("Maximum memory usage exceeded.");
         }

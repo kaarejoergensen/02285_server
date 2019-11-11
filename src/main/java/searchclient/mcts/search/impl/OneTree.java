@@ -1,10 +1,10 @@
-package searchclient.mcts.impl;
+package searchclient.mcts.search.impl;
 
-import searchclient.mcts.MonteCarloTreeSearch;
 import searchclient.mcts.backpropagation.Backpropagation;
 import searchclient.mcts.expansion.Expansion;
-import searchclient.mcts.expansion.impl.AllActionsNoDuplicateExpansion;
+import searchclient.mcts.expansion.impl.AllActionsNoDuplicatesExpansion;
 import searchclient.mcts.model.Node;
+import searchclient.mcts.search.MonteCarloTreeSearch;
 import searchclient.mcts.selection.Selection;
 import searchclient.mcts.simulation.Simulation;
 import shared.Action;
@@ -27,15 +27,14 @@ public class OneTree extends MonteCarloTreeSearch {
         long startTime = System.nanoTime();
         int iterations = 0;
         int totalIterations = 0;
-        List<Node> expandedNodes;
 
         while (true) {
             if (iterations == 10000) {
-                printSearchStatus(startTime, ((AllActionsNoDuplicateExpansion) this.expansion).getExpandedStates().size(), totalIterations);
+                printSearchStatus(startTime, ((AllActionsNoDuplicatesExpansion) this.expansion).getExpandedStates().size(), totalIterations);
                 iterations = 0;
             }
             Node promisingNode = this.selection.selectPromisingNode(root);
-            expandedNodes = this.expansion.expandNode(promisingNode);
+            List<Node> expandedNodes = this.expansion.expandNode(promisingNode);
             if (expandedNodes.isEmpty()) {
                 if (promisingNode.getParent() != null) promisingNode.getParent().removeChild(promisingNode);
                 if (promisingNode.equals(root)) {
@@ -44,9 +43,13 @@ public class OneTree extends MonteCarloTreeSearch {
                 continue;
             }
             for (Node node : expandedNodes) {
-                if (node.getState().isGoalState()) return node.getState().extractPlan();
-                float score = this.simulation.simulatePlayout(promisingNode);
-                this.backpropagation.backpropagate(score, promisingNode, root);
+                if (node.getState().isGoalState()) {
+                    printSearchStatus(startTime, ((AllActionsNoDuplicatesExpansion) this.expansion).getExpandedStates().size(), totalIterations);
+                    return node.getState().extractPlan();
+                }
+
+                float score = this.simulation.simulatePlayout(node);
+                this.backpropagation.backpropagate(score, node, root);
 
                 if (this.currentDepth < node.getCountToRoot()) {
                     this.currentDepth = node.getCountToRoot();

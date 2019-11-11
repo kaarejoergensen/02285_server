@@ -1,9 +1,9 @@
-package searchclient.mcts.impl;
+package searchclient.mcts.search.impl;
 
-import searchclient.mcts.MonteCarloTreeSearch;
 import searchclient.mcts.backpropagation.Backpropagation;
 import searchclient.mcts.expansion.Expansion;
 import searchclient.mcts.model.Node;
+import searchclient.mcts.search.MonteCarloTreeSearch;
 import searchclient.mcts.selection.Selection;
 import searchclient.mcts.simulation.Simulation;
 import shared.Action;
