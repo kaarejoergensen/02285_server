@@ -4,6 +4,7 @@ import levelgenerator.Complexity;
 import shared.Action.MoveDirection;
 
 import java.awt.*;
+import java.util.ArrayList;
 
 interface PGL {
 
@@ -15,6 +16,9 @@ interface PGL {
     Point getNewPoint(Point p, MoveDirection direction);
 
     char[] elementsToArray();
+    char[] agentsToArray();
+    ArrayList<Character> agentsToArrayList();
+    ArrayList<Character> boxesToArrayList();
 
     String toString();
     String stateToString(char[][] state);

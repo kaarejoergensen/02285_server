@@ -32,9 +32,6 @@ public class Dungeon extends RandomLevel {
     private ArrayList<Room> rooms;
     private ArrayList<Edge> edges;
 
-    private ArrayList<Edge> nonConnected;
-
-    //MST Stuff
 
 
     public Dungeon(Complexity c, int levelNumber) {
@@ -52,29 +49,110 @@ public class Dungeon extends RandomLevel {
             if(isIntersecting(room)) continue;
 
             rooms.add(room);
-
-
-
             tiles += room.getArea();
         }
-        System.out.println("Rooms Created");
-        //Convert rooms to tiles
+
         convertRoomToTiles();
-        //Find an edge (hallway) for every room (centroid)
-
-
         buildEdges();
 
         System.out.println("Number of rooms: " + rooms.size() + System.lineSeparator() + "Edge count: " + edges.size());
 
         convertEdgesToTiles();
 
-        addRoomNameInTiles();
-        System.out.println(wallsDebugString());
-        printEdges();
+        addRoomNameInTiles(); //Debug
+        System.out.println(wallsDebugString()); //Debug
+        printEdges(); //Debug
 
-        //Make a path to every room?
+
+        totallyRandomDistribution(initStateElements, true);
+        totallyRandomDistribution(goalStateElements, false);
+
     }
+
+    private void totallyRandomDistribution(char[][] state, boolean pickFromStart){
+        var agents = agentsToArrayList();
+        var boxes = boxesToArrayList();
+
+
+
+        while(agents.size() > 0 && boxes.size() > 0){
+            for(Room r : rooms){
+                if(agents.size() > 0){
+                    r.addElement(agents.get(0),state);
+                    agents.remove(0);
+                    continue;
+                }
+                if(boxes.size() > 0){
+                    r.addElement(boxes.get(0),state);
+                    boxes.remove(0);
+                    continue;
+                }
+                break;
+            }
+        }
+    }
+
+    private void distributeElements(char[][] state){
+
+        var agents = agentsToArrayList();
+        var boxes = boxesToArrayList();
+
+        for(int i = 0; i < rooms.size(); i++){
+            Room tempRoom = rooms.get(i);
+
+            int loop_indexer = (int) Math.floor(tempRoom.getArea() / 2);
+
+            //Agents
+            if(agents.size() != 0){
+                while(agents.size() > 0 && loop_indexer > 0){
+                    char temp = agents.get(0);
+                    agents.remove(0);
+                    tempRoom.addElement(temp, state);
+                    loop_indexer--;
+                }
+                continue;
+            }
+            //Boxes
+            if(boxes.size() != 0){
+                while(boxes.size() > 0 && loop_indexer > 0){
+                    char temp = boxes.get(0);
+                    boxes.remove(0);
+                    tempRoom.addElement(temp, state);
+                    loop_indexer--;
+                }
+            }
+
+        }
+    }
+
+    private int assignRoomTypes(){
+        //Derom det er færre enn 3 rom, ALL RANDOM
+        if(rooms.size() < 4){
+            return 0;
+        }
+        //Minst en type av hvert rom
+        rooms.get(0).setType(RoomType.AGENTS);
+        rooms.get(1).setType(RoomType.BOX);
+        rooms.get(2).setType(RoomType.BOX_GOALS);
+        int count = 3;
+        if(rooms.size() == 3) return count;
+
+        for(int i = 3; i < rooms.size(); i++){
+            double factor = 3 / rooms.size();
+            double rnd = ThreadLocalRandom.current().nextDouble(0,1);
+            if(factor > rnd){
+                count++;
+                int roomTypeRNG = ThreadLocalRandom.current().nextInt(0,1);
+                if(roomTypeRNG == 1)
+                    rooms.get(i).setType(RoomType.BOX);
+                else
+                    rooms.get(i).setType(RoomType.BOX_GOALS);
+            }
+        }
+        return count;
+    }
+
+
 
     private void buildEdges(){
         var rooms_copy = new ArrayList<>(rooms);
@@ -94,7 +172,6 @@ public class Dungeon extends RandomLevel {
         rooms_copy.remove(r);
 
         if(closestRoom != null){
-
             edges.add(new Edge(findClosestRoom(r, closestRoom), closestRoom));
             connectClosest(closestRoom,rooms_copy);
 
@@ -115,23 +192,8 @@ public class Dungeon extends RandomLevel {
             if(candidate == null) break;
             r = candidate;
         }
-        if(!r.equals(temp))
-        //System.out.println("New closest to " +  closest + " found! -> OG: " + r + " vs: " + temp);
+        //if(!r.equals(temp)) System.out.println("New closest to " +  closest + " found! -> OG: " + r + " vs: " + temp);
         return temp;
-    }
-
-
-    private boolean hasCloserRoom(Room temp, Room closest){
-            ArrayList<Edge> edges = new ArrayList<>(temp.getEdges());
-            boolean foundCloser = false;
-            //Henter ut alle rom conncected
-            for(Edge e : edges){
-                Room dest = e.src == temp ? e.dest : e.src;
-                if(dest.getDistance(closest) < temp.getDistance(closest)){
-                    foundCloser = true;
-                }
-            }
-            return foundCloser;
     }
 
 
@@ -222,6 +284,8 @@ public class Dungeon extends RandomLevel {
             }
         }
     }
+
+
 
     private int distanceBetweenPoints(int a, int b){
         return Math.abs(a-b);

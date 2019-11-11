@@ -3,8 +3,10 @@ package levelgenerator.pgl.Dungeon;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 import lombok.Getter;
+import lombok.Setter;
 
 public class Room {
     @Getter
@@ -14,6 +16,10 @@ public class Room {
     public Rectangle rect;
 
     public ArrayList<Edge> edges;
+    @Getter
+    @Setter
+    public RoomType type;
+
 
     public Room (Rectangle rect){
         this.rect = rect;
@@ -43,6 +49,22 @@ public class Room {
             }
         }
         return false;
+    }
+
+    public void addElement(char c, char[][] state){
+        while(true){
+            Point rng = getRandomPositionWithinBounds();
+            if(state[rng.y][rng.x] == '\0'){
+                state[rng.y][rng.x] = c;
+                break;
+            }
+        }
+    }
+
+    public Point getRandomPositionWithinBounds(){
+        int x = ThreadLocalRandom.current().nextInt(rect.x, rect.x + rect.width);
+        int y = ThreadLocalRandom.current().nextInt(rect.y, rect.y + rect.height);
+        return new Point(x,y);
     }
 
     public int getArea(){

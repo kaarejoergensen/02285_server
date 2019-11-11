@@ -144,6 +144,38 @@ public abstract class RandomLevel implements PGL{
         return elements;
     }
 
+    public char[] agentsToArray(){
+        char[] agents = new char[complexity.agents];
+        int index = 0;
+        for(char e : elementsToArray()){
+            if(Character.isDigit(e)){
+                agents[index] = e;
+                index++;
+            }
+        }
+        return agents;
+    }
+
+    public ArrayList<Character> agentsToArrayList(){
+        ArrayList<Character> temp = new ArrayList<>();
+        for(char c : elementsToArray()){
+            if(Character.isDigit(c)){
+                temp.add(c);
+            }
+        }
+        return temp;
+    }
+
+    public ArrayList<Character> boxesToArrayList(){
+        ArrayList<Character> temp = new ArrayList<>();
+        for(char c : elementsToArray()){
+            if(Character.isLetter(c)){
+                temp.add(c);
+            }
+        }
+        return temp;
+    }
+
 
     public int getCellCount(){
         int cellCount = 0;
