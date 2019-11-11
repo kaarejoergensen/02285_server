@@ -52,66 +52,89 @@ public class Dungeon extends RandomLevel {
             if(isIntersecting(room)) continue;
 
             rooms.add(room);
+
+
+
             tiles += room.getArea();
         }
         System.out.println("Rooms Created");
         //Convert rooms to tiles
         convertRoomToTiles();
         //Find an edge (hallway) for every room (centroid)
-        createMinimumSpanningTree();
-        printCentroids();
-        printEdges();
+
+
+        buildEdges();
+
+        System.out.println("Number of rooms: " + rooms.size() + System.lineSeparator() + "Edge count: " + edges.size());
 
         convertEdgesToTiles();
 
-
-        System.out.println(wallsToString());
+        addRoomNameInTiles();
+        System.out.println(wallsDebugString());
+        printEdges();
 
         //Make a path to every room?
     }
 
-    private void createMinimumSpanningTree(){
-        //Lager
-        nonConnected = new ArrayList<>();
-        var rooms_copy  = new ArrayList<>(rooms);
-        while(rooms_copy.size() > 0){
-            //Plukke første i lista
-            var temp = rooms_copy.get(0);
-            //Fjerne fra listen
-            rooms_copy.remove(temp);
-            //Finne det rommet som er nærest
-            Room closest = null;
-            for(Room r : rooms_copy){
-                if(closest == null || temp.getDistance(r) < temp.getDistance(closest)){
-                    boolean exists = false;
-                    for(Edge e : edges){
-                        if(e.equals(new Edge(temp,r))){
-                            exists = true;
-                            break;
-                        }
-                    }
-                    if(!exists){
-                        closest = r;
-                    }
+    private void buildEdges(){
+        var rooms_copy = new ArrayList<>(rooms);
+        Room chosen = rooms_copy.get(0);
+        rooms_copy.remove(0);
+        connectClosest(chosen, rooms_copy);
+    }
+
+    private void connectClosest(Room r, ArrayList<Room> rooms_copy){
+        if(rooms_copy.size() == 0) return;
+        Room closestRoom = null;
+        for(Room temp : rooms_copy){
+            if(!temp.equals(r) && (closestRoom == null || r.getDistance(temp) < r.getDistance(closestRoom))){
+                closestRoom = temp;
+            }
+        }
+        rooms_copy.remove(r);
+
+        if(closestRoom != null){
+
+            edges.add(new Edge(findClosestRoom(r, closestRoom), closestRoom));
+            connectClosest(closestRoom,rooms_copy);
+
+        }
+    }
+
+    private Room findClosestRoom(Room r, Room closest) {
+        Room temp = r;
+        while(true){
+            ArrayList<Edge> edges = new ArrayList<>(r.getEdges());
+            Room candidate = null;
+            for(Edge e : edges){
+                Room dest = e.src == r ? e.dest : e.src;
+                if(dest.getDistance(closest) < r.getDistance(closest)){
+                    candidate = dest;
                 }
             }
-            if(closest != null){
-                Edge newEdge = new Edge(temp, closest);
-                edges.add(newEdge);
+            if(candidate == null) break;
+            r = candidate;
+        }
+        if(!r.equals(temp))
+        //System.out.println("New closest to " +  closest + " found! -> OG: " + r + " vs: " + temp);
+        return temp;
+    }
+
+
+    private boolean hasCloserRoom(Room temp, Room closest){
+            ArrayList<Edge> edges = new ArrayList<>(temp.getEdges());
+            boolean foundCloser = false;
+            //Henter ut alle rom conncected
+            for(Edge e : edges){
+                Room dest = e.src == temp ? e.dest : e.src;
+                if(dest.getDistance(closest) < temp.getDistance(closest)){
+                    foundCloser = true;
+                }
             }
-
-        }
+            return foundCloser;
     }
 
 
-    //En algoritme for å
-    public void basicGenerateEdges(){
-        for(int i = 0; i < rooms.size(); i++){
-            Room dest = (i == (rooms.size()-1)) ? rooms.get(0) : rooms.get(i+1);
-            Edge temp = new Edge(rooms.get(i),dest);
-            edges.add(temp);
-        }
-    }
 
 
     private boolean isIntersecting(Room room){
@@ -204,10 +227,6 @@ public class Dungeon extends RandomLevel {
         return Math.abs(a-b);
     }
 
-    private void equalizePoints(int a, int b){
-        if(a > b) a++;
-        if(b > a) a--;
-    }
 
     private void printCentroids(){
         for(Room r : rooms){
@@ -217,14 +236,17 @@ public class Dungeon extends RandomLevel {
 
     private void printEdges(){
         for(Edge e : edges){
-            System.out.println("Edge; Src: " + e.src + "  - Dest: " + e.dest);
+            System.out.println("Edge: Src: " + e.src + "  - Dest: " + e.dest);
         }
     }
 
-
-
-
-
+    private void addRoomNameInTiles(){
+        for(Room r : rooms){
+            walls[r.centre.y][r.centre.x-1] = r.toString().charAt(0);
+            walls[r.centre.y][r.centre.x] = r.toString().charAt(1);
+            walls[r.centre.y][r.centre.x+1] = r.toString().charAt(2);
+        }
+    }
 
 
 

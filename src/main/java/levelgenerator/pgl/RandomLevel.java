@@ -208,6 +208,17 @@ public abstract class RandomLevel implements PGL{
         return stateToString(walls);
     }
 
+    public String wallsDebugString(){
+        String out = "";
+        for(int y = 0; y < height; y++){
+            for(int x = 0; x< width; x++){
+                out += walls[y][x];
+            }
+            out += System.lineSeparator();
+        }
+        return out;
+    }
+
     public String getName(){
         return levelNumber + "_" + getAlgorithmName() + "_" + complexity.label;
     }

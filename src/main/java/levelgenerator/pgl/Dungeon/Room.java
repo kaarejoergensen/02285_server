@@ -32,6 +32,19 @@ public class Room {
         edges.add(edge);
     }
 
+    public ArrayList<Edge> getEdges(){
+        return edges;
+    }
+
+    public boolean hasEdge(Room dest){
+        for(Edge e : edges){
+            if(e.equals(new Edge(this, dest))){
+                return true;
+            }
+        }
+        return false;
+    }
+
     public int getArea(){
         return rect.width * rect.height;
     }
@@ -42,8 +55,13 @@ public class Room {
     }
 
 
+    public boolean equals(Room obj) {
+        return obj.id.equals(this.id);
+    }
+
     @Override
     public String toString() {
-        return this.getId().substring(0,5);
+        return this.getId().substring(0,3);
     }
+
 }
