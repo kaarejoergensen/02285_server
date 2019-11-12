@@ -21,7 +21,7 @@ public class Dungeon extends RandomLevel {
     private final double MINIMUM_SPACE = 0.3;
     private final double MAX_ROOMSIZE_FACTOR = 3;
     private final int MAX_ROOMSIZE = 15;
-    //Hvor mange tiles som finnes
+
     private int tiles;
 
     //Min størrelse på høyde / bredde på boksene
@@ -32,7 +32,7 @@ public class Dungeon extends RandomLevel {
     private ArrayList<Room> rooms;
     private ArrayList<Edge> edges;
 
-
+    public int MAX_TRIES = 10000;
 
     public Dungeon(Complexity c, int levelNumber) {
         super(c, levelNumber);
@@ -42,7 +42,9 @@ public class Dungeon extends RandomLevel {
         determineVariables();
         fillLevelWithWalls();
         //Create rooms
-        while(tiles < (getTotalSpace() * MINIMUM_SPACE)){
+        int tries = this.MAX_TRIES;
+        while(tries > 0 && tiles < (getTotalSpace() * MINIMUM_SPACE)){
+            tries--;
             //Create a room
             Room room = generateRoom();
             //If this room intersects with another, scrap it
@@ -50,23 +52,17 @@ public class Dungeon extends RandomLevel {
 
             rooms.add(room);
             tiles += room.getArea();
+
         }
 
         convertRoomToTiles();
         buildEdges();
-
-
         convertEdgesToTiles();
-
-        addRoomNameInTiles(); //Debug
-        System.out.println(wallsDebugString()); //Debug
-        //printEdges(); //Debug
 
 
         totallyRandomElementDistribution(initStateElements);
         totallyRandomElementDistribution(goalStateElements);
 
-        System.out.println("Dungeon Generated!"+ System.lineSeparator() + "Number of rooms: " + rooms.size() + System.lineSeparator() + "Edge count: " + edges.size());
     }
 
     private void totallyRandomElementDistribution(char[][] state){
@@ -86,6 +82,9 @@ public class Dungeon extends RandomLevel {
             }
             rooms_copy.remove(agentRoom);
         }
+
+        //Om banen er veldig liten, så fjernes alle rommene til agenter. Må legge de tilbake dersom dette skjer
+        if(rooms_copy.size() == 0) rooms_copy = new ArrayList<>(rooms);
 
         //Box time
         while(boxes.size() > 0){
@@ -244,6 +243,19 @@ public class Dungeon extends RandomLevel {
 
     private int distanceBetweenPoints(int a, int b){
         return Math.abs(a-b);
+    }
+
+    /*
+    Debug Functions
+     */
+
+    private void printDebug(){
+        addRoomNameInTiles(); //Debug
+        System.out.println(wallsDebugString()); //Debug
+        printEdges(); //Debug
+
+        //System.out.println("Dungeon Generated!"+ System.lineSeparator() + "Number of rooms: " + rooms.size() + System.lineSeparator() + "Edge count: " + edges.size());
+
     }
 
 

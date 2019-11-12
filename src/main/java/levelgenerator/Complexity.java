@@ -4,7 +4,12 @@ public enum Complexity {
 
     Easy_1("Easy_1", 5,5, 1, 1, 1),
     Easy_2("Easy_2", 10,8, 1, 3, 1),
-    Easy_3("Easy_3", 20,15, 9, 26, 1);
+    Easy_3("Easy_3", 15,10, 1, 5, 1),
+
+    Medium_1("Medium_1", 8,8, 2, 2, 1),
+    Medium_2("Medium_2", 15,8, 2, 5, 1);
+
+
 
 
     public final String label;

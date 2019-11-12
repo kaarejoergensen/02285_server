@@ -40,7 +40,7 @@ public class Generator {
 
     public static void main(String[] args)throws IOException {
         System.out.println("Generator Initated");
-        new Generator(1, "dungeon", Complexity.fromString("easy_3"));
+        new Generator(1, "dungeon", Complexity.fromString("medium_2"));
     }
 
 }
