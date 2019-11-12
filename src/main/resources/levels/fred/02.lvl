@@ -3,23 +3,19 @@ hospital2
 #levelname
 01
 #colors
-Blue:A,C
-Red:B
-green:D
-cyan:0,1
-grey:2
+Blue:0,A,B,C,D
 #initial
 ++++++++
-+     2+
++      +
 +0AD   +
-+1BC   +
++ BC   +
 +      +
 ++++++++
 #goal
 ++++++++
-+     2+
++      +
 +0   CB+
-+1   DA+
++    DA+
 +      +
 ++++++++
 #end

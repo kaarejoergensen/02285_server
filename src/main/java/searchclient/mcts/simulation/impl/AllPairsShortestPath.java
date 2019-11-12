@@ -1,16 +1,20 @@
-package searchclient;
+package searchclient.mcts.simulation.impl;
 
+import searchclient.State;
 import searchclient.level.Coordinate;
+import searchclient.mcts.model.Node;
+import searchclient.mcts.simulation.Simulation;
 import shared.Action;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
-public abstract class Heuristic implements Comparator<State> {
+public class AllPairsShortestPath implements Simulation {
+    private static final int MAX_SCORE = 100;
+
     private HashMap<Character, List<Coordinate>> goals;
-    public Heuristic(State initialState) {
+
+    public AllPairsShortestPath(State initialState) {
         goals = new HashMap<>();
         for (int row = 1; row < initialState.goals.length - 1; row ++) {
             for (int col = 1; col < initialState.goals[row].length - 1; col++) {
@@ -29,8 +33,13 @@ public abstract class Heuristic implements Comparator<State> {
         }
     }
 
-    public int h(State n) {
-        int result = 0;
+    @Override
+    public float simulatePlayout(Node node) {
+        State n = node.getState();
+        if (n.isGoalState()) {
+            return MAX_SCORE;
+        }
+        float result = 0;
         for (int row = 1; row < n.boxes.length - 1; row ++) {
             for (int col = 1; col < n.boxes[row].length - 1; col++) {
                 char b = n.boxes[row][col];
@@ -50,7 +59,7 @@ public abstract class Heuristic implements Comparator<State> {
                             }
                         }
                         if (finalDistance != Integer.MAX_VALUE) {
-                            result += 2 * finalDistance;
+                            result += 10 * finalDistance;
                             result += n.distanceMap.getDistance(new Coordinate(n.agentRows[0], n.agentCols[0]), box);
                         }
                     }
@@ -71,69 +80,12 @@ public abstract class Heuristic implements Comparator<State> {
                 }
             }
         }
-        for (Action a : n.jointAction) {
-            result += a.getType().equals(Action.ActionType.NoOp) ? 0 : 1;
+        if (n.jointAction != null) {
+            for (Action a : Arrays.stream(n.jointAction).filter(Objects::nonNull).collect(Collectors.toList())) {
+                result += a.getType().equals(Action.ActionType.NoOp) ? 0 : 1;
+            }
         }
-        return result;
-    }
-
-    public abstract int f(State n);
-
-    @Override
-    public int compare(State n1, State n2) {
-        return this.f(n1) - this.f(n2);
-    }
-
-}
-
-class HeuristicAStar extends Heuristic {
-    public HeuristicAStar(State initialState) {
-        super(initialState);
-    }
-
-    @Override
-    public int f(State n) {
-        return n.g() + this.h(n);
-    }
-
-    @Override
-    public String toString() {
-        return "A* evaluation";
+//        System.err.println(result + "|" + MAX_SCORE / result);
+        return MAX_SCORE / result;
     }
 }
-
-class HeuristicWeightedAStar extends Heuristic {
-    private int w;
-
-    public HeuristicWeightedAStar(State initialState, int w) {
-        super(initialState);
-        this.w = w;
-    }
-
-    @Override
-    public int f(State n) {
-        return n.g() + this.w * this.h(n);
-    }
-
-    @Override
-    public String toString() {
-        return String.format("WA*(%d) evaluation", this.w);
-    }
-}
-
-class HeuristicGreedy extends Heuristic {
-    public HeuristicGreedy(State initialState) {
-        super(initialState);
-    }
-
-    @Override
-    public int f(State n) {
-        return this.h(n);
-    }
-
-    @Override
-    public String toString() {
-        return "greedy evaluation";
-    }
-}
-

@@ -4,9 +4,9 @@ import searchclient.State;
 import shared.Farge;
 
 import java.io.BufferedReader;
-import java.util.Arrays;
 
 public class Level {
+    public DistanceMap distanceMap;
     //Map Data
     public int[] agentRows;
     public int[] agentCols;
@@ -66,11 +66,6 @@ public class Level {
     }
 
     public State toState(){
-        return new State(agentRows, agentCols, agentColors, walls, boxes, boxColors, goals);
+        return new State(distanceMap, agentRows, agentCols, agentColors, walls, boxes, boxColors, goals);
     }
-
-
-
-
-
 }

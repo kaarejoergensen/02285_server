@@ -1,14 +1,22 @@
 package searchclient;
 
 import searchclient.level.Level;
+import searchclient.mcts.backpropagation.impl.AdditiveBackpropagation;
+import searchclient.mcts.expansion.impl.AllActionsExpansion;
+import searchclient.mcts.expansion.impl.AllActionsNoDuplicatesExpansion;
+import searchclient.mcts.model.Node;
+import searchclient.mcts.search.MonteCarloTreeSearch;
+import searchclient.mcts.search.impl.Basic;
+import searchclient.mcts.search.impl.OneTree;
+import searchclient.mcts.selection.impl.UCTSelection;
+import searchclient.mcts.simulation.impl.AllPairsShortestPath;
+import searchclient.mcts.simulation.impl.RandomSimulation;
 import shared.Action;
-import shared.Farge;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
 
@@ -70,35 +78,6 @@ public class SearchClient {
         }
     }
 
-    public static Action[][] search2(State initialState) {
-        long startTime = System.nanoTime();
-        int explored = 0;
-
-        System.err.format("Starting mcts.\n");
-        MonteCarloTreeSearch monteCarloTreeSearch = new MonteCarloTreeSearch();
-        State leafState = initialState;
-        while (true) {
-            leafState = monteCarloTreeSearch.findNextMove(leafState);
-            printSearchStatus(startTime, explored);
-            System.err.println(numberOfNodes(initialState));
-
-            if (leafState.isGoalState()) {
-                printSearchStatus(startTime, explored);
-                return leafState.extractPlan();
-            }
-
-            ++explored;
-        }
-    }
-
-    private static int numberOfNodes(State state) {
-        int i = 1;
-        if (state.children.size() > 0) {
-            i += state.children.stream().mapToInt(SearchClient::numberOfNodes).sum();
-        }
-        return i;
-    }
-
     private static void printSearchStatus(long startTime, HashSet<State> explored, Frontier frontier) {
         String statusTemplate = "#Explored: %,8d, #Frontier: %,8d, #Generated: %,8d, Time: %3.3f s\n%s\n";
         double elapsedTime = (System.nanoTime() - startTime) / 1_000_000_000d;
@@ -114,8 +93,7 @@ public class SearchClient {
 
 
 
-    public static void main(String[] args)
-            throws IOException {
+    public static void main(String[] args) throws IOException {
         // Send client name to server.
         System.out.println("SearchClient");
 
@@ -124,7 +102,8 @@ public class SearchClient {
         State initialState = SearchClient.parseLevel(serverMessages);
 
         // Select search strategy.
-        Frontier frontier;
+        Frontier frontier = null;
+        MonteCarloTreeSearch monteCarloTreeSearch = null;
         if (args.length > 0) {
             switch (args[0].toLowerCase(Locale.ROOT)) {
                 case "-bfs":
@@ -150,25 +129,34 @@ public class SearchClient {
                 case "-greedy":
                     frontier = new FrontierBestFirst(new HeuristicGreedy(initialState));
                     break;
+                case "-basic":
+                    monteCarloTreeSearch = new Basic(new UCTSelection(), new AllActionsExpansion(),
+                            new RandomSimulation(), new AdditiveBackpropagation());
+                    break;
+                    case "-onetree":
+                    monteCarloTreeSearch = new OneTree(new UCTSelection(), new AllActionsNoDuplicatesExpansion(),
+                            new AllPairsShortestPath(initialState), new AdditiveBackpropagation());
+                    break;
                 default:
-                    frontier = new FrontierBFS();
-                    System.err.println("Defaulting to BFS search. Use arguments -bfs, -dfs, -astar, -wastar, or " +
+                    frontier = new FrontierBestFirst(new HeuristicAStar(initialState));
+                    System.err.println("Defaulting to astar search. Use arguments -bfs, -dfs, -astar, -wastar, or " +
                             "-greedy to set the search strategy.");
             }
         } else {
-            frontier = new FrontierBestFirst(new HeuristicGreedy(initialState));
-            System.err.println("Defaulting to BFS search. Use arguments -bfs, -dfs, -astar, -wastar, or -greedy to " +
+            frontier = new FrontierBestFirst(new HeuristicAStar(initialState));
+            System.err.println("Defaulting to astar search. Use arguments -bfs, -dfs, -astar, -wastar, or -greedy to " +
                     "set the search strategy.");
         }
 
         // Search for a plan.
         Action[][] plan = null;
         try {
-            plan = SearchClient.search(initialState, frontier);
-            //plan = SearchClient.search2(initialState);
+            if (monteCarloTreeSearch == null)
+                plan = SearchClient.search(initialState, frontier);
+            else
+                plan = monteCarloTreeSearch.solve(new Node(initialState));
         } catch (OutOfMemoryError ex) {
             System.err.println("Maximum memory usage exceeded.");
-            plan = null;
         }
 
         // Print plan to server.
