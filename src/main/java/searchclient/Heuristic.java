@@ -1,60 +1,45 @@
 package searchclient;
 
+import searchclient.level.Box;
 import searchclient.level.Coordinate;
 import shared.Action;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public abstract class Heuristic implements Comparator<State> {
     private HashMap<Character, List<Coordinate>> goals;
     public Heuristic(State initialState) {
         goals = new HashMap<>();
-        for (int row = 1; row < initialState.goals.length - 1; row ++) {
-            for (int col = 1; col < initialState.goals[row].length - 1; col++) {
-                char g = initialState.goals[row][col];
-                if (g > 0) {
-                    Coordinate goal = new Coordinate(row, col);
-                    if (goals.containsKey(g)) {
-                        goals.get(g).add(goal);
-                    } else {
-                        List<Coordinate> goalsList = new ArrayList<>();
-                        goalsList.add(goal);
-                        goals.put(g, goalsList);
-                    }
-                }
+        for (Map.Entry<Coordinate, Character> goal : initialState.goals.entrySet()) {
+            if (goals.containsKey(goal.getValue())) {
+                goals.get(goal.getValue()).add(goal.getKey());
+            } else {
+                List<Coordinate> goalsList = new ArrayList<>();
+                goalsList.add(goal.getKey());
+                goals.put(goal.getValue(), goalsList);
             }
         }
     }
 
     public int h(State n) {
         int result = 0;
-        for (int row = 1; row < n.boxes.length - 1; row ++) {
-            for (int col = 1; col < n.boxes[row].length - 1; col++) {
-                char b = n.boxes[row][col];
-                if (b > 0) {
-                    if (goals.containsKey(b)) {
-                        List<Coordinate> goalsList = goals.get(b);
-                        Coordinate box = new Coordinate(row, col);
-                        int finalDistance = Integer.MAX_VALUE;
-                        for (Coordinate goal : goalsList) {
-                            if (goal.getRow() == box.getRow() && goal.getCol() == box.getCol()) {
-                                break;
-                            } else {
-                                int distance = n.distanceMap.getDistance(box, goal);
-                                if (distance < finalDistance) {
-                                    finalDistance = distance;
-                                }
-                            }
-                        }
-                        if (finalDistance != Integer.MAX_VALUE) {
-                            result += 2 * finalDistance;
-                            result += n.distanceMap.getDistance(new Coordinate(n.agentRows[0], n.agentCols[0]), box);
-                        }
+        for (Map.Entry<Coordinate, Box> boxEntry : n.boxMap.entrySet()) {
+            Box box = boxEntry.getValue();
+            List<Coordinate> goalsList = goals.get(box.getCharacter());
+            int finalDistance = Integer.MAX_VALUE;
+            for (Coordinate goal : goalsList) {
+                if (goal.equals(boxEntry.getKey())) {
+                    break;
+                } else {
+                    int distance = n.distanceMap.getDistance(boxEntry.getKey(), goal);
+                    if (distance < finalDistance) {
+                        finalDistance = distance;
                     }
                 }
+            }
+            if (finalDistance != Integer.MAX_VALUE) {
+                result += 2 * finalDistance;
+                result += n.distanceMap.getDistance(new Coordinate(n.agentRows[0], n.agentCols[0]), boxEntry.getKey());
             }
         }
 

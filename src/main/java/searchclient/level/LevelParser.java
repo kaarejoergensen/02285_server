@@ -100,7 +100,8 @@ public class LevelParser {
                     level.agentCols[c - '0'] = col;
                     ++level.numAgents;
                 } else if ('A' <= c && c <= 'Z') {
-                    level.boxes[row][col] = c;
+                    Box box = new Box(c, level.boxColors[c - 'A']);
+                    level.boxMap.put(new Coordinate(row, col), box);
                 } else if (c == '+') {
                     level.walls[row][col] = true;
                 }
@@ -144,7 +145,7 @@ public class LevelParser {
                 char c = line.charAt(col);
 
                 if (('0' <= c && c <= '9') || ('A' <= c && c <= 'Z')) {
-                    level.goals[row][col] = c;
+                    level.goals.put(new Coordinate(row, col), c);
                 }
             }
 
@@ -169,7 +170,7 @@ public class LevelParser {
     }
 
     public void requireArraysInitialized() throws IndexOutOfBoundsException{
-        if (level.walls == null || level.boxes == null || level.goals == null){
+        if (level.walls == null || level.boxMap == null || level.goals == null){
             throw new IndexOutOfBoundsException("Call 'initateMapDependentArrays' from 'Level' in order to initilize it's map dependent levels before calling this method");
         }
     }

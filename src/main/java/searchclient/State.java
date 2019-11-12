@@ -1,5 +1,7 @@
 package searchclient;
 
+import searchclient.level.Box;
+import searchclient.level.Coordinate;
 import searchclient.level.DistanceMap;
 import shared.Action;
 import shared.Farge;
@@ -11,24 +13,16 @@ public class State {
     private static final Random RNG = new Random(1);
 
     public DistanceMap distanceMap;
-    // Contains the (row, col) pair and color for each agent indexed by agent number.
+
     public int[] agentRows;
     public int[] agentCols;
     public Farge[] agentColors;
     private Set<Farge> agentFarges;
 
-    // Arrays are indexed from the top-left of the level, with first index being row and second being column.
-    // Row 0: (0,0) (0,1) (0,2) (0,3) ...
-    // Row 1: (1,0) (1,1) (1,2) (1,3) ...
-    // Row 2: (2,0) (2,1) (2,2) (2,3) ...
-    // ...
-    //
-    // E.g. this.walls[2] is an array of booleans for the third row.
-    // this.walls[row][col] is true if there's a wall at (row, col).
     public boolean[][] walls;
-    public char[][] boxes;
-    public Farge[] boxColors;
-    public char[][] goals;
+
+    public Map<Coordinate, Character> goals;
+    public Map<Coordinate, Box> boxMap;
 
 
     public final State parent;
@@ -42,15 +36,14 @@ public class State {
      * Arguments are not copied, and therefore should not be modified after being passed in.
      */
     public State(DistanceMap distanceMap, int[] agentRows, int[] agentCols, Farge[] agentColors, boolean[][] walls,
-                 char[][] boxes, Farge[] boxColors, char[][] goals) {
+                 Map<Coordinate, Box> boxMap, Map<Coordinate, Character> goals) {
         this.distanceMap = distanceMap;
         this.agentRows = agentRows;
         this.agentCols = agentCols;
         this.agentColors = agentColors;
         this.agentFarges = EnumSet.copyOf(Arrays.stream(agentColors).filter(Objects::nonNull).collect(Collectors.toList()));
         this.walls = walls;
-        this.boxes = boxes;
-        this.boxColors = boxColors;
+        this.boxMap = boxMap;
         this.goals = goals;
         this.parent = null;
         this.jointAction = null;
@@ -69,11 +62,8 @@ public class State {
         this.agentColors = parent.agentColors;
         this.agentFarges = parent.agentFarges;
         this.walls = parent.walls;
-        this.boxes = new char[parent.boxes.length][];
-        for (int i = 0; i < parent.boxes.length; i++) {
-            this.boxes[i] = Arrays.copyOf(parent.boxes[i], parent.boxes[i].length);
-        }
-        this.boxColors = Arrays.copyOf(parent.boxColors, parent.boxColors.length);
+        this.boxMap = new HashMap<>(parent.boxMap.size());
+        this.boxMap.putAll(parent.boxMap);
         this.goals = parent.goals;
         this.parent = parent;
         //parent.children.add(this);
@@ -84,8 +74,9 @@ public class State {
         int numAgents = this.agentRows.length;
         for (int agent = 0; agent < numAgents; ++agent) {
             Action action = jointAction[agent];
-            char box;
 
+            Coordinate oldCoordinate;
+            Coordinate newCoordinate;
             switch (action.getType()) {
                 case NoOp:
                     break;
@@ -98,25 +89,28 @@ public class State {
                 case Push:
                     this.agentRows[agent] += action.getAgentDeltaRow();
                     this.agentCols[agent] += action.getAgentDeltaCol();
-                    box = this.boxAt(this.agentRows[agent], this.agentCols[agent]);
-                    this.boxes[this.agentRows[agent]][this.agentCols[agent]] = 0;
-                    this.boxes[this.agentRows[agent] + action.getBoxDeltaRow()]
-                            [this.agentCols[agent] + action.getBoxDeltaCol()] = box;
+
+                    oldCoordinate = new Coordinate(this.agentRows[agent], this.agentCols[agent]);
+                    newCoordinate = new Coordinate(this.agentRows[agent] + action.getBoxDeltaRow(),
+                            this.agentCols[agent] + action.getBoxDeltaCol());
+                    this.moveBox(oldCoordinate, newCoordinate);
                     break;
 
                 case Pull:
-                    box = this.boxAt(this.agentRows[agent] + action.getBoxDeltaRow(),
+                    oldCoordinate = new Coordinate(this.agentRows[agent] + action.getBoxDeltaRow(),
                             this.agentCols[agent] + action.getBoxDeltaCol());
-                    this.boxes[this.agentRows[agent] + action.getBoxDeltaRow()]
-                            [this.agentCols[agent] + action.getBoxDeltaCol()] = 0;
-                    this.boxes[this.agentRows[agent]][this.agentCols[agent]] = box;
+                    newCoordinate = new Coordinate(this.agentRows[agent], this.agentCols[agent]);
+                    this.moveBox(oldCoordinate, newCoordinate);
+
                     this.agentRows[agent] += action.getAgentDeltaRow();
                     this.agentCols[agent] += action.getAgentDeltaCol();
                     break;
                 case Paint:
-                    char index = this.boxAt(this.agentRows[agent] + action.getBoxDeltaRow(),
+                    Coordinate coordinate = new Coordinate(this.agentRows[agent] + action.getBoxDeltaRow(),
                             this.agentCols[agent] + action.getBoxDeltaCol());
-                    boxColors[index - 'A'] = action.getColor();
+                    Box oldBox = this.boxMap.remove(coordinate);
+                    Box newBox = new Box(oldBox.getCharacter(), action.getColor());
+                    this.boxMap.put(coordinate, newBox);
                     break;
 
             }
@@ -128,16 +122,10 @@ public class State {
     }
 
     public boolean isGoalState() {
-        for (int row = 1; row < this.goals.length - 1; row++) {
-            for (int col = 1; col < this.goals[row].length - 1; col++) {
-                char goal = this.goals[row][col];
-
-                if ('A' <= goal && goal <= 'Z' && this.boxes[row][col] != goal) {
-                    return false;
-                } else if ('0' <= goal && goal <= '9' &&
-                        !(this.agentRows[goal - '0'] == row && this.agentCols[goal - '0'] == col)) {
-                    return false;
-                }
+        for (Map.Entry<Coordinate, Character> goal : this.goals.entrySet()) {
+            Box box = this.boxMap.get(goal.getKey());
+            if (box == null || !box.getCharacter().equals(goal.getValue())) {
+                return false;
             }
         }
         return true;
@@ -202,7 +190,7 @@ public class State {
         Farge agentFarge = this.agentColors[agent];
         int boxRow;
         int boxCol;
-        char box;
+        Box box;
         int destinationRow;
         int destinationCol;
         switch (action.getType()) {
@@ -218,7 +206,7 @@ public class State {
                 boxRow = agentRow + action.getAgentDeltaRow();
                 boxCol = agentCol + action.getAgentDeltaCol();
                 box = this.boxAt(boxRow, boxCol);
-                if (box == 0 || !agentFarge.equals(boxColors[box - 'A'])) {
+                if (box == null || !agentFarge.equals(box.getColor())) {
                     return false;
                 }
                 destinationRow = boxRow + action.getBoxDeltaRow();
@@ -229,7 +217,7 @@ public class State {
                 boxRow = agentRow + action.getBoxDeltaRow();
                 boxCol = agentCol + action.getBoxDeltaCol();
                 box = this.boxAt(boxRow, boxCol);
-                if (box == 0 || !agentFarge.equals(boxColors[box - 'A'])) {
+                if (box == null || !agentFarge.equals(box.getColor())) {
                     return false;
                 }
                 destinationRow = agentRow + action.getAgentDeltaRow();
@@ -240,13 +228,21 @@ public class State {
                     boxRow = agentRow + action.getBoxDeltaRow();
                     boxCol = agentCol + action.getBoxDeltaCol();
                     box = this.boxAt(boxRow, boxCol);
-                    return box != 0;
+                    return box != null;
                 }
                 return false;
         }
 
         // Unreachable:
         return false;
+    }
+
+    private boolean moveBox(Coordinate oldCoordinate, Coordinate newCoordinate) {
+        Box box = this.boxMap.remove(oldCoordinate);
+        if (box != null) {
+            this.boxMap.put(newCoordinate, box);
+        }
+        return box != null;
     }
 
     private boolean isConflicting(Action[] jointAction) {
@@ -326,11 +322,11 @@ public class State {
     }
 
     private boolean cellIsFree(int row, int col) {
-        return !this.walls[row][col] && this.boxAt(row, col) == 0 && this.agentAt(row, col) == 0;
+        return !this.walls[row][col] && this.boxAt(row, col) == null && this.agentAt(row, col) == 0;
     }
 
-    private char boxAt(int row, int col) {
-        return this.boxes[row][col];
+    private Box boxAt(int row, int col) {
+        return this.boxMap.get(new Coordinate(row, col));
     }
 
     private char agentAt(int row, int col) {
@@ -357,10 +353,9 @@ public class State {
         if (this._hash == 0) {
             final int prime = 31;
             int result = 1;
-            result = prime * result + Arrays.hashCode(this.agentRows);
-            result = prime * result + Arrays.hashCode(this.agentCols);
-            result = prime * result + Arrays.hashCode(this.boxColors);
-            result = prime * result + Arrays.deepHashCode(this.boxes);
+            result += prime * result + Arrays.hashCode(this.agentRows);
+            result += prime * result + Arrays.hashCode(this.agentCols);
+            result += prime * result + this.boxMap.entrySet().hashCode();
             this._hash = result;
         }
         return this._hash;
@@ -380,8 +375,7 @@ public class State {
         State other = (State) obj;
         return Arrays.equals(this.agentRows, other.agentRows) &&
                 Arrays.equals(this.agentCols, other.agentCols) &&
-                Arrays.deepEquals(this.boxes, other.boxes) &&
-                Arrays.equals(this.boxColors, other.boxColors);
+                this.boxMap.entrySet().equals(other.boxMap.entrySet());
     }
 
     @Override
@@ -389,8 +383,9 @@ public class State {
         StringBuilder s = new StringBuilder();
         for (int row = 0; row < this.walls.length; row++) {
             for (int col = 0; col < this.walls[row].length; col++) {
-                if (this.boxes[row][col] > 0) {
-                    s.append(this.boxes[row][col]);
+                Box box = this.boxMap.get(new Coordinate(row, col));
+                if (box != null) {
+                    s.append(box.getCharacter());
                 } else if (this.walls[row][col]) {
                     s.append("+");
                 } else if (this.agentAt(row, col) != 0) {
