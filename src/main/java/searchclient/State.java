@@ -28,6 +28,7 @@ public class State {
     public final State parent;
     public final Action[] jointAction;
     private final int g;
+    public int h = -1;
 
     private int _hash = 0;
 
@@ -123,9 +124,18 @@ public class State {
 
     public boolean isGoalState() {
         for (Map.Entry<Coordinate, Character> goal : this.goals.entrySet()) {
-            Box box = this.boxMap.get(goal.getKey());
-            if (box == null || !box.getCharacter().equals(goal.getValue())) {
-                return false;
+            Coordinate coordinate = goal.getKey();
+            Character goalCharacter = goal.getValue();
+            if ('0' <= goalCharacter && goalCharacter <= '9') {
+                if (this.agentRows[goalCharacter - '0'] != coordinate.getRow() ||
+                        this.agentCols[goalCharacter - '0'] != coordinate.getCol()) {
+                    return false;
+                }
+            } else {
+                Box box = this.boxMap.get(coordinate);
+                if (box == null || box.getCharacter() != goalCharacter) {
+                    return false;
+                }
             }
         }
         return true;
@@ -353,9 +363,9 @@ public class State {
         if (this._hash == 0) {
             final int prime = 31;
             int result = 1;
-            result += prime * result + Arrays.hashCode(this.agentRows);
-            result += prime * result + Arrays.hashCode(this.agentCols);
-            result += prime * result + this.boxMap.entrySet().hashCode();
+            result = prime * result + Arrays.hashCode(this.agentRows);
+            result = prime * result + Arrays.hashCode(this.agentCols);
+            result = prime * result + this.boxMap.hashCode();
             this._hash = result;
         }
         return this._hash;
@@ -375,7 +385,7 @@ public class State {
         State other = (State) obj;
         return Arrays.equals(this.agentRows, other.agentRows) &&
                 Arrays.equals(this.agentCols, other.agentCols) &&
-                this.boxMap.entrySet().equals(other.boxMap.entrySet());
+                this.boxMap.equals(other.boxMap);
     }
 
     @Override

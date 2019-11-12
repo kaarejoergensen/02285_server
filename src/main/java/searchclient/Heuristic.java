@@ -22,44 +22,47 @@ public abstract class Heuristic implements Comparator<State> {
     }
 
     public int h(State n) {
-        int result = 0;
-        for (Map.Entry<Coordinate, Box> boxEntry : n.boxMap.entrySet()) {
-            Box box = boxEntry.getValue();
-            List<Coordinate> goalsList = goals.get(box.getCharacter());
-            int finalDistance = Integer.MAX_VALUE;
-            for (Coordinate goal : goalsList) {
-                if (goal.equals(boxEntry.getKey())) {
-                    break;
-                } else {
-                    int distance = n.distanceMap.getDistance(boxEntry.getKey(), goal);
-                    if (distance < finalDistance) {
-                        finalDistance = distance;
+        if (n.h == -1) {
+            int result = 0;
+            for (Map.Entry<Coordinate, Box> boxEntry : n.boxMap.entrySet()) {
+                Box box = boxEntry.getValue();
+                List<Coordinate> goalsList = goals.get(box.getCharacter());
+                int finalDistance = Integer.MAX_VALUE;
+                for (Coordinate goal : goalsList) {
+                    if (goal.equals(boxEntry.getKey())) {
+                        break;
+                    } else {
+                        int distance = n.distanceMap.getDistance(boxEntry.getKey(), goal);
+                        if (distance < finalDistance) {
+                            finalDistance = distance;
+                        }
                     }
                 }
+                if (finalDistance != Integer.MAX_VALUE) {
+                    result += 20 * finalDistance;
+                    result += 10 * n.distanceMap.getDistance(new Coordinate(n.agentRows[0], n.agentCols[0]), boxEntry.getKey());
+                }
             }
-            if (finalDistance != Integer.MAX_VALUE) {
-                result += 2 * finalDistance;
-                result += n.distanceMap.getDistance(new Coordinate(n.agentRows[0], n.agentCols[0]), boxEntry.getKey());
-            }
-        }
 
-        if (result == 0) {
-            for (Character g : goals.keySet()) {
-                if ('0' <= g && g <= '9') {
-                    int agentRow = n.agentRows[g - '0'];
-                    int agentCol = n.agentCols[g - '0'];
-                    Coordinate goal = goals.get(g).get(0);
-                    if (agentRow != goal.getRow() || agentCol != goal.getCol()) {
-                        int distance = n.distanceMap.getDistance(new Coordinate(agentRow, agentCol), goal);
-                        result += distance;
+            if (result == 0) {
+                for (Character g : goals.keySet()) {
+                    if ('0' <= g && g <= '9') {
+                        int agentRow = n.agentRows[g - '0'];
+                        int agentCol = n.agentCols[g - '0'];
+                        Coordinate goal = goals.get(g).get(0);
+                        if (agentRow != goal.getRow() || agentCol != goal.getCol()) {
+                            int distance = n.distanceMap.getDistance(new Coordinate(agentRow, agentCol), goal);
+                            result += distance;
+                        }
                     }
                 }
             }
+            for (Action a : n.jointAction) {
+                result += a.getType().equals(Action.ActionType.NoOp) ? 0 : 1;
+            }
+            n.h = result;
         }
-        for (Action a : n.jointAction) {
-            result += a.getType().equals(Action.ActionType.NoOp) ? 0 : 1;
-        }
-        return result;
+        return n.h;
     }
 
     public abstract int f(State n);
