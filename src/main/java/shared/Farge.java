@@ -40,6 +40,14 @@ public enum Farge {
     @Getter
     private static Object[] clientFarger = EnumSet.range(Blue, Brown).toArray();
 
+    public static ArrayList<Farge> clientFargerToList(){
+        ArrayList<Farge> temp = new ArrayList<>();
+        for(Farge f : EnumSet.range(Blue,Brown)){
+            temp.add(f);
+        }
+        return temp;
+    }
+
     //TODO: Rename this class - doesn't make sense to call it colors. dankColors måske?
     public static Farge getFromRGB(Color color){
         for(Farge c : values()){
@@ -47,6 +55,8 @@ public enum Farge {
         }
         return null;
     }
+
+
 
     public static Farge fromString(String s) {
         switch (s.toLowerCase(Locale.ROOT)) {
