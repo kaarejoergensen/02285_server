@@ -35,7 +35,10 @@ public class DistanceMap {
     public int getDistance(Coordinate from, Coordinate goal)  {
         if (!this.allGoalsDistanceMap.containsKey(goal)) throw new IllegalArgumentException("Invalid goal coordinate");
         Map<Coordinate, Integer> distanceMap = this.allGoalsDistanceMap.get(goal);
-        if (!distanceMap.containsKey(from)) throw new IllegalArgumentException("Invalid from coordinate");
+        if (!distanceMap.containsKey(from)) {
+            System.out.println();
+            throw new IllegalArgumentException("Invalid from coordinate: " + from);
+        }
         return distanceMap.get(from);
     }
 }

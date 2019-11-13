@@ -1,5 +1,6 @@
 package searchclient;
 
+import lombok.RequiredArgsConstructor;
 import searchclient.level.Level;
 import searchclient.mcts.backpropagation.impl.AdditiveBackpropagation;
 import searchclient.mcts.expansion.impl.AllActionsExpansion;
@@ -19,6 +20,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SearchClient {
     public static State parseLevel(BufferedReader serverMessages) throws IOException {
@@ -32,8 +34,6 @@ public class SearchClient {
         level.parse.initialState();
         level.parse.goalState();
 
-        System.err.println(level);
-
         return level.toState();
     }
 
@@ -42,28 +42,23 @@ public class SearchClient {
      */
     public static Action[][] search(State initialState, Frontier frontier) {
         long startTime = System.nanoTime();
-        int iterations = 0;
 
         System.err.format("Starting %s.\n", frontier.getName());
 
         frontier.add(initialState);
         HashSet<State> explored = new HashSet<>(65536);
-
+        StatusThread statusThread = new StatusThread(startTime, explored, frontier);
+        statusThread.start();
         while (true) {
-            if (iterations == 10000) {
-                printSearchStatus(startTime, explored, frontier);
-                iterations = 0;
-            }
-
             if (frontier.isEmpty()) {
-                printSearchStatus(startTime, explored, frontier);
+                statusThread.interrupt();
                 return null;
             }
 
             State leafState = frontier.pop();
 
             if (leafState.isGoalState()) {
-                printSearchStatus(startTime, explored, frontier);
+                statusThread.interrupt();
                 return leafState.extractPlan();
             }
 
@@ -73,22 +68,7 @@ public class SearchClient {
                     frontier.add(s);
                 }
             }
-
-            ++iterations;
         }
-    }
-
-    private static void printSearchStatus(long startTime, HashSet<State> explored, Frontier frontier) {
-        String statusTemplate = "#Explored: %,8d, #Frontier: %,8d, #Generated: %,8d, Time: %3.3f s\n%s\n";
-        double elapsedTime = (System.nanoTime() - startTime) / 1_000_000_000d;
-        System.err.format(statusTemplate, explored.size(), frontier.size(), explored.size() + frontier.size(),
-                elapsedTime, Memory.stringRep());
-    }
-
-    private static void printSearchStatus(long startTime, int explored) {
-        String statusTemplate = "#Explored: %,8d, Time: %3.3f s\n%s\n";
-        double elapsedTime = (System.nanoTime() - startTime) / 1_000_000_000d;
-        System.err.format(statusTemplate, explored, elapsedTime, Memory.stringRep());
     }
 
 
@@ -176,6 +156,56 @@ public class SearchClient {
                 // We must read the server's response to not fill up the stdin buffer and block the server.
                 serverMessages.readLine();
             }
+        }
+    }
+
+    @RequiredArgsConstructor
+    private static class StatusThread implements Runnable {
+        private static long SECONDS_BETWEEN_PRINTS = 2;
+
+        private final long startTime;
+        private final HashSet<State> explored;
+        private final Frontier frontier;
+
+        private AtomicBoolean running = new AtomicBoolean(false);
+        private Thread worker;
+
+        public void start() {
+            this.worker = new Thread(this);
+            worker.start();
+        }
+
+        public void interrupt() {
+            running.set(false);
+            worker.interrupt();
+            this.printSearchStatus(this.startTime, this.explored, this.frontier);
+        }
+
+        @Override
+        public void run() {
+            this.running.set(true);
+            while (this.running.get()) {
+                try {
+                    Thread.sleep(SECONDS_BETWEEN_PRINTS * 1000);
+                } catch (InterruptedException ignored) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+                this.printSearchStatus(this.startTime, this.explored, this.frontier);
+            }
+        }
+
+        private void printSearchStatus(long startTime, HashSet<State> explored, Frontier frontier) {
+            String statusTemplate = "#Explored: %,8d, #Frontier: %,8d, #Generated: %,8d, Time: %3.3f s\n%s\n";
+            double elapsedTime = (System.nanoTime() - startTime) / 1_000_000_000d;
+            System.err.format(statusTemplate, explored.size(), frontier.size(), explored.size() + frontier.size(),
+                    elapsedTime, Memory.stringRep());
+        }
+
+        private void printSearchStatus(long startTime, int explored) {
+            String statusTemplate = "#Explored: %,8d, Time: %3.3f s\n%s\n";
+            double elapsedTime = (System.nanoTime() - startTime) / 1_000_000_000d;
+            System.err.format(statusTemplate, explored, elapsedTime, Memory.stringRep());
         }
     }
 }

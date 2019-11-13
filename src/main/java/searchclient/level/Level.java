@@ -4,6 +4,8 @@ import searchclient.State;
 import shared.Farge;
 
 import java.io.BufferedReader;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Level {
     public DistanceMap distanceMap;
@@ -15,12 +17,12 @@ public class Level {
     //TOOD: Finne en annen løsning på dette
     public int numAgents;
 
-    public char[][] boxes;
     public Farge[] boxColors;
 
     public boolean[][] walls;
 
-    public char[][] goals;
+    public Map<Coordinate, Character> goals;
+    public Map<Coordinate, Box> boxMap;
 
     //Map Details
     public int height;
@@ -59,13 +61,13 @@ public class Level {
 
 
     public void initiateMapDependentArrays(){
-        goals = new char[width][height];
-        boxes = new char[width][height];
+        goals = new HashMap<>();
+        boxMap = new HashMap<>();
         walls = new boolean[width][height];
 
     }
 
     public State toState(){
-        return new State(distanceMap, agentRows, agentCols, agentColors, walls, boxes, boxColors, goals);
+        return new State(distanceMap, agentRows, agentCols, agentColors, walls, boxMap, goals);
     }
 }
