@@ -28,9 +28,9 @@
 
 nvidia-smi
 # Load the cuda module
-module load cuda/9.1
+module load cuda/10.1
 
-/appl/cuda/9.1/samples/bin/x86_64/linux/release/deviceQuery
+/appl/cuda/10.1/samples/bin/x86_64/linux/release/deviceQuery
 
 # here follow the commands you want to execute 
 cd ~/Documents/02285_server
