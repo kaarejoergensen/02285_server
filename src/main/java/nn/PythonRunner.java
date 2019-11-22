@@ -6,7 +6,7 @@ import java.io.InputStreamReader;
 
 public class PythonRunner {
 
-    private final String PATH = "./src/main/java/nn/";
+    private final String PATH = "./src/main/java/nn/scripts/";
 
     private String filename;
 
