@@ -251,15 +251,8 @@ public class Client {
     private void closeClientStreams() {
         try {
             this.clientIn.close();
-        } catch (IOException ignored) {
-        }
-        try {
             this.clientOut.close();
-        } catch (IOException ignored) {
-        }
-        try {
             this.clientProcess.getErrorStream().close();
-        } catch (IOException ignored) {
-        }
+        } catch (IOException ignored) { }
     }
 }

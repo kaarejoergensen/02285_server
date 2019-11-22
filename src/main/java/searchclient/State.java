@@ -19,6 +19,8 @@ public class State {
     public Farge[] agentColors;
     private Set<Farge> agentFarges;
 
+    public String wallsAndGoalsByteRepresentation;
+
     public boolean[][] walls;
 
     public Map<Coordinate, Character> goals;
@@ -49,6 +51,26 @@ public class State {
         this.parent = null;
         this.jointAction = null;
         this.g = 0;
+        this.wallsAndGoalsByteRepresentation = this.createWallsAndGoalsByteRepresentation();
+    }
+
+    private String createWallsAndGoalsByteRepresentation() {
+        byte[][][] bytes = new byte[2][this.walls.length][this.walls[0].length];
+        for (Map.Entry<Coordinate, Character> entry : this.goals.entrySet()) {
+            Coordinate goalCoordinate = entry.getKey();
+            if ('A' <= entry.getValue() && entry.getValue() <= 'Z')
+                bytes[1][goalCoordinate.getRow()][goalCoordinate.getCol()] = 1;
+            else
+                bytes[1][goalCoordinate.getRow()][goalCoordinate.getCol()] = -1;
+        }
+        for (int row = 0; row < this.walls.length; row++) {
+            for (int col = 0; col < this.walls[row].length; col++) {
+                if (!this.walls[row][col]) {
+                    bytes[0][row][col] = 1;
+                }
+            }
+        }
+        return Arrays.deepToString(bytes[0]) + System.lineSeparator() + Arrays.deepToString(bytes[1]);
     }
 
     /**
@@ -70,6 +92,7 @@ public class State {
         //parent.children.add(this);
         this.jointAction = Arrays.copyOf(jointAction, jointAction.length);
         this.g = parent.g + 1;
+        this.wallsAndGoalsByteRepresentation = parent.wallsAndGoalsByteRepresentation;
 
         // Apply each action.
         int numAgents = this.agentRows.length;
@@ -409,4 +432,24 @@ public class State {
         return s.toString();
     }
 
+    public String toMLString() {
+        byte[][] byteRepresentation = new byte[this.walls.length][this.walls[0].length];
+//        for (byte agent = 0; agent < this.agentCols.length; agent++) {
+        for (int row = 0; row < this.walls.length; row++) {
+            for (int col = 0; col < this.walls[row].length; col++) {
+                if (this.agentRows[0] == row && this.agentCols[0] == col) {
+                    byteRepresentation[row][col] = 1;
+                } else {
+                    Coordinate coordinate = new Coordinate(row, col);
+                    Box box = this.boxMap.get(coordinate);
+                    if (box != null) {
+                        byteRepresentation[row][col] = -1;
+                    }
+                }
+
+            }
+//            }
+        }
+        return this.wallsAndGoalsByteRepresentation + System.lineSeparator() + Arrays.deepToString(byteRepresentation);
+    }
 }

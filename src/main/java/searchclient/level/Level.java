@@ -36,13 +36,13 @@ public class Level {
 
     //Rules
     final static int MAX_AGENTS = 10;
-    final static int BOX_COLORS = 26;
+    final static int MAX_BOXES = 26;
 
     public Level(BufferedReader file){
         parse = new LevelParser(file,this);
 
         agentColors = new Farge[MAX_AGENTS];
-        boxColors = new Farge[BOX_COLORS];
+        boxColors = new Farge[MAX_BOXES];
 
         agentRows = new int[MAX_AGENTS];
         agentCols = new int[MAX_AGENTS];
