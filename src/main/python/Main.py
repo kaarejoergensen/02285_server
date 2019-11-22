@@ -45,6 +45,7 @@ def main():
             state = []
             for line in lines:
                 state.append(ast.literal_eval(line))
+            nnet.info()
             flush_print(nnet.predict(state))
         elif method == "saveModel":
             nnet.save_checkpoint(lines[0])

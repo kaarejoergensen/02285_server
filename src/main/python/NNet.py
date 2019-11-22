@@ -1,4 +1,7 @@
+import sys
 import time
+
+import torch
 
 from NNetModule import NNetModule
 
@@ -22,3 +25,9 @@ class NNet:
 
     def close(self):
         pass
+
+    def info(self):
+        print(torch.cuda.current_device(), file=sys.stderr, flush=True)
+        print(torch.cuda.device_count(), file=sys.stderr, flush=True)
+        print(torch.cuda.get_device_name(), file=sys.stderr, flush=True)
+        print(torch.cuda.is_available(), file=sys.stderr, flush=True)

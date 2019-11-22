@@ -1,11 +1,11 @@
 package searchclient;
 
 import lombok.RequiredArgsConstructor;
+import nn.impl.PythonNNet;
 import searchclient.level.Level;
 import searchclient.mcts.backpropagation.impl.AdditiveBackpropagation;
 import searchclient.mcts.expansion.impl.AllActionsExpansion;
 import searchclient.mcts.expansion.impl.AllActionsNoDuplicatesExpansion;
-import searchclient.mcts.model.Node;
 import searchclient.mcts.search.MonteCarloTreeSearch;
 import searchclient.mcts.search.impl.Basic;
 import searchclient.mcts.search.impl.OneTree;
@@ -73,7 +73,7 @@ public class SearchClient {
 
 
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         // Send client name to server.
         System.out.println("SearchClient");
 
@@ -130,15 +130,19 @@ public class SearchClient {
 
         // Search for a plan.
         Action[][] plan = null;
-        try {
-            if (monteCarloTreeSearch == null)
-                plan = SearchClient.search(initialState, frontier);
-            else
-                plan = monteCarloTreeSearch.solve(new Node(initialState));
-        } catch (OutOfMemoryError ex) {
-            System.err.println("Maximum memory usage exceeded.");
-        }
-
+//        try {
+//            if (monteCarloTreeSearch == null)
+//                plan = SearchClient.search(initialState, frontier);
+//            else
+//                plan = monteCarloTreeSearch.solve(new Node(initialState));
+//        } catch (OutOfMemoryError ex) {
+//            System.err.println("Maximum memory usage exceeded.");
+//        }
+        PythonNNet pythonNNet = new PythonNNet();
+        System.out.println("1: " + pythonNNet.predict(initialState));
+        Thread.sleep(2000);
+        System.out.println("2: " + pythonNNet.predict(initialState));
+        pythonNNet.close();
         // Print plan to server.
         if (plan == null) {
             System.err.println("Unable to solve level.");
