@@ -9,12 +9,13 @@ import searchclient.mcts.selection.Selection;
 import searchclient.mcts.simulation.Simulation;
 import shared.Action;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.PriorityQueue;
 
 public class OneTree extends MonteCarloTreeSearch {
     private PriorityQueue<Node> frontier;
-    private int searchDepth = 32;
+    private static final int searchDepth = 32;
     private int currentDepth = 0;
 
     public OneTree(Selection selection, Expansion expansion, Simulation simulation, Backpropagation backpropagation) {
@@ -24,15 +25,7 @@ public class OneTree extends MonteCarloTreeSearch {
 
     @Override
     public Action[][] solve(Node root) {
-        long startTime = System.nanoTime();
-        int iterations = 0;
-        int totalIterations = 0;
-
         while (true) {
-            if (iterations == 10000) {
-                printSearchStatus(startTime, ((AllActionsNoDuplicatesExpansion) this.expansion).getExpandedStates().size(), totalIterations);
-                iterations = 0;
-            }
             Node promisingNode = this.selection.selectPromisingNode(root);
             List<Node> expandedNodes = this.expansion.expandNode(promisingNode);
             if (expandedNodes.isEmpty()) {
@@ -44,7 +37,6 @@ public class OneTree extends MonteCarloTreeSearch {
             }
             for (Node node : expandedNodes) {
                 if (node.getState().isGoalState()) {
-                    printSearchStatus(startTime, ((AllActionsNoDuplicatesExpansion) this.expansion).getExpandedStates().size(), totalIterations);
                     return node.getState().extractPlan();
                 }
 
@@ -59,9 +51,12 @@ public class OneTree extends MonteCarloTreeSearch {
             if (currentDepth >= (searchDepth + root.getCountToRoot())) {
                 root = this.nextRoot(root);
             }
-            iterations++;
-            totalIterations++;
         }
+    }
+
+    @Override
+    public Collection getExpandedStates() {
+        return this.expansion.getExpandedStates();
     }
 
     private Node nextRoot(Node root) {

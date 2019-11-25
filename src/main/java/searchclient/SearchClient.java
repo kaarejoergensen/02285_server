@@ -1,6 +1,5 @@
 package searchclient;
 
-import lombok.RequiredArgsConstructor;
 import searchclient.level.Level;
 import searchclient.mcts.backpropagation.impl.AdditiveBackpropagation;
 import searchclient.mcts.expansion.impl.AllActionsExpansion;
@@ -9,6 +8,7 @@ import searchclient.mcts.model.Node;
 import searchclient.mcts.search.MonteCarloTreeSearch;
 import searchclient.mcts.search.impl.Basic;
 import searchclient.mcts.search.impl.OneTree;
+import searchclient.mcts.selection.impl.RandomSelection;
 import searchclient.mcts.selection.impl.UCTSelection;
 import searchclient.mcts.simulation.impl.AllPairsShortestPath;
 import searchclient.mcts.simulation.impl.RandomSimulation;
@@ -18,6 +18,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -40,25 +41,19 @@ public class SearchClient {
     /**
      * Implements the Graph-Search algorithm from R&N figure 3.7.
      */
-    public static Action[][] search(State initialState, Frontier frontier) {
-        long startTime = System.nanoTime();
+    public static Action[][] search(State initialState, Frontier frontier, HashSet<State> explored) {
 
         System.err.format("Starting %s.\n", frontier.getName());
 
         frontier.add(initialState);
-        HashSet<State> explored = new HashSet<>(65536);
-        StatusThread statusThread = new StatusThread(startTime, explored, frontier);
-        statusThread.start();
         while (true) {
             if (frontier.isEmpty()) {
-                statusThread.interrupt();
                 return null;
             }
 
             State leafState = frontier.pop();
 
             if (leafState.isGoalState()) {
-                statusThread.interrupt();
                 return leafState.extractPlan();
             }
 
@@ -110,11 +105,11 @@ public class SearchClient {
                     frontier = new FrontierBestFirst(new HeuristicGreedy(initialState));
                     break;
                 case "-basic":
-                    monteCarloTreeSearch = new Basic(new UCTSelection(), new AllActionsExpansion(),
+                    monteCarloTreeSearch = new Basic(new UCTSelection(0.4), new AllActionsExpansion(),
                             new RandomSimulation(), new AdditiveBackpropagation());
                     break;
                     case "-onetree":
-                    monteCarloTreeSearch = new OneTree(new UCTSelection(), new AllActionsNoDuplicatesExpansion(),
+                    monteCarloTreeSearch = new OneTree(new UCTSelection(0.4), new AllActionsNoDuplicatesExpansion(initialState),
                             new AllPairsShortestPath(initialState), new AdditiveBackpropagation());
                     break;
                 default:
@@ -130,14 +125,57 @@ public class SearchClient {
 
         // Search for a plan.
         Action[][] plan = null;
+        long startTime = System.nanoTime();
         try {
-            if (monteCarloTreeSearch == null)
-                plan = SearchClient.search(initialState, frontier);
-            else
+            if (monteCarloTreeSearch == null) {
+                HashSet<State> explored = new HashSet<>(65536);
+                StatusThread statusThread = new StatusThread(startTime, explored, frontier);
+                statusThread.start();
+                plan = SearchClient.search(initialState, frontier, explored);
+                statusThread.interrupt();
+            }
+            else {
+                StatusThread statusThread = new StatusThread(startTime, monteCarloTreeSearch.getExpandedStates());
+                statusThread.start();
                 plan = monteCarloTreeSearch.solve(new Node(initialState));
+                statusThread.interrupt();
+            }
         } catch (OutOfMemoryError ex) {
             System.err.println("Maximum memory usage exceeded.");
         }
+
+//        try {
+//            long fastest = Long.MAX_VALUE;
+//            double fastestConstant = 0;
+//            int shortest = Integer.MAX_VALUE;
+//            double shortestConstant = 0;
+//            for (double constant = 0.1; constant < 10; constant = constant + 0.1) {
+//                monteCarloTreeSearch = new Basic(new UCTSelection(constant), new AllActionsExpansion(), new RandomSimulation(), new AdditiveBackpropagation());
+//                long startTime = System.nanoTime();
+//                plan = monteCarloTreeSearch.solve(new Node(initialState));
+//                long elapsedTime = System.nanoTime() - startTime;
+//                if (elapsedTime < fastest || plan.length < shortest) {
+//                    System.out.println("----------------------------");
+//                    if (elapsedTime < fastest) {
+//                        fastest = elapsedTime;
+//                        fastestConstant = constant;
+//                        System.out.println("NEW FASTEST: Constant: " + constant + " time: " + elapsedTime / 1_000_000_000d);
+//                    }
+//                    if (plan.length < shortest) {
+//                        shortest = plan.length;
+//                        shortestConstant = constant;
+//                        System.out.println("NEW SHORTEST: Constant: " + constant + " length: " + plan.length + " time: " + elapsedTime / 1_000_000_000d);
+//                    }
+//                    System.out.println("Explored: " + monteCarloTreeSearch.getExpandedStates().size() + " Solution: " + plan.length);
+//                    System.out.println("----------------------------");
+//                }
+//                //if (plan.length == shortest) System.out.println("EQUAL: " + constant);
+//            }
+//            System.out.println("constant: " + fastestConstant + " time: " + fastest);
+//            System.out.println("DONE");
+//        } catch (OutOfMemoryError e) {
+//            System.err.println("Maximum memory usage exceeded.");
+//        }
 
         // Print plan to server.
         if (plan == null) {
@@ -159,26 +197,36 @@ public class SearchClient {
         }
     }
 
-    @RequiredArgsConstructor
     private static class StatusThread implements Runnable {
         private static long SECONDS_BETWEEN_PRINTS = 2;
 
-        private final long startTime;
-        private final HashSet<State> explored;
-        private final Frontier frontier;
+        private long startTime;
+        private Collection explored;
+        private Frontier frontier;
 
         private AtomicBoolean running = new AtomicBoolean(false);
         private Thread worker;
 
-        public void start() {
+        StatusThread(long startTime, Collection explored, Frontier frontier) {
+            this.startTime = startTime;
+            this.explored = explored;
+            this.frontier = frontier;
+        }
+
+        StatusThread(long startTime, Collection explored) {
+            this.startTime = startTime;
+            this.explored = explored;
+        }
+
+        void start() {
             this.worker = new Thread(this);
             worker.start();
         }
 
-        public void interrupt() {
+        void interrupt() {
             running.set(false);
             worker.interrupt();
-            this.printSearchStatus(this.startTime, this.explored, this.frontier);
+            this.printSearchStatus();
         }
 
         @Override
@@ -191,21 +239,28 @@ public class SearchClient {
                     Thread.currentThread().interrupt();
                     break;
                 }
-                this.printSearchStatus(this.startTime, this.explored, this.frontier);
+                this.printSearchStatus();
             }
         }
 
-        private void printSearchStatus(long startTime, HashSet<State> explored, Frontier frontier) {
+        private void printSearchStatus() {
+            if (this.frontier != null)
+                this.printSearchStatusFrontier();
+            else
+                this.printSearchStatusNoFrontier();
+        }
+
+        private void printSearchStatusFrontier() {
             String statusTemplate = "#Explored: %,8d, #Frontier: %,8d, #Generated: %,8d, Time: %3.3f s\n%s\n";
             double elapsedTime = (System.nanoTime() - startTime) / 1_000_000_000d;
             System.err.format(statusTemplate, explored.size(), frontier.size(), explored.size() + frontier.size(),
                     elapsedTime, Memory.stringRep());
         }
 
-        private void printSearchStatus(long startTime, int explored) {
+        private void printSearchStatusNoFrontier() {
             String statusTemplate = "#Explored: %,8d, Time: %3.3f s\n%s\n";
             double elapsedTime = (System.nanoTime() - startTime) / 1_000_000_000d;
-            System.err.format(statusTemplate, explored, elapsedTime, Memory.stringRep());
+            System.err.format(statusTemplate, explored.size(), elapsedTime, Memory.stringRep());
         }
     }
 }

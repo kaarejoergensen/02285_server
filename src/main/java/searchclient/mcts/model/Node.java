@@ -4,10 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import searchclient.State;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 @Getter
 @Setter
@@ -16,6 +13,7 @@ public class Node {
     private float winScore = 0;
     private int countToRoot;
     final private State state;
+    private boolean isExpanded;
     private List<Node> children = new ArrayList<>();
     private Node parent;
 
@@ -47,6 +45,9 @@ public class Node {
     }
 
     public Node getChildWithMaxScore() {
+        if (this.children.isEmpty()) {
+            System.out.println("empty");
+        }
         return Collections.max(this.children, Comparator.comparing(Node::getWinScore));
     }
 
@@ -61,6 +62,16 @@ public class Node {
     public Node makeRandomMove() {
         List<State> expandedStates = this.state.getExpandedStates();
         return expandedStates.size() > 0 ? new Node(expandedStates.get(0), this) : null;
+    }
+
+    public Node makeRandomMove(Set<State> states) {
+        List<State> expandedStates = this.state.getExpandedStates();
+        for (State state : expandedStates) {
+            if (!states.contains(state)) {
+                return new Node(state, this);
+            }
+        }
+        return null;
     }
 
     public void removeChild(Node child) {

@@ -8,13 +8,10 @@ import searchclient.mcts.selection.Selection;
 import searchclient.mcts.simulation.Simulation;
 import shared.Action;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class Basic extends MonteCarloTreeSearch {
     private static final int MCTS_LOOP_ITERATIONS = 1000;
-
-    private Set<Node> expandedNodes = new HashSet<>();
 
     public Basic(Selection selection, Expansion expansion, Simulation simulation, Backpropagation backpropagation) {
         super(selection, expansion, simulation, backpropagation);
@@ -24,8 +21,10 @@ public class Basic extends MonteCarloTreeSearch {
         for (int i = 0; i < MCTS_LOOP_ITERATIONS; i++) {
             Node promisingNode = this.selection.selectPromisingNode(root);
 
-            if (!promisingNode.getState().isGoalState())
-                this.expandedNodes.addAll(this.expansion.expandNode(promisingNode));
+            if (promisingNode.getState().isGoalState())
+                return promisingNode;
+
+            this.expansion.expandNode(promisingNode);
 
             float score = this.simulation.simulatePlayout(promisingNode);
 
@@ -37,15 +36,18 @@ public class Basic extends MonteCarloTreeSearch {
 
     @Override
     public Action[][] solve(Node root) {
-        long startTime = System.nanoTime();
-        int iterations = 0;
         Node node = root;
         while (true) {
             node = this.findNextMove(node);
-            printSearchStatus(startTime, this.expandedNodes.size(), (iterations++) * MCTS_LOOP_ITERATIONS);
             if (node.getState().isGoalState()) {
                 return node.getState().extractPlan();
             }
         }
     }
+
+    @Override
+    public Collection getExpandedStates() {
+        return this.expansion.getExpandedStates();
+    }
+
 }

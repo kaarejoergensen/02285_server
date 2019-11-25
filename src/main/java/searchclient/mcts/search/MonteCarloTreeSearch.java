@@ -9,6 +9,8 @@ import searchclient.mcts.selection.Selection;
 import searchclient.mcts.simulation.Simulation;
 import shared.Action;
 
+import java.util.Collection;
+
 @AllArgsConstructor
 public abstract class MonteCarloTreeSearch {
     final protected Selection selection;
@@ -18,9 +20,5 @@ public abstract class MonteCarloTreeSearch {
 
     public abstract Action[][] solve(Node root);
 
-    protected void printSearchStatus(long startTime, int expandedNodes, int totalIterations) {
-        String statusTemplate = "#Expanded: %,8d, #Total iterations: %,8d, Time: %3.3f s\n%s\n";
-        double elapsedTime = (System.nanoTime() - startTime) / 1_000_000_000d;
-        System.err.format(statusTemplate, expandedNodes, totalIterations, elapsedTime, Memory.stringRep());
-    }
+    public abstract Collection getExpandedStates();
 }
