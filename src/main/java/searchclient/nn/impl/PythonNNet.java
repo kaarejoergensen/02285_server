@@ -1,15 +1,17 @@
-package nn.impl;
+package searchclient.nn.impl;
 
-import nn.NNet;
+import org.javatuples.Pair;
+import searchclient.nn.NNet;
 import searchclient.State;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 
 public class PythonNNet extends NNet {
-    private static final String PYTHON_PATH = "python";
+    private static final String PYTHON_PATH = "python3";
     private static final String SCRIPT_PATH = "./src/main/python/main.py";
 
     private BufferedReader clientReader;
@@ -37,8 +39,9 @@ public class PythonNNet extends NNet {
     }
 
     @Override
-    public void train(List<String[]> examples) {
-        this.writeToPython("train", examples.toString());
+    public void train(Pair<List<String>, List<Double>> trainingSet) {
+        this.writeToPython("train", trainingSet.getValue0().toString()
+                + System.lineSeparator() + trainingSet.getValue1().toString());
         this.readFromPython();
     }
 

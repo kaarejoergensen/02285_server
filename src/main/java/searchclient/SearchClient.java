@@ -135,10 +135,10 @@ public class SearchClient {
                 statusThread.interrupt();
             }
             else {
-                StatusThread statusThread = new StatusThread(startTime, monteCarloTreeSearch.getExpandedStates());
-                statusThread.start();
+                //StatusThread statusThread = new StatusThread(startTime, monteCarloTreeSearch.getExpandedStates());
+                //statusThread.start();
                 plan = monteCarloTreeSearch.solve(new Node(initialState));
-                statusThread.interrupt();
+                //statusThread.interrupt();
             }
         } catch (OutOfMemoryError ex) {
             System.err.println("Maximum memory usage exceeded.");

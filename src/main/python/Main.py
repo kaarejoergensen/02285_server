@@ -2,6 +2,7 @@ import ast
 import sys
 
 from NNet import NNet
+from StateDataSet import StateDataSet
 
 
 def flush_print(msg):
@@ -36,16 +37,15 @@ def main():
         lines = parser.receive()
         method = lines.pop(0)
         if method == "train":
-            examples = []
-            for line in lines:
-                examples.append(ast.literal_eval(line))
-            nnet.train(examples)
+            states = ast.literal_eval(lines[0])
+            scores = ast.literal_eval(lines[1])
+            result = nnet.train(states,scores)
+            print("Train complete. Loss: ", result, file=sys.stderr, flush=True)
             flush_print("done")
         elif method == "predict":
-            state = []
-            for line in lines:
-                state.append(ast.literal_eval(line))
-            flush_print(nnet.predict(state))
+            state = ast.literal_eval(lines[0])
+            output = nnet.predict(state).item()
+            flush_print(output)
         elif method == "saveModel":
             nnet.save_checkpoint(lines[0])
             flush_print("done")

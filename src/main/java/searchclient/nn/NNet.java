@@ -1,5 +1,6 @@
-package nn;
+package searchclient.nn;
 
+import org.javatuples.Pair;
 import searchclient.State;
 
 import java.io.Closeable;
@@ -8,7 +9,7 @@ import java.util.List;
 
 public abstract class NNet implements Closeable {
 
-    public abstract void train(List<String[]> examples);
+    public abstract void train(Pair<List<String>, List<Double>> trainingSet);
 
     public abstract float predict(State state);
 

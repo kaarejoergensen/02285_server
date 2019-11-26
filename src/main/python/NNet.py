@@ -1,6 +1,8 @@
 import time
 import torch
 from torch.utils.data import DataLoader
+import sys
+import copy as kopi
 
 from NNetModule import NNetModule
 import numpy as np
@@ -14,6 +16,8 @@ class NNet():
         self.model =NNetModule()
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
         self.criterion = torch.nn.BCELoss()
+        self.priorLoss = 1.0
+
 
 
     #State skal ta inn staten + scoren gitt fra mcts
@@ -23,10 +27,12 @@ class NNet():
     # Train nettverk på denne dataoen
     # Kjøre MCTS en gang til for valideringsett
     # Teste accuracien til nettverket
-    def train(self, states, scores, epoch=2, batch_size=2):
+    def train(self, states, scores, epoch=2, batch_size=256):
+        #copy = kopi.deepcopy(self.model)
         #Omgjør states og scores til numpy arrays
         trainSet = StateDataSet(states, scores)
-        train_loader = DataLoader(dataset=trainSet, batch_size=batch_size, shuffle=True, num_workers=0)
+        train_loader = DataLoader(dataset=trainSet, batch_size=batch_size, shuffle=True, num_workers=4)
+        #print(train_loader., file=sys.stderr, flush=True)
 
         running_loss = 0.0
         for batch in train_loader:
@@ -39,8 +45,12 @@ class NNet():
             self.optimizer.step()
             running_loss += loss.item()
 
-        print("Training session complete...")
-        print(loss)
+        #if(loss.item() > self.priorLoss):
+         #   self.model = copy
+          #  return self.priorLoss
+
+        #self.priorLoss = loss.item()
+        return loss.item()
 
 
     def predict(self, state):

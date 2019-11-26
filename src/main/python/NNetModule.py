@@ -1,3 +1,4 @@
+import sys
 import torch.nn as nn
 
 
@@ -7,9 +8,11 @@ class NNetModule(nn.Module):
 
             # Inputs to hidden layer linear transformation
             # Tester med
-            self.hidden1 = nn.Linear(75, 256)
-            self.hidden2 = nn.Linear(256, 10)
+
+            self.hidden1 = nn.Linear(75, 300)
+            self.hidden2 = nn.Linear(300, 60)
             # Output layer, 10 units - one for each digit
+            self.hidden3 = nn.Linear(60, 10)
             self.output = nn.Linear(10, 1)
 
 
@@ -23,6 +26,8 @@ class NNetModule(nn.Module):
             x = self.hidden1(x)
             x = self.sigmoid(x)
             x = self.hidden2(x)
+            x = self.sigmoid(x)
+            x = self.hidden3(x)
             x = self.sigmoid(x)
             x = self.output(x)
             x = self.sigmoid(x)
