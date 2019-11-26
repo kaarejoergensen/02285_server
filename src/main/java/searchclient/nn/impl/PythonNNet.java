@@ -1,18 +1,17 @@
 package searchclient.nn.impl;
 
 import org.javatuples.Pair;
-import searchclient.nn.NNet;
 import searchclient.State;
+import searchclient.nn.NNet;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
 
 public class PythonNNet extends NNet {
-    private static final String PYTHON_PATH = "python3";
-    private static final String SCRIPT_PATH = "./src/main/python/main.py";
+    private static final String PYTHON_PATH = "python";
+    private static final String SCRIPT_PATH = "./src/main/python/Main.py";
 
     private BufferedReader clientReader;
     private BufferedWriter clientWriter;

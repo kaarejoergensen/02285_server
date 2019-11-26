@@ -16,10 +16,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 public class Basic extends MonteCarloTreeSearch {
     private static final int MCTS_LOOP_ITERATIONS = 10000;
@@ -43,8 +40,7 @@ public class Basic extends MonteCarloTreeSearch {
 
             this.expansion.expandNode(promisingNode);
 
-//            float score = train ? this.simulation.simulatePlayout(promisingNode) : this.nNet.predict(promisingNode.getState());
-            float score = this.nNet.predict(promisingNode.getState());
+            float score = train ? this.simulation.simulatePlayout(promisingNode) : this.nNet.predict(promisingNode.getState());
 
             this.backpropagation.backpropagate(score, promisingNode, root);
         }
@@ -56,33 +52,29 @@ public class Basic extends MonteCarloTreeSearch {
     public Action[][] solve(Node root) {
         ExecutorService executorService = Executors.newFixedThreadPool(2);
         int iterations = 0;
-        Callable<Node> mctsCallable = () -> runMCTS(new Node(root.getState()), true);
+        Callable<Pair<List<String>, List<Double>>> mctsCallable = () -> createMLTrainSet(runMCTS(new Node(root.getState()), true));
         Future<Float> futureLoss = null;
         while (true) {
             System.out.println("Iteration: " + (iterations + 1));
-            Node node = this.runMCTS(new Node(root.getState()), true);
-            float loss = this.nNet.train(this.createMLTrainSet(node));
-            System.out.println("Loss: " + loss);
-            if (loss < 0.1) break;
-//            final Future<Node> futureNode = executorService.submit(mctsCallable);
-//            while (!futureNode.isDone()) {
-//                try {
-//                    Thread.sleep(100);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//            try {
-//                if (futureLoss != null && futureLoss.get() < 0.1) break;
-//            } catch (InterruptedException | ExecutionException e) {
-//                e.printStackTrace();
-//            }
-//            Callable<Float> trainCallable = () -> {
-//                float loss = nNet.train(createMLTrainSet(futureNode.get()));
-//                System.out.println("Training done. Loss: " + loss);
-//                return loss;
-//            };
-//            futureLoss = executorService.submit(trainCallable);
+            final var futureNode = executorService.submit(mctsCallable);
+            while (!futureNode.isDone()) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            try {
+                if (futureLoss != null && futureLoss.get() < 0.1) break;
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
+            Callable<Float> trainCallable = () -> {
+                float loss = nNet.train(futureNode.get());
+                System.out.println("Training done. Loss: " + loss);
+                return loss;
+            };
+            futureLoss = executorService.submit(trainCallable);
             iterations++;
         }
         System.out.println("Training Complete... Finding solution");
