@@ -71,29 +71,36 @@ public class PythonNNet extends NNet {
     }
 
     private String readFromPython() {
-        try {
-            String line = this.clientReader.readLine();
-            if (line == null) {
-                System.err.println("Read from python failed: null line received");
+        synchronized (this) {
+            try {
+                String line = this.clientReader.readLine();
+                if (line == null) {
+                    System.err.println("Read from python failed: null line received");
+                    System.exit(-1);
+                }
+                return line;
+            } catch (IOException e) {
+                System.err.println("Read from python failed: " + e.getMessage());
                 System.exit(-1);
             }
-            return line;
-        } catch (IOException e) {
-            System.err.println("Read from python failed: " + e.getMessage());
-            System.exit(-1);
+            return "";
         }
-        return "";
     }
 
     private void writeToPython(String method, String args) {
-        try {
-            this.clientWriter.write(method + System.lineSeparator());
-            this.clientWriter.flush();
-            this.clientWriter.write(args + System.lineSeparator() + System.lineSeparator());
-            this.clientWriter.flush();
-        } catch (IOException e) {
-            System.err.println("Write to python failed: " + e.getMessage());
-            System.exit(-1);
+        synchronized (this) {
+            try {
+                this.clientWriter.write(method + System.lineSeparator());
+                this.clientWriter.flush();
+                this.clientWriter.write(args + System.lineSeparator());
+                this.clientWriter.flush();
+                this.clientWriter.write("done" + System.lineSeparator());
+                this.clientWriter.flush();
+                Thread.sleep(200);
+            } catch (IOException | InterruptedException e) {
+                System.err.println("Write to python failed: " + e.getMessage());
+                System.exit(-1);
+            }
         }
     }
 }

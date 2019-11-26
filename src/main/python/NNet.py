@@ -3,7 +3,6 @@ import torch
 from torch.utils.data import DataLoader
 
 from NNetModule import NNetModule
-from StateDataSet import StateDataSet
 
 
 class NNet():
@@ -23,12 +22,11 @@ class NNet():
     # Train nettverk på denne dataoen
     # Kjøre MCTS en gang til for valideringsett
     # Teste accuracien til nettverket
-    def train(self, states, scores, epoch=2, batch_size=256):
+    def train(self, trainSet, epoch=2, batch_size=256):
         # copy = kopi.deepcopy(self.model)
         # Omgjør states og scores til numpy arrays
-        trainSet = StateDataSet(states, scores)
-        train_loader = DataLoader(dataset=trainSet, batch_size=batch_size, shuffle=True, num_workers=4)
-        # print(train_loader., file=sys.stderr, flush=True)
+        #trainSet = StateDataSet(states, scores)
+        train_loader = DataLoader(dataset=trainSet, batch_size=batch_size, shuffle=True)
 
         running_loss = 0.0
         for batch in train_loader:
@@ -38,7 +36,7 @@ class NNet():
                 labels = labels.to("cuda")
             self.optimizer.zero_grad()
             score_predication = self.model(input)
-
+            labels = labels.view(-1, 1)
             loss = self.criterion(score_predication, labels)
             loss.backward()
             self.optimizer.step()

@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Basic extends MonteCarloTreeSearch {
     private static final int MCTS_LOOP_ITERATIONS = 10000;
@@ -51,35 +52,50 @@ public class Basic extends MonteCarloTreeSearch {
     @Override
     public Action[][] solve(Node root) {
         ExecutorService executorService = Executors.newFixedThreadPool(2);
-        int iterations = 0;
         Callable<Pair<List<String>, List<Double>>> mctsCallable = () -> createMLTrainSet(runMCTS(new Node(root.getState()), true));
-        Future<Float> futureLoss = null;
-        while (true) {
-            System.out.println("Iteration: " + (iterations + 1));
-            final var futureNode = executorService.submit(mctsCallable);
-            while (!futureNode.isDone()) {
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+        final AtomicInteger atomicIterations = new AtomicInteger(0);
+        Runnable runnable = () -> {
+            ExecutorService executorService1 = Executors.newFixedThreadPool(2);
+            Future<Float> futureLoss = null;
+            boolean done = false;
+            while (!done) {
+                System.out.println("Iteration: " + (atomicIterations.get() + 1));
+                final var futureNode = executorService1.submit(mctsCallable);
+                while (!futureNode.isDone()) {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        done = true;
+                    }
                 }
+                try {
+                    if (futureLoss != null && futureLoss.get() < 0.1) break;
+                } catch (InterruptedException | ExecutionException e) {
+                    break;
+                }
+                Callable<Float> trainCallable = () -> {
+                    float loss = nNet.train(futureNode.get());
+                    System.out.println("Training done. Loss: " + loss);
+                    return loss;
+                };
+                futureLoss = executorService1.submit(trainCallable);
+                atomicIterations.addAndGet(1);
             }
+        };
+        Future future = executorService.submit(runnable);
+        Future future1 = executorService.submit(runnable);
+        while (!future.isDone() && !future1.isDone()) {
             try {
-                if (futureLoss != null && futureLoss.get() < 0.1) break;
-            } catch (InterruptedException | ExecutionException e) {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            Callable<Float> trainCallable = () -> {
-                float loss = nNet.train(futureNode.get());
-                System.out.println("Training done. Loss: " + loss);
-                return loss;
-            };
-            futureLoss = executorService.submit(trainCallable);
-            iterations++;
         }
+        future.cancel(true);
+        future1.cancel(true);
         System.out.println("Training Complete... Finding solution");
         Node node = root;
-        iterations = 0;
+        int iterations = 0;
         while (true) {
             iterations++;
             node = this.runMCTS(node, false);

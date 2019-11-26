@@ -1,15 +1,12 @@
-import torch
 import numpy as np
+import torch
 from torch.utils.data import Dataset
-import sys
 
 
 class StateDataSet(Dataset):
     def __init__(self, states, scores):
         self.len = len(states)
-
         npStates = np.array(states)
-
         self.states = torch.tensor(npStates, dtype=torch.float)
         self.scores = torch.tensor(np.array(scores).flatten(), dtype=torch.float)
 
