@@ -9,11 +9,11 @@ class NNetModule(nn.Module):
             # Inputs to hidden layer linear transformation
             # Tester med
 
-            self.hidden1 = nn.Linear(75, 300)
-            self.hidden2 = nn.Linear(300, 60)
+            self.hidden1 = nn.Linear(75, 1000)
+            self.hidden2 = nn.Linear(1000, 500)
             # Output layer, 10 units - one for each digit
-            self.hidden3 = nn.Linear(60, 10)
-            self.output = nn.Linear(10, 1)
+            self.hidden3 = nn.Linear(500, 60)
+            self.output = nn.Linear(60, 1)
 
 
             # Define sigmoid activation and softmax output

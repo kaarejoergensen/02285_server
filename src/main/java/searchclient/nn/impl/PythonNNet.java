@@ -39,10 +39,10 @@ public class PythonNNet extends NNet {
     }
 
     @Override
-    public void train(Pair<List<String>, List<Double>> trainingSet) {
+    public float train(Pair<List<String>, List<Double>> trainingSet) {
         this.writeToPython("train", trainingSet.getValue0().toString()
                 + System.lineSeparator() + trainingSet.getValue1().toString());
-        this.readFromPython();
+        return Float.parseFloat(this.readFromPython());
     }
 
     @Override
