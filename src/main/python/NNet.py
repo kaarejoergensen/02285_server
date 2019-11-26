@@ -1,26 +1,22 @@
-import time
+import numpy as np
 import torch
 from torch.utils.data import DataLoader
-import sys
-import copy as kopi
 
 from NNetModule import NNetModule
-import numpy as np
-
 from StateDataSet import StateDataSet
 
 
 class NNet():
     def __init__(self):
-        self.filepath = "model.pth" #TODO: Ikke hardkode
-        self.model =NNetModule()
+        self.filepath = "model.pth"  # TODO: Ikke hardkode
+        self.model = NNetModule()
+        if torch.cuda.is_available():
+            self.model = self.model.to("cuda")
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
         self.criterion = torch.nn.BCELoss()
         self.priorLoss = 1.0
 
-
-
-    #State skal ta inn staten + scoren gitt fra mcts
+    # State skal ta inn staten + scoren gitt fra mcts
 
     # Init NN
     # Kjøre en gang MCTS, lagre alle states med socres
@@ -28,15 +24,18 @@ class NNet():
     # Kjøre MCTS en gang til for valideringsett
     # Teste accuracien til nettverket
     def train(self, states, scores, epoch=2, batch_size=256):
-        #copy = kopi.deepcopy(self.model)
-        #Omgjør states og scores til numpy arrays
+        # copy = kopi.deepcopy(self.model)
+        # Omgjør states og scores til numpy arrays
         trainSet = StateDataSet(states, scores)
         train_loader = DataLoader(dataset=trainSet, batch_size=batch_size, shuffle=True, num_workers=4)
-        #print(train_loader., file=sys.stderr, flush=True)
+        # print(train_loader., file=sys.stderr, flush=True)
 
         running_loss = 0.0
         for batch in train_loader:
             input, labels = batch
+            if torch.cuda.is_available():
+                input = input.to("cuda")
+                labels = labels.to("cuda")
             self.optimizer.zero_grad()
             score_predication = self.model(input)
 
@@ -45,24 +44,24 @@ class NNet():
             self.optimizer.step()
             running_loss += loss.item()
 
-        #if(loss.item() > self.priorLoss):
-         #   self.model = copy
-          #  return self.priorLoss
+        # if(loss.item() > self.priorLoss):
+        #   self.model = copy
+        #  return self.priorLoss
 
-        #self.priorLoss = loss.item()
+        # self.priorLoss = loss.item()
         return loss.item()
 
-
     def predict(self, state):
-        return self.model(torch.tensor(np.array(state), dtype=torch.float))
+        stateTensor = torch.tensor(np.array(state), dtype=torch.float)
+        if torch.cuda.is_available():
+            stateTensor = stateTensor.to("cuda")
+        return self.model(stateTensor)
 
     def save_checkpoint(self):
         torch.save(self.model.state_dict(), self.filepath)
 
-
     def load_checkpoint(self, filepath):
         self.nnetModule = self.model.load_state_dict(torch.load(self.filepath))
-
 
     def close(self):
         pass
