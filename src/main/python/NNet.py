@@ -35,6 +35,7 @@ class NNet():
             input, labels = batch
             if torch.cuda.is_available():
                 input = input.to("cuda")
+                labels = labels.to("cuda")
             self.optimizer.zero_grad()
             score_predication = self.model(input)
 
