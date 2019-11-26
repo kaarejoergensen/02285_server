@@ -47,22 +47,26 @@ public class Basic extends MonteCarloTreeSearch {
     @Override
     public Action[][] solve(Node root) {
         int iterations = 0;
-        while (iterations < 20) {
-            System.out.println("Iteration: " + iterations);
+        while (true) {
             Node node = this.runMCTS(new Node(root.getState()), true);
-            this.nNet.train(this.createMLTrainSet(node));
+            float loss = this.nNet.train(this.createMLTrainSet(node));
             iterations++;
+            System.out.println("Iteration: " + iterations + " Loss: " + loss);
+            if (loss < 0.1) {
+                break;
+            }
         }
         System.out.println("Training Complete... Finding solution");
+        this.nNet.saveModel("");
         Node node = root;
         iterations = 0;
         while (true) {
+            iterations++;
             node = this.runMCTS(node, false);
             if (node.getState().isGoalState()) {
                 return node.getState().extractPlan();
             }
             System.out.println("Try nr... " + iterations);
-            iterations++;
             if(iterations % 10 == 0){
                 System.out.println("Hmm... det tar litt tid det her eller hva");
             }

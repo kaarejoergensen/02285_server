@@ -39,9 +39,7 @@ def main():
         if method == "train":
             states = ast.literal_eval(lines[0])
             scores = ast.literal_eval(lines[1])
-            result = nnet.train(states,scores)
-            print("Train complete. Loss: ", result, file=sys.stderr, flush=True)
-            flush_print("done")
+            flush_print(nnet.train(states,scores))
         elif method == "predict":
             state = ast.literal_eval(lines[0])
             output = nnet.predict(state).item()
