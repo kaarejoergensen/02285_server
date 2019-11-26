@@ -52,10 +52,10 @@ class NNet():
         return loss.item()
 
     def predict(self, state):
-        stateTensor = torch.tensor(np.array(state))
+        stateTensor = torch.tensor(np.array(state), dtype=torch.float)
         if torch.cuda.is_available():
             stateTensor = stateTensor.to("cuda")
-        return self.model(stateTensor, dtype=torch.float)
+        return self.model(stateTensor)
 
     def save_checkpoint(self):
         torch.save(self.model.state_dict(), self.filepath)
