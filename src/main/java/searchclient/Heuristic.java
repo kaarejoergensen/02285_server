@@ -57,8 +57,10 @@ public abstract class Heuristic implements Comparator<State> {
                     }
                 }
             }
-            for (Action a : n.jointAction) {
-                result += a.getType().equals(Action.ActionType.NoOp) ? 0 : 1;
+            if (n.jointAction != null) {
+                for (Action a : n.jointAction) {
+                    result += a.getType().equals(Action.ActionType.NoOp) ? 0 : 1;
+                }
             }
             n.h = result;
         }

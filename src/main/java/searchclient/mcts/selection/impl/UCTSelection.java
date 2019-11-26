@@ -1,16 +1,22 @@
 package searchclient.mcts.selection.impl;
 
+import lombok.RequiredArgsConstructor;
 import searchclient.mcts.model.Node;
 import searchclient.mcts.selection.Selection;
 
 import java.util.Collections;
 import java.util.Comparator;
 
+@RequiredArgsConstructor
 public class UCTSelection extends Selection {
+    private final double constant;
+
     @Override
     public Node selectPromisingNode(Node rootNode) {
         Node node = rootNode;
         while (node.getChildren().size() != 0) {
+            if (node.getState().isGoalState())
+                return node;
             node = this.findBestNodeWithUCT(node);
         }
         return node;
@@ -23,7 +29,7 @@ public class UCTSelection extends Selection {
     private double uctValue(Node node) {
         int parentVisit = node.getParent() == null ? 0 : node.getParent().getVisitCount();
         if (parentVisit == 0) return Integer.MAX_VALUE;
-        return (node.getWinScore() / (double) parentVisit) + 0.05 * Math.sqrt(Math.log(parentVisit) / (double) node.getVisitCount());
+        return (node.getWinScore() / (double) parentVisit) + this.constant * Math.sqrt(Math.log(parentVisit) / (double) node.getVisitCount());
     }
 
     @Override
