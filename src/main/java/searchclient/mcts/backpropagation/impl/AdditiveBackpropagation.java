@@ -8,6 +8,7 @@ public class AdditiveBackpropagation implements Backpropagation {
     @Override
     public void backpropagate(float score, Node nodeToExplore, Node root) {
         Node tempNode = nodeToExplore;
+        nodeToExplore.setSimulationScore(score);
         while (tempNode != null) {
             tempNode.incrementVisitCount();
             tempNode.addScore(score);

@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from torch import optim
 from torch.utils.data import DataLoader
 
 from NNetModule import NNetModule
@@ -11,7 +12,7 @@ class NNet():
         self.model = NNetModule()
         if torch.cuda.is_available():
             self.model = self.model.to("cuda")
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
+        self.optimizer = optim.SGD(self.model.parameters(), lr=0.001, momentum=0.9)
         self.criterion = torch.nn.BCELoss()
         self.priorLoss = 1.0
 
@@ -22,7 +23,7 @@ class NNet():
     # Train nettverk på denne dataoen
     # Kjøre MCTS en gang til for valideringsett
     # Teste accuracien til nettverket
-    def train(self, trainSet, epoch=2, batch_size=256):
+    def train(self, trainSet, epoch=2, batch_size=10):
         # copy = kopi.deepcopy(self.model)
         # Omgjør states og scores til numpy arrays
         #trainSet = StateDataSet(states, scores)

@@ -10,9 +10,10 @@ import java.nio.file.Path;
 import java.util.List;
 
 public class PythonNNet extends NNet {
-    private static final String PYTHON_PATH = "python";
+    private static final String PYTHON_PATH = "./venv/bin/python";
     private static final String SCRIPT_PATH = "./src/main/python/Main.py";
 
+    private Process process;
     private BufferedReader clientReader;
     private BufferedWriter clientWriter;
 
@@ -21,8 +22,9 @@ public class PythonNNet extends NNet {
     }
 
     private void run() throws IOException {
+        Runtime.getRuntime().addShutdownHook(new Thread(this::shutdownPython));
         ProcessBuilder processBuilder = new ProcessBuilder(PYTHON_PATH, SCRIPT_PATH).redirectError(ProcessBuilder.Redirect.INHERIT);
-        Process process = processBuilder.start();
+        this.process = processBuilder.start();
 
         InputStream clientIn = process.getInputStream();
         BufferedInputStream outputFromClient = clientIn instanceof BufferedInputStream ?
@@ -35,6 +37,10 @@ public class PythonNNet extends NNet {
 
         this.clientReader = new BufferedReader(new InputStreamReader(outputFromClient, StandardCharsets.UTF_8));
         this.clientWriter = new BufferedWriter(new OutputStreamWriter(inputToClient, StandardCharsets.UTF_8));
+    }
+
+    private void shutdownPython() {
+        this.process.destroy();
     }
 
     @Override
@@ -68,23 +74,29 @@ public class PythonNNet extends NNet {
         this.readFromPython();
         this.clientWriter.close();
         this.clientReader.close();
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        if (this.process.isAlive()) this.process.destroy();
     }
 
     private String readFromPython() {
+        String line = "";
         synchronized (this) {
             try {
-                String line = this.clientReader.readLine();
+                line = this.clientReader.readLine();
                 if (line == null) {
                     System.err.println("Read from python failed: null line received");
                     System.exit(-1);
                 }
-                return line;
             } catch (IOException e) {
                 System.err.println("Read from python failed: " + e.getMessage());
                 System.exit(-1);
             }
-            return "";
         }
+        return line;
     }
 
     private void writeToPython(String method, String args) {
@@ -96,8 +108,7 @@ public class PythonNNet extends NNet {
                 this.clientWriter.flush();
                 this.clientWriter.write("done" + System.lineSeparator());
                 this.clientWriter.flush();
-                Thread.sleep(200);
-            } catch (IOException | InterruptedException e) {
+            } catch (IOException e) {
                 System.err.println("Write to python failed: " + e.getMessage());
                 System.exit(-1);
             }
