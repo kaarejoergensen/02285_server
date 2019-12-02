@@ -18,9 +18,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Locale;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SearchClient {
@@ -106,7 +105,7 @@ public class SearchClient {
                     break;
                 case "-basic":
                     monteCarloTreeSearch = new Basic(new UCTSelection(0.4), new AllActionsExpansion(),
-                            new RandomSimulation(), new AdditiveBackpropagation());
+                            new AllPairsShortestPath(initialState), new AdditiveBackpropagation());
                     break;
                     case "-onetree":
                     monteCarloTreeSearch = new OneTree(new UCTSelection(0.4), new AllActionsNoDuplicatesExpansion(initialState),

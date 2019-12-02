@@ -11,6 +11,7 @@ import java.util.*;
 public class Node {
     private int visitCount = 0;
     private float winScore = 0;
+    private float simulationScore = 0;
     private int countToRoot;
     final private State state;
     private boolean isExpanded;
