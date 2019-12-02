@@ -8,6 +8,7 @@ import shared.Action;
 import shared.Farge;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -163,6 +164,31 @@ public class State {
                 }
             }
         }
+        return true;
+    }
+
+    public boolean isApplicable(List<Action[][]> plans) {
+        System.err.println("Testing applicability of plan");
+        State testState = this;
+        for (Action[][] singlePlan : plans) {
+            for (Action[] value : singlePlan) {
+                Action action = value[0];
+                if (testState.isApplicable(0, action)) {
+                    testState = new State(testState, value);
+                } else {
+                    System.err.println("Not applicable");
+                    System.err.println(testState);
+                    System.err.println(action.getName());
+                    try {
+                        TimeUnit.SECONDS.sleep(5);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    return false;
+                }
+            }
+        }
+        System.err.println("Applicable");
         return true;
     }
 
@@ -419,8 +445,11 @@ public class State {
         for (int row = 0; row < this.walls.length; row++) {
             for (int col = 0; col < this.walls[row].length; col++) {
                 Box box = this.boxMap.get(new Coordinate(row, col));
+                Character goal = this.goals.get(new Coordinate(row, col));
                 if (box != null) {
                     s.append(box.getCharacter());
+                } else if (goal != null) {
+                    s.append(Character.toLowerCase(goal));
                 } else if (this.walls[row][col]) {
                     s.append("+");
                 } else if (this.agentAt(row, col) != 0) {

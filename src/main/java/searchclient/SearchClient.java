@@ -1,5 +1,7 @@
 package searchclient;
 
+import searchclient.level.Box;
+import searchclient.level.Coordinate;
 import searchclient.level.Level;
 import searchclient.mcts.backpropagation.impl.AdditiveBackpropagation;
 import searchclient.mcts.expansion.impl.AllActionsExpansion;
@@ -8,10 +10,8 @@ import searchclient.mcts.model.Node;
 import searchclient.mcts.search.MonteCarloTreeSearch;
 import searchclient.mcts.search.impl.Basic;
 import searchclient.mcts.search.impl.OneTree;
-import searchclient.mcts.selection.impl.RandomSelection;
 import searchclient.mcts.selection.impl.UCTSelection;
 import searchclient.mcts.simulation.impl.AllPairsShortestPath;
-import searchclient.mcts.simulation.impl.RandomSimulation;
 import shared.Action;
 
 import java.io.BufferedReader;
@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 public class SearchClient {
     public static State parseLevel(BufferedReader serverMessages) throws IOException {
@@ -41,28 +42,84 @@ public class SearchClient {
      * Implements the Graph-Search algorithm from R&N figure 3.7.
      */
     public static Action[][] search(State initialState, Frontier frontier, HashSet<State> explored) {
+        long startTime = System.nanoTime();
+        List<State> splitStates = splitState(initialState);
+        ExecutorService executorService = Executors.newFixedThreadPool(splitStates.size());
 
-        System.err.format("Starting %s.\n", frontier.getName());
+        List<Callable<WorkerReturn>> stateCallables = new ArrayList<>(splitStates.size());
+        for (int i = 0; i < splitStates.size(); i++) {
+            stateCallables.add(new Worker(i, splitStates.get(i)));
+        }
 
-        frontier.add(initialState);
-        while (true) {
-            if (frontier.isEmpty()) {
-                return null;
-            }
-
-            State leafState = frontier.pop();
-
-            if (leafState.isGoalState()) {
-                return leafState.extractPlan();
-            }
-
-            explored.add(leafState);
-            for (State s : leafState.getExpandedStates()) {
-                if (!explored.contains(s) && !frontier.contains(s)) {
-                    frontier.add(s);
+        try {
+            int exploredSize = 0;
+            int frontierSize = 0;
+            List<Action[][]> actions = new ArrayList<>();
+            List<Future<WorkerReturn>> futurePlans = executorService.invokeAll(stateCallables);
+            for (Future<WorkerReturn> futurePlan : futurePlans) {
+                WorkerReturn workerReturn = futurePlan.get();
+                exploredSize += workerReturn.getExploredSize();
+                frontierSize += workerReturn.getFrontierSize();
+                actions.add(workerReturn.getPlan());
+                if (workerReturn.getPlan() == null) {
+                    System.err.println("State could not be solved:");
+                    System.err.println(workerReturn.getState());
                 }
             }
+            printSearchStatusFrontier(startTime, exploredSize, frontierSize);
+            List<Action[][]> finalPlan = testPermutations(actions, initialState);
+            if (finalPlan == null) {
+                System.err.println("NOT APPLICABLE");
+                return null;
+            }
+            var test = new Action[finalPlan.stream().map(a -> a.length).reduce(0, Integer::sum)][];
+            int index = 0;
+            for (Action[][] actions1 : finalPlan) {
+                for (Action[] actions2 : actions1) {
+                    test[index++] = actions2;
+                }
+            }
+            return test;
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
         }
+        return null;
+    }
+
+    private static List<Action[][]> testPermutations(List<Action[][]> actions, State state) {
+        return testPermutationsRecursive(actions.size(), actions, state);
+    }
+
+    private static List<Action[][]> testPermutationsRecursive(int n, List<Action[][]> actions, State state) {
+        if (n == 1) {
+            if (state.isApplicable(actions)) return actions;
+            return null;
+        } else {
+            for(int i = 0; i < n-1; i++) {
+                var result = testPermutationsRecursive(n - 1, actions, state);
+                if (result != null) return result;
+                if(n % 2 == 0) {
+                    swap(actions, i, n-1);
+                } else {
+                    swap(actions, 0, n-1);
+                }
+            }
+            return testPermutationsRecursive(n - 1, actions, state);
+        }
+    }
+
+    private static <T> void swap(List<T> input, int a, int b) {
+        T tmp = input.get(a);
+        input.set(a, input.get(b));
+        input.set(b, tmp);
+    }
+
+
+    private static void printSearchStatusFrontier(long startTime, int explored, int frontier) {
+        String statusTemplate = "#Explored: %,8d, #Frontier: %,8d, #Generated: %,8d, Time: %3.3f s\n%s\n";
+        double elapsedTime = (System.nanoTime() - startTime) / 1_000_000_000d;
+        System.err.format(statusTemplate, explored, frontier, explored + frontier,
+                elapsedTime, Memory.stringRep());
     }
 
 
@@ -128,10 +185,10 @@ public class SearchClient {
         try {
             if (monteCarloTreeSearch == null) {
                 HashSet<State> explored = new HashSet<>(65536);
-                StatusThread statusThread = new StatusThread(startTime, explored, frontier);
-                statusThread.start();
+//                StatusThread statusThread = new StatusThread(startTime, explored, frontier);
+//                statusThread.start();
                 plan = SearchClient.search(initialState, frontier, explored);
-                statusThread.interrupt();
+//                statusThread.interrupt();
             }
             else {
                 //StatusThread statusThread = new StatusThread(startTime, monteCarloTreeSearch.getExpandedStates());
@@ -194,6 +251,69 @@ public class SearchClient {
                 serverMessages.readLine();
             }
         }
+    }
+
+    private static List<State> splitState(State initialState) {
+        Set<Map.Entry<Coordinate, Box>> boxes = initialState.boxMap.entrySet();
+        List<State> splitStates = new ArrayList<>(boxes.size());
+
+        var goalMap = generateMap(initialState.goals);
+
+        for (Map.Entry<Coordinate, Box> boxEntry : boxes) {
+            final boolean[][] walls = new boolean[initialState.walls.length][];
+            for (int i = 0; i < initialState.walls.length; i++) {
+                walls[i] = Arrays.copyOf(initialState.walls[i], initialState.walls[i].length);
+            }
+            for (Map.Entry<Coordinate, Box> boxEntry2 : initialState.boxMap.entrySet()) {
+                if (!boxEntry.equals(boxEntry2)) {
+                    Coordinate coordinate = boxEntry2.getKey();
+                    walls[coordinate.getRow()][coordinate.getCol()] = true;
+                }
+            }
+            Map<Coordinate, Box> boxMap = Collections.singletonMap(boxEntry.getKey(), boxEntry.getValue());
+            var newGoalMap = getBestGoal(goalMap, boxEntry, initialState);
+            State newState = new State(initialState.distanceMap, initialState.agentRows, initialState.agentCols,
+                    initialState.agentColors, walls, boxMap, newGoalMap);
+            splitStates.add(newState);
+        }
+        Set<Map.Entry<Coordinate, Character>> agentGoals = initialState.goals.entrySet().stream().
+                filter(entry -> '0' <= entry.getValue() && entry.getValue() <= '9' ).collect(Collectors.toSet());
+        if (!agentGoals.isEmpty()) {
+            //TODO: Do something
+        }
+        return splitStates;
+    }
+
+    private static Map<Coordinate, Character> getBestGoal(Map<Character, List<Coordinate>> allGoals,
+                                                          Map.Entry<Coordinate, Box> boxEntry, State state) {
+        List<Coordinate> goals = allGoals.get(boxEntry.getValue().getCharacter());
+        int bestDistance = Integer.MAX_VALUE;
+        Coordinate bestGoal = null;
+        for (Coordinate goal : goals) {
+            int distance = state.distanceMap.getDistance(boxEntry.getKey(), goal);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestGoal = goal;
+            }
+        }
+        var goalMap = new HashMap<Coordinate, Character>();
+        goalMap.put(bestGoal, boxEntry.getValue().getCharacter());
+        goalMap.put(new Coordinate(state.agentRows[0], state.agentCols[0]), '0');
+        return goalMap;
+    }
+
+    private static Map<Character, List<Coordinate>> generateMap(Map<Coordinate, Character> allGoals) {
+        Map<Character, List<Coordinate>> maps = new HashMap<>();
+        for (Map.Entry<Coordinate, Character> goal : allGoals.entrySet()) {
+            if (maps.containsKey(goal.getValue())) {
+                maps.get(goal.getValue()).add(goal.getKey());
+            } else {
+                List<Coordinate> list = new ArrayList<>();
+                list.add(goal.getKey());
+                maps.put(goal.getValue(), list);
+            }
+        }
+        return maps;
     }
 
     private static class StatusThread implements Runnable {
