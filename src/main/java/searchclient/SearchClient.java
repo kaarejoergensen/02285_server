@@ -2,6 +2,7 @@ package searchclient;
 
 import searchclient.level.Level;
 import searchclient.mcts.backpropagation.impl.AdditiveBackpropagation;
+import searchclient.mcts.backpropagation.impl.ForwardAdditiveBackpropagation;
 import searchclient.mcts.expansion.impl.AllActionsExpansion;
 import searchclient.mcts.expansion.impl.AllActionsNoDuplicatesExpansion;
 import searchclient.mcts.model.Node;
@@ -104,8 +105,8 @@ public class SearchClient {
                     frontier = new FrontierBestFirst(new HeuristicGreedy(initialState));
                     break;
                 case "-basic":
-                    monteCarloTreeSearch = new Basic(new UCTSelection(0.4), new AllActionsExpansion(),
-                            new AllPairsShortestPath(initialState), new AdditiveBackpropagation());
+                    monteCarloTreeSearch = new Basic(new UCTSelection(0.4), new AllActionsNoDuplicatesExpansion(initialState),
+                            new RandomSimulation(), new AdditiveBackpropagation());
                     break;
                     case "-onetree":
                     monteCarloTreeSearch = new OneTree(new UCTSelection(0.4), new AllActionsNoDuplicatesExpansion(initialState),
@@ -136,6 +137,11 @@ public class SearchClient {
             else {
                 //StatusThread statusThread = new StatusThread(startTime, monteCarloTreeSearch.getExpandedStates());
                 //statusThread.start();
+                if (monteCarloTreeSearch instanceof Basic && "a".equalsIgnoreCase("b")) {
+                    Coach coach = new Coach();
+                    coach.train(new Node(initialState));
+                    ((Basic)monteCarloTreeSearch).setNNet(coach.getNNet());
+                }
                 plan = monteCarloTreeSearch.solve(new Node(initialState));
                 //statusThread.interrupt();
             }
