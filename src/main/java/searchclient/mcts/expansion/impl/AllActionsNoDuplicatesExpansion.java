@@ -19,9 +19,9 @@ public class AllActionsNoDuplicatesExpansion implements Expansion {
         for (State state : newExpandedStates) {
             if (state.equals(this.root)) continue;
             if (!this.expandedStates.containsKey(state)) {
-                Node node = new Node(state, root);
+                Node node = new Node(state, root, state.jointAction[0]);
                 this.expandedStates.put(state, node);
-                nodes.add(new Node(state, root));
+                nodes.add(new Node(state, root, state.jointAction[0]));
             } else {
                 nodes.add(this.expandedStates.get(state));
             }

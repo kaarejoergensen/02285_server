@@ -35,6 +35,7 @@ public class State {
     public int h = -1;
 
     private int _hash = 0;
+    private Action[][] applicableActions;
 
     /**
      * Constructs an initial state.
@@ -166,12 +167,10 @@ public class State {
         return true;
     }
 
-    public ArrayList<State> getExpandedStates() {
-        int numAgents = this.agentRows.length;
-
-        // Determine list of applicable actions for each individual agent.
-        Action[][] applicableActions = new Action[numAgents][];
-        for (int agent = 0; agent < numAgents; ++agent) {
+    public Action[][] getApplicableActions() {
+        if (this.applicableActions != null) return this.applicableActions;
+        Action[][] applicableActions = new Action[this.agentRows.length][];
+        for (int agent = 0; agent < this.agentRows.length; ++agent) {
 
             ArrayList<Action> agentActions = new ArrayList<>(Action.getAllActions().size());
             for (Action action : Action.getAllActions()) {
@@ -181,6 +180,15 @@ public class State {
             }
             applicableActions[agent] = agentActions.toArray(new Action[0]);
         }
+        this.applicableActions = applicableActions;
+        return applicableActions;
+    }
+
+    public ArrayList<State> getExpandedStates() {
+        int numAgents = this.agentRows.length;
+
+        // Determine list of applicable actions for each individual agent.
+        Action[][] applicableActions = this.getApplicableActions();
 
         // Iterate over joint actions, check conflict and generate child states.
         Action[] jointAction = new Action[numAgents];

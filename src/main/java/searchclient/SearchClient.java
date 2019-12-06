@@ -2,14 +2,11 @@ package searchclient;
 
 import searchclient.level.Level;
 import searchclient.mcts.backpropagation.impl.AdditiveBackpropagation;
-import searchclient.mcts.backpropagation.impl.ForwardAdditiveBackpropagation;
-import searchclient.mcts.expansion.impl.AllActionsExpansion;
 import searchclient.mcts.expansion.impl.AllActionsNoDuplicatesExpansion;
 import searchclient.mcts.model.Node;
 import searchclient.mcts.search.MonteCarloTreeSearch;
 import searchclient.mcts.search.impl.Basic;
 import searchclient.mcts.search.impl.OneTree;
-import searchclient.mcts.selection.impl.RandomSelection;
 import searchclient.mcts.selection.impl.UCTSelection;
 import searchclient.mcts.simulation.impl.AllPairsShortestPath;
 import searchclient.mcts.simulation.impl.RandomSimulation;
@@ -19,8 +16,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SearchClient {

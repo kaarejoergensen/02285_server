@@ -5,25 +5,21 @@ import org.javatuples.Pair;
 import searchclient.mcts.backpropagation.impl.AdditiveBackpropagation;
 import searchclient.mcts.expansion.impl.AllActionsNoDuplicatesExpansion;
 import searchclient.mcts.model.Node;
-import searchclient.mcts.search.MonteCarloTreeSearch;
 import searchclient.mcts.search.impl.Basic;
 import searchclient.mcts.selection.impl.UCTSelection;
 import searchclient.mcts.simulation.impl.RandomSimulation;
 import searchclient.nn.NNet;
 import searchclient.nn.impl.PythonNNet;
-import shared.Action;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 public class Coach {
     @Getter private NNet nNet;
@@ -75,7 +71,7 @@ public class Coach {
         while (!queue.isEmpty()) {
             Node node = queue.pop();
             states.add(node.getState().toMLString());
-            winScores.add((double) node.getSimulationScore());
+            winScores.add((double) node.getTotalScore());
             queue.addAll(node.getChildren());
         }
         return Pair.with(states.subList(0, 2), winScores.subList(0, 2));

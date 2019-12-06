@@ -16,7 +16,7 @@ import java.util.Comparator;
 import java.util.concurrent.TimeUnit;
 
 public class Basic extends MonteCarloTreeSearch {
-    private static final int MCTS_LOOP_ITERATIONS = 10000;
+    private static final int MCTS_LOOP_ITERATIONS = 1600;
     @Setter private NNet nNet;
 
     public Basic(Selection selection, Expansion expansion, Simulation simulation, Backpropagation backpropagation) {
@@ -27,13 +27,12 @@ public class Basic extends MonteCarloTreeSearch {
         for (int i = 0; i < MCTS_LOOP_ITERATIONS; i++) {
             Node promisingNode = this.selection.selectPromisingNode(root);
 
-//            if (!train && promisingNode.getState().isGoalState())
-//                return promisingNode;
+            if (!train && promisingNode.getState().isGoalState())
+                return promisingNode;
 
             this.expansion.expandNode(promisingNode);
 
-            float score = this.simulation.simulatePlayout(promisingNode);
-//            float score = train ? this.simulation.simulatePlayout(promisingNode) : this.nNet.predict(promisingNode.getState());
+            float score = train ? this.simulation.simulatePlayout(promisingNode) : this.nNet.predict(promisingNode.getState());
 
             this.backpropagation.backpropagate(score, promisingNode, root);
         }
@@ -44,9 +43,9 @@ public class Basic extends MonteCarloTreeSearch {
     private void printPathToGoal(Node root) {
         Node node = root;
         while (node != null && !node.getChildren().isEmpty()) {
-            System.out.println(node.getWinScore());
+            System.out.println(node.getTotalScore());
             System.out.println(node.getState());
-            node = Collections.max(node.getChildren(), Comparator.comparing(Node::getWinScore));
+            node = Collections.max(node.getChildren(), Comparator.comparing(Node::getTotalScore));
             try {
                 TimeUnit.SECONDS.sleep(2);
             } catch (InterruptedException e) {
