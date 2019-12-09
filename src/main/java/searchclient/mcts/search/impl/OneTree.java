@@ -55,7 +55,7 @@ public class OneTree extends MonteCarloTreeSearch {
     }
 
     @Override
-    public Collection getExpandedStates() {
+    public Collection<?> getExpandedStates() {
         return this.expansion.getExpandedStates();
     }
 

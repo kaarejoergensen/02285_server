@@ -20,5 +20,5 @@ public abstract class MonteCarloTreeSearch {
 
     public abstract Action[][] solve(Node root);
 
-    public abstract Collection getExpandedStates();
+    public abstract Collection<?> getExpandedStates();
 }

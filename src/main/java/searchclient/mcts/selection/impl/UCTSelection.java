@@ -6,6 +6,7 @@ import searchclient.mcts.selection.Selection;
 
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Random;
 
 @RequiredArgsConstructor
 public class UCTSelection extends Selection {
@@ -27,9 +28,11 @@ public class UCTSelection extends Selection {
     }
 
     private double uctValue(Node node) {
-        int parentVisit = node.getParent() == null ? 0 : node.getParent().getVisitCount();
-        if (parentVisit == 0) return Integer.MAX_VALUE;
-        return (node.getTotalScore() / (double) parentVisit) + this.constant * Math.sqrt(Math.log(parentVisit) / (double) node.getVisitCount());
+        //TODO: Fix this
+//        int parentVisit = node.getParent() == null ? 0 : node.getParent().getVisitCount();
+//        if (parentVisit == 0) return Integer.MAX_VALUE;
+//        return (node.getTotalScore() / (double) parentVisit) + this.constant * Math.sqrt(Math.log(parentVisit) / (double) node.getVisitCount());
+        return new Random().nextDouble();
     }
 
     @Override

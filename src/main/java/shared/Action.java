@@ -1,5 +1,6 @@
 package shared;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -8,6 +9,7 @@ import java.util.List;
 
 
 @Getter
+@EqualsAndHashCode
 public class Action {
     @Getter
     private static final List<Action> allActions = generateALlActions();
@@ -159,7 +161,5 @@ public class Action {
             this.deltaRow = (short) deltaRow;
             this.deltaCol = (short) deltaCol;
         }
-
-
     }
 }

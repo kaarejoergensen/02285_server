@@ -5,11 +5,14 @@ import searchclient.mcts.backpropagation.impl.AdditiveBackpropagation;
 import searchclient.mcts.expansion.impl.AllActionsNoDuplicatesExpansion;
 import searchclient.mcts.model.Node;
 import searchclient.mcts.search.MonteCarloTreeSearch;
+import searchclient.mcts.search.impl.AlphaGo;
 import searchclient.mcts.search.impl.Basic;
 import searchclient.mcts.search.impl.OneTree;
+import searchclient.mcts.selection.impl.AlphaGoSelection;
 import searchclient.mcts.selection.impl.UCTSelection;
 import searchclient.mcts.simulation.impl.AllPairsShortestPath;
 import searchclient.mcts.simulation.impl.RandomSimulation;
+import searchclient.nn.impl.PythonNNet;
 import shared.Action;
 
 import java.io.BufferedReader;
@@ -106,9 +109,13 @@ public class SearchClient {
                     monteCarloTreeSearch = new Basic(new UCTSelection(0.4), new AllActionsNoDuplicatesExpansion(initialState),
                             new RandomSimulation(), new AdditiveBackpropagation());
                     break;
-                    case "-onetree":
+                case "-onetree":
                     monteCarloTreeSearch = new OneTree(new UCTSelection(0.4), new AllActionsNoDuplicatesExpansion(initialState),
                             new AllPairsShortestPath(initialState), new AdditiveBackpropagation());
+                    break;
+                case "-alpha":
+                    monteCarloTreeSearch = new AlphaGo(new AlphaGoSelection(), new AllActionsNoDuplicatesExpansion(initialState),
+                            new RandomSimulation(), new AdditiveBackpropagation(), new PythonNNet(), true);
                     break;
                 default:
                     frontier = new FrontierBestFirst(new HeuristicAStar(initialState));

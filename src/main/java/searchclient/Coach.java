@@ -71,7 +71,8 @@ public class Coach {
         while (!queue.isEmpty()) {
             Node node = queue.pop();
             states.add(node.getState().toMLString());
-            winScores.add((double) node.getTotalScore());
+            //TODO: Fix this
+            //winScores.add((double) node.getTotalScore());
             queue.addAll(node.getChildren());
         }
         return Pair.with(states.subList(0, 2), winScores.subList(0, 2));
