@@ -1,6 +1,5 @@
 package searchclient;
 
-import org.apache.commons.lang3.ArrayUtils;
 import searchclient.level.Box;
 import searchclient.level.Coordinate;
 import searchclient.level.DistanceMap;
@@ -9,7 +8,6 @@ import shared.Farge;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class State {
     private static final Random RNG = new Random(1);
@@ -21,7 +19,7 @@ public class State {
     public Farge[] agentColors;
     private Set<Farge> agentFarges;
 
-    public byte[] wallsAndGoalsByteRepresentation;
+    public byte[][] wallsAndGoalsByteRepresentation;
 
     public boolean[][] walls;
 
@@ -54,26 +52,25 @@ public class State {
         this.parent = null;
         this.jointAction = null;
         this.g = 0;
-        this.wallsAndGoalsByteRepresentation = this.createWallsAndGoalsByteRepresentation();
+        this.createWallsAndGoalsByteRepresentation();
     }
 
-    private byte[] createWallsAndGoalsByteRepresentation() {
-        byte[] bytes = new byte[this.walls.length * this.walls[0].length * 2];
+    private void createWallsAndGoalsByteRepresentation() {
+        this.wallsAndGoalsByteRepresentation = new byte[this.walls.length * 2][this.walls[0].length];
         for (Map.Entry<Coordinate, Character> entry : this.goals.entrySet()) {
             Coordinate goalCoordinate = entry.getKey();
             if ('A' <= entry.getValue() && entry.getValue() <= 'Z')
-                bytes[goalCoordinate.getRow() * goalCoordinate.getCol()] = 1;
+                this.wallsAndGoalsByteRepresentation[goalCoordinate.getRow()][goalCoordinate.getCol()] = 1;
             else
-                bytes[goalCoordinate.getRow() * goalCoordinate.getCol()] = -1;
+                this.wallsAndGoalsByteRepresentation[goalCoordinate.getRow()][goalCoordinate.getCol()] = -1;
         }
         for (int row = 0; row < this.walls.length; row++) {
             for (int col = 0; col < this.walls[row].length; col++) {
                 if (!this.walls[row][col]) {
-                    bytes[this.walls.length * this.walls[0].length + row * col] = 1;
+                    this.wallsAndGoalsByteRepresentation[this.walls.length + row][col] = 1;
                 }
             }
         }
-        return bytes;
     }
 
     /**
@@ -443,23 +440,27 @@ public class State {
     }
 
     public String toMLString() {
-        byte[] byteRepresentation = new byte[this.walls.length * this.walls[0].length];
+        byte[][] byteRepresentation = new byte[this.wallsAndGoalsByteRepresentation.length + this.walls.length][this.walls[0].length];
+        for (int i = 0; i < this.wallsAndGoalsByteRepresentation.length; i++) {
+            byteRepresentation[i] = Arrays.copyOf(this.wallsAndGoalsByteRepresentation[i], this.wallsAndGoalsByteRepresentation[i].length);
+        }
+
 //        for (byte agent = 0; agent < this.agentCols.length; agent++) {
         for (int row = 0; row < this.walls.length; row++) {
             for (int col = 0; col < this.walls[row].length; col++) {
                 if (this.agentRows[0] == row && this.agentCols[0] == col) {
-                    byteRepresentation[row * col] = 1;
+                    byteRepresentation[this.walls.length * 2 + row][col] = 1;
                 } else {
                     Coordinate coordinate = new Coordinate(row, col);
                     Box box = this.boxMap.get(coordinate);
                     if (box != null) {
-                        byteRepresentation[row * col] = -1;
+                        byteRepresentation[this.walls.length * 2 + row][col] = -1;
                     }
                 }
 
             }
 //            }
         }
-        return Arrays.toString(ArrayUtils.addAll(this.wallsAndGoalsByteRepresentation, byteRepresentation));
+        return Arrays.deepToString(byteRepresentation);
     }
 }

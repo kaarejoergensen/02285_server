@@ -115,7 +115,7 @@ public class SearchClient {
                     break;
                 case "-alpha":
                     monteCarloTreeSearch = new AlphaGo(new AlphaGoSelection(), new AllActionsNoDuplicatesExpansion(initialState),
-                            new RandomSimulation(), new AdditiveBackpropagation(), new PythonNNet(), true);
+                            new RandomSimulation(), new AdditiveBackpropagation(), new PythonNNet());
                     break;
                 default:
                     frontier = new FrontierBestFirst(new HeuristicAStar(initialState));
@@ -130,6 +130,7 @@ public class SearchClient {
 
         // Search for a plan.
         Action[][] plan = null;
+        System.out.println(initialState.toMLString());
         long startTime = System.nanoTime();
         try {
             if (monteCarloTreeSearch == null) {
@@ -208,22 +209,22 @@ public class SearchClient {
     }
 
     private static class StatusThread implements Runnable {
-        private static long SECONDS_BETWEEN_PRINTS = 2;
+        private static final long SECONDS_BETWEEN_PRINTS = 2;
 
         private long startTime;
-        private Collection explored;
+        private Collection<?> explored;
         private Frontier frontier;
 
         private AtomicBoolean running = new AtomicBoolean(false);
         private Thread worker;
 
-        StatusThread(long startTime, Collection explored, Frontier frontier) {
+        StatusThread(long startTime, Collection<?> explored, Frontier frontier) {
             this.startTime = startTime;
             this.explored = explored;
             this.frontier = frontier;
         }
 
-        StatusThread(long startTime, Collection explored) {
+        StatusThread(long startTime, Collection<?> explored) {
             this.startTime = startTime;
             this.explored = explored;
         }

@@ -37,8 +37,8 @@ public class Coach {
             while (run.get() && iterations < 3) {
                 Basic mcts = new Basic(new UCTSelection(0.4), new AllActionsNoDuplicatesExpansion(root.getState()),
                         new RandomSimulation(), new AdditiveBackpropagation());
-                var node = createMLTrainSet(mcts.runMCTS(new Node(root.getState()), true));
-                float loss = nNet.train(node);
+                var trainSet = createMLTrainSet(mcts.runMCTS(new Node(root.getState()), true));
+                float loss = nNet.train(trainSet);
                 try {
                     TimeUnit.SECONDS.sleep(20);
                 } catch (InterruptedException e) {
