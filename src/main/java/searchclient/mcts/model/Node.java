@@ -15,7 +15,7 @@ public class Node {
     private Map<Action, Integer> numberOfTimesActionTakenMap = new HashMap<>();
     private Map<Action, Double> totalValueOfActionMap = new HashMap<>();
     private Map<Action, Double> meanValueOfActionMap = new HashMap<>();
-    private Map<Action, Float> actionProbabilityMap = new HashMap<>();
+    private Map<Action, Double> actionProbabilityMap = new HashMap<>();
     private Map<Action, Node> actionChildMap = new HashMap<>();
 
     private int countToRoot = 0;
@@ -42,7 +42,7 @@ public class Node {
             this.numberOfTimesActionTakenMap.put(action, 0);
             this.totalValueOfActionMap.put(action, 0.0);
             this.meanValueOfActionMap.put(action, 0.0);
-            this.actionProbabilityMap.put(action, (float) (1 / applicableActions[0].length));
+            this.actionProbabilityMap.put(action, 1.0 / applicableActions[0].length);
         }
     }
 
@@ -55,7 +55,7 @@ public class Node {
         Action bestAction = null;
         for (Action action : this.numberOfTimesActionTakenMap.keySet()) {
             double score = this.meanValueOfActionMap.get(action) + this.explorationFactor(action);
-            if (score > bestActionScore) {
+            if (score > bestActionScore && !action.getType().equals(Action.ActionType.NoOp)) {
                 bestActionScore = score;
                 bestAction = action;
             }
@@ -143,8 +143,23 @@ public class Node {
         this.actionChildMap.remove(child.actionPerformed, child);
     }
 
-    public List<Node> getChildren() {
-        return new ArrayList<>(this.actionChildMap.values());
+    public void addChildren(Collection<Node> children) {
+        children.forEach(c -> this.actionChildMap.put(c.actionPerformed, c));
+    }
+
+    public boolean childrenEmpty() {
+        return this.actionChildMap.isEmpty();
+    }
+
+    public Collection<Node> getChildren() {
+        return this.actionChildMap.values();
+    }
+
+    public Node getRandomChild() {
+        Collection<Node> children = this.getChildren();
+        return children.stream()
+                .skip((long) (children.size() * Math.random())).findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Node has no children"));
     }
 
     @Override

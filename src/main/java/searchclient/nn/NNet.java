@@ -9,9 +9,9 @@ import java.util.List;
 
 public abstract class NNet implements Closeable {
 
-    public abstract float train(Pair<List<String>, List<Double>> trainingSet);
+    public abstract float train(List<String> trainingSet);
 
-    public abstract float predict(State state);
+    public abstract PredictResult predict(State state);
 
     public abstract void saveModel(Path fileName);
 

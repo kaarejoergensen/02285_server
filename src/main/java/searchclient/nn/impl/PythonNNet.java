@@ -3,10 +3,12 @@ package searchclient.nn.impl;
 import org.javatuples.Pair;
 import searchclient.State;
 import searchclient.nn.NNet;
+import searchclient.nn.PredictResult;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 
 public class PythonNNet extends NNet {
@@ -44,16 +46,23 @@ public class PythonNNet extends NNet {
     }
 
     @Override
-    public float train(Pair<List<String>, List<Double>> trainingSet) {
-        this.writeToPython("train", trainingSet.getValue0().toString()
-                + System.lineSeparator() + trainingSet.getValue1().toString());
+    public float train(List<String> trainingSet) {
+        this.writeToPython("train", trainingSet.toString());
         return Float.parseFloat(this.readFromPython());
     }
 
     @Override
-    public float predict(State state) {
+    public PredictResult predict(State state) {
         this.writeToPython("predict", state.toMLString());
-        return Float.parseFloat(this.readFromPython());
+        double[] probabilityVector = this.parseProbabilityVector(this.readFromPython());
+        float score = Float.parseFloat(this.readFromPython());
+        float loss = Float.parseFloat(this.readFromPython());
+        return new PredictResult(probabilityVector, score, loss);
+    }
+
+    private double[] parseProbabilityVector(String string) {
+        return Arrays.stream(string.replaceAll("[\\[\\] ]", "").split(","))
+                .mapToDouble(Double::parseDouble).toArray();
     }
 
     @Override

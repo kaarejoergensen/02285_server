@@ -63,7 +63,7 @@ public class Coach {
         return nNet;
     }
 
-    private Pair<List<String>, List<Double>> createMLTrainSet(Node root) {
+    private List<String> createMLTrainSet(Node root) {
         List<String> states = new ArrayList<>();
         List<Double> winScores = new ArrayList<>();
         ArrayDeque<Node> queue = new ArrayDeque<>();
@@ -75,6 +75,7 @@ public class Coach {
             //winScores.add((double) node.getTotalScore());
             queue.addAll(node.getChildren());
         }
-        return Pair.with(states.subList(0, 2), winScores.subList(0, 2));
+
+        return states;
     }
 }

@@ -15,7 +15,7 @@ public class UCTSelection extends Selection {
     @Override
     public Node selectPromisingNode(Node rootNode) {
         Node node = rootNode;
-        while (node.getChildren().size() != 0) {
+        while (!node.childrenEmpty()) {
             if (node.getState().isGoalState())
                 return node;
             node = this.findBestNodeWithUCT(node);
@@ -24,7 +24,9 @@ public class UCTSelection extends Selection {
     }
 
     private Node findBestNodeWithUCT(Node node) {
-        return Collections.max(node.getChildren(), Comparator.comparing(this::uctValue));
+        return null;
+        //TODO: Fix this
+//        return Collections.max(node.getChildren(), Comparator.comparing(this::uctValue));
     }
 
     private double uctValue(Node node) {

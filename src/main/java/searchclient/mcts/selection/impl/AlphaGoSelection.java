@@ -8,11 +8,18 @@ public class AlphaGoSelection extends Selection {
     @Override
     public Node selectPromisingNode(Node rootNode) {
         Node node = rootNode;
-        while (node.getChildren().size() != 0) {
+        while (!node.childrenEmpty()) {
             if (node.getState().isGoalState())
                 return node;
             Action action = node.chooseBestAction();
-            node = node.getActionChildMap().get(action);
+            if (action.getType().equals(Action.ActionType.NoOp)) {
+                System.out.println();
+            }
+            Node newNode = node.getActionChildMap().get(action);
+            if (newNode == null) {
+                System.out.println("NULL");
+            }
+            node = newNode;
         }
         return node;
     }

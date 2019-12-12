@@ -26,7 +26,7 @@ public class AllActionsNoDuplicatesExpansion implements Expansion {
                 nodes.add(this.expandedStates.get(state));
             }
         }
-        root.getChildren().addAll(nodes);
+        root.addChildren(nodes);
         root.setExpanded(true);
         return nodes;
     }

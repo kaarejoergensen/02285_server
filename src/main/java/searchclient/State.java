@@ -423,9 +423,13 @@ public class State {
         StringBuilder s = new StringBuilder();
         for (int row = 0; row < this.walls.length; row++) {
             for (int col = 0; col < this.walls[row].length; col++) {
-                Box box = this.boxMap.get(new Coordinate(row, col));
+                Coordinate coordinate = new Coordinate(row, col);
+                Box box = this.boxMap.get(coordinate);
+                Character goal = this.goals.get(coordinate);
                 if (box != null) {
                     s.append(box.getCharacter());
+                } else if (goal != null) {
+                    s.append(goal);
                 } else if (this.walls[row][col]) {
                     s.append("+");
                 } else if (this.agentAt(row, col) != 0) {

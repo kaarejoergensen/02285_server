@@ -18,7 +18,7 @@ public class AllActionsExpansion implements Expansion {
         List<Node> expandedNodes = expandedStates.stream().
                 map(state -> new Node(state, root, state.jointAction[0])).collect(Collectors.toList());
         this.expandedStates.addAll(expandedStates);
-        root.getChildren().addAll(expandedNodes);
+        root.addChildren(expandedNodes);
         root.setExpanded(true);
         return expandedNodes;
     }

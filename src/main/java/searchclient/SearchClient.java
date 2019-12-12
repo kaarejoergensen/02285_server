@@ -2,6 +2,7 @@ package searchclient;
 
 import searchclient.level.Level;
 import searchclient.mcts.backpropagation.impl.AdditiveBackpropagation;
+import searchclient.mcts.expansion.impl.AllActionsExpansion;
 import searchclient.mcts.expansion.impl.AllActionsNoDuplicatesExpansion;
 import searchclient.mcts.model.Node;
 import searchclient.mcts.search.MonteCarloTreeSearch;
@@ -12,6 +13,7 @@ import searchclient.mcts.selection.impl.AlphaGoSelection;
 import searchclient.mcts.selection.impl.UCTSelection;
 import searchclient.mcts.simulation.impl.AllPairsShortestPath;
 import searchclient.mcts.simulation.impl.RandomSimulation;
+import searchclient.nn.impl.MockNNet;
 import searchclient.nn.impl.PythonNNet;
 import shared.Action;
 
@@ -80,6 +82,7 @@ public class SearchClient {
         // Select search strategy.
         Frontier frontier = null;
         MonteCarloTreeSearch monteCarloTreeSearch = null;
+        boolean train = false;
         if (args.length > 0) {
             switch (args[0].toLowerCase(Locale.ROOT)) {
                 case "-bfs":
@@ -114,14 +117,15 @@ public class SearchClient {
                             new AllPairsShortestPath(initialState), new AdditiveBackpropagation());
                     break;
                 case "-alpha":
-                    monteCarloTreeSearch = new AlphaGo(new AlphaGoSelection(), new AllActionsNoDuplicatesExpansion(initialState),
-                            new RandomSimulation(), new AdditiveBackpropagation(), new PythonNNet());
+                    monteCarloTreeSearch = new AlphaGo(new AlphaGoSelection(), new AllActionsExpansion(),
+                            new RandomSimulation(), new AdditiveBackpropagation(), new MockNNet(new HeuristicAStar(initialState)));
                     break;
                 default:
                     frontier = new FrontierBestFirst(new HeuristicAStar(initialState));
                     System.err.println("Defaulting to astar search. Use arguments -bfs, -dfs, -astar, -wastar, or " +
                             "-greedy to set the search strategy.");
             }
+            train = args.length > 1 && args[1].equalsIgnoreCase("-train");
         } else {
             frontier = new FrontierBestFirst(new HeuristicAStar(initialState));
             System.err.println("Defaulting to astar search. Use arguments -bfs, -dfs, -astar, -wastar, or -greedy to " +
@@ -130,7 +134,6 @@ public class SearchClient {
 
         // Search for a plan.
         Action[][] plan = null;
-        System.out.println(initialState.toMLString());
         long startTime = System.nanoTime();
         try {
             if (monteCarloTreeSearch == null) {
@@ -143,10 +146,14 @@ public class SearchClient {
             else {
                 //StatusThread statusThread = new StatusThread(startTime, monteCarloTreeSearch.getExpandedStates());
                 //statusThread.start();
-                if (monteCarloTreeSearch instanceof Basic && "a".equalsIgnoreCase("b")) {
-                    Coach coach = new Coach();
-                    coach.train(new Node(initialState));
-                    ((Basic)monteCarloTreeSearch).setNNet(coach.getNNet());
+                if (train) {
+                    if (monteCarloTreeSearch instanceof Basic) {
+                        Coach coach = new Coach();
+                        coach.train(new Node(initialState));
+                        ((Basic)monteCarloTreeSearch).setNNet(coach.getNNet());
+                    } else if (monteCarloTreeSearch instanceof AlphaGo) {
+                        ((AlphaGo) monteCarloTreeSearch).train(new Node(initialState));
+                    }
                 }
                 plan = monteCarloTreeSearch.solve(new Node(initialState));
                 //statusThread.interrupt();
@@ -154,39 +161,6 @@ public class SearchClient {
         } catch (OutOfMemoryError ex) {
             System.err.println("Maximum memory usage exceeded.");
         }
-
-//        try {
-//            long fastest = Long.MAX_VALUE;
-//            double fastestConstant = 0;
-//            int shortest = Integer.MAX_VALUE;
-//            double shortestConstant = 0;
-//            for (double constant = 0.1; constant < 10; constant = constant + 0.1) {
-//                monteCarloTreeSearch = new Basic(new UCTSelection(constant), new AllActionsExpansion(), new RandomSimulation(), new AdditiveBackpropagation());
-//                long startTime = System.nanoTime();
-//                plan = monteCarloTreeSearch.solve(new Node(initialState));
-//                long elapsedTime = System.nanoTime() - startTime;
-//                if (elapsedTime < fastest || plan.length < shortest) {
-//                    System.out.println("----------------------------");
-//                    if (elapsedTime < fastest) {
-//                        fastest = elapsedTime;
-//                        fastestConstant = constant;
-//                        System.out.println("NEW FASTEST: Constant: " + constant + " time: " + elapsedTime / 1_000_000_000d);
-//                    }
-//                    if (plan.length < shortest) {
-//                        shortest = plan.length;
-//                        shortestConstant = constant;
-//                        System.out.println("NEW SHORTEST: Constant: " + constant + " length: " + plan.length + " time: " + elapsedTime / 1_000_000_000d);
-//                    }
-//                    System.out.println("Explored: " + monteCarloTreeSearch.getExpandedStates().size() + " Solution: " + plan.length);
-//                    System.out.println("----------------------------");
-//                }
-//                //if (plan.length == shortest) System.out.println("EQUAL: " + constant);
-//            }
-//            System.out.println("constant: " + fastestConstant + " time: " + fastest);
-//            System.out.println("DONE");
-//        } catch (OutOfMemoryError e) {
-//            System.err.println("Maximum memory usage exceeded.");
-//        }
 
         // Print plan to server.
         if (plan == null) {
