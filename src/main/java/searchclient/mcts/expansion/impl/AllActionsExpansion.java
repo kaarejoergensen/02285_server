@@ -9,7 +9,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class AllActionsExpansion implements Expansion {
+public class AllActionsExpansion extends Expansion {
     List<State> expandedStates = new ArrayList<>();
 
     @Override
@@ -27,4 +27,10 @@ public class AllActionsExpansion implements Expansion {
     public Collection<State> getExpandedStates() {
         return this.expandedStates;
     }
+
+    @Override
+    public Expansion clone() {
+        return new AllActionsExpansion();
+    }
+
 }

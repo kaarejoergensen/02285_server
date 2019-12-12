@@ -1,8 +1,7 @@
 package searchclient.nn;
 
-import searchclient.mcts.model.Node;
-import shared.Action;
+import searchclient.State;
 
 public interface Trainer {
-    void train(Node root);
+    void train(State root);
 }

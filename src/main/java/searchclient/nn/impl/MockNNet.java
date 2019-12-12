@@ -7,9 +7,10 @@ import searchclient.nn.NNet;
 import searchclient.nn.PredictResult;
 import shared.Action;
 
-import java.io.IOException;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @AllArgsConstructor
 public class MockNNet extends NNet {
@@ -54,6 +55,11 @@ public class MockNNet extends NNet {
     @Override
     public void loadModel(Path fileName) {
 
+    }
+
+    @Override
+    public NNet clone() {
+        return new MockNNet(this.heuristic);
     }
 
     @Override

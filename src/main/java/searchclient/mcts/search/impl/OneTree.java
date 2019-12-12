@@ -1,5 +1,6 @@
 package searchclient.mcts.search.impl;
 
+import searchclient.NotImplementedException;
 import searchclient.mcts.backpropagation.Backpropagation;
 import searchclient.mcts.expansion.Expansion;
 import searchclient.mcts.expansion.impl.AllActionsNoDuplicatesExpansion;
@@ -55,8 +56,18 @@ public class OneTree extends MonteCarloTreeSearch {
     }
 
     @Override
+    public Node runMCTS(Node root) {
+        throw new NotImplementedException();
+    }
+
+    @Override
     public Collection<?> getExpandedStates() {
         return this.expansion.getExpandedStates();
+    }
+
+    @Override
+    public MonteCarloTreeSearch clone() throws CloneNotSupportedException {
+        return new OneTree(this.selection, this.expansion.clone(), this.simulation, this.backpropagation);
     }
 
     private Node nextRoot(Node root) {

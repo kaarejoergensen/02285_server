@@ -14,13 +14,33 @@ import java.util.Collection;
 
 public class Basic extends MonteCarloTreeSearch {
     private static final int MCTS_LOOP_ITERATIONS = 1600;
-    @Setter private NNet nNet;
+    private NNet nNet;
+    private boolean train = false;
 
-    public Basic(Selection selection, Expansion expansion, Simulation simulation, Backpropagation backpropagation) {
+    public Basic(Selection selection, Expansion expansion, Simulation simulation, Backpropagation backpropagation,
+                 NNet nNet) {
         super(selection, expansion, simulation, backpropagation);
+        this.nNet = nNet;
     }
 
-    public Node runMCTS(Node root, boolean train) {
+    @Override
+    public Action[][] solve(Node root) {
+        Node node = root;
+        int iterations = 0;
+        while (true) {
+            System.out.println("Try nr... " + iterations++);
+            node = this.runMCTS(node);
+            if (node.getState().isGoalState()) {
+                return node.getState().extractPlan();
+            }
+            if(iterations % 10 == 0){
+                System.out.println("Hmm... det tar litt tid det her eller hva");
+            }
+        }
+    }
+
+    @Override
+    public Node runMCTS(Node root) {
         for (int i = 0; i < MCTS_LOOP_ITERATIONS; i++) {
             Node promisingNode = this.selection.selectPromisingNode(root);
 
@@ -37,24 +57,18 @@ public class Basic extends MonteCarloTreeSearch {
     }
 
     @Override
-    public Action[][] solve(Node root) {
-        Node node = root;
-        int iterations = 0;
-        while (true) {
-            System.out.println("Try nr... " + iterations++);
-            node = this.runMCTS(node, false);
-            if (node.getState().isGoalState()) {
-                return node.getState().extractPlan();
-            }
-            if(iterations % 10 == 0){
-                System.out.println("Hmm... det tar litt tid det her eller hva");
-            }
-        }
+    public Collection<?> getExpandedStates() {
+        return this.expansion.getExpandedStates();
     }
 
     @Override
-    public Collection<?> getExpandedStates() {
-        return this.expansion.getExpandedStates();
+    public void setNNet(NNet nNet) {
+        this.nNet = nNet;
+    }
+
+    @Override
+    public MonteCarloTreeSearch clone() {
+        return new Basic(this.selection, this.expansion.clone(), this.simulation, this.backpropagation, this.nNet);
     }
 
 }

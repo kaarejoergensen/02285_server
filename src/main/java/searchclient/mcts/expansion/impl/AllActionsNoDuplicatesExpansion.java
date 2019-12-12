@@ -8,7 +8,7 @@ import searchclient.mcts.model.Node;
 import java.util.*;
 
 @RequiredArgsConstructor
-public class AllActionsNoDuplicatesExpansion implements Expansion {
+public class AllActionsNoDuplicatesExpansion extends Expansion {
     private final State root;
     private HashMap<State, Node> expandedStates = new HashMap<>();
 
@@ -34,5 +34,10 @@ public class AllActionsNoDuplicatesExpansion implements Expansion {
     @Override
     public Collection<State> getExpandedStates() {
         return this.expandedStates.keySet();
+    }
+
+    @Override
+    public Expansion clone() {
+        return new AllActionsNoDuplicatesExpansion(this.root);
     }
 }

@@ -13,6 +13,7 @@ import searchclient.mcts.selection.impl.AlphaGoSelection;
 import searchclient.mcts.selection.impl.UCTSelection;
 import searchclient.mcts.simulation.impl.AllPairsShortestPath;
 import searchclient.mcts.simulation.impl.RandomSimulation;
+import searchclient.nn.NNet;
 import searchclient.nn.impl.MockNNet;
 import searchclient.nn.impl.PythonNNet;
 import shared.Action;
@@ -21,10 +22,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Locale;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class SearchClient {
     public static State parseLevel(BufferedReader serverMessages) throws IOException {
@@ -82,6 +83,7 @@ public class SearchClient {
         // Select search strategy.
         Frontier frontier = null;
         MonteCarloTreeSearch monteCarloTreeSearch = null;
+        NNet nNet = new PythonNNet();
         boolean train = false;
         if (args.length > 0) {
             switch (args[0].toLowerCase(Locale.ROOT)) {
@@ -110,7 +112,7 @@ public class SearchClient {
                     break;
                 case "-basic":
                     monteCarloTreeSearch = new Basic(new UCTSelection(0.4), new AllActionsNoDuplicatesExpansion(initialState),
-                            new RandomSimulation(), new AdditiveBackpropagation());
+                            new RandomSimulation(), new AdditiveBackpropagation(), new MockNNet(new HeuristicAStar(initialState)));
                     break;
                 case "-onetree":
                     monteCarloTreeSearch = new OneTree(new UCTSelection(0.4), new AllActionsNoDuplicatesExpansion(initialState),
@@ -147,13 +149,8 @@ public class SearchClient {
                 //StatusThread statusThread = new StatusThread(startTime, monteCarloTreeSearch.getExpandedStates());
                 //statusThread.start();
                 if (train) {
-                    if (monteCarloTreeSearch instanceof Basic) {
-                        Coach coach = new Coach();
-                        coach.train(new Node(initialState));
-                        ((Basic)monteCarloTreeSearch).setNNet(coach.getNNet());
-                    } else if (monteCarloTreeSearch instanceof AlphaGo) {
-                        ((AlphaGo) monteCarloTreeSearch).train(new Node(initialState));
-                    }
+                    Coach coach = new Coach(nNet, monteCarloTreeSearch);
+                    coach.train(initialState);
                 }
                 plan = monteCarloTreeSearch.solve(new Node(initialState));
                 //statusThread.interrupt();

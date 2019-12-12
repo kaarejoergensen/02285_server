@@ -6,8 +6,11 @@ import searchclient.mcts.model.Node;
 import java.util.Collection;
 import java.util.List;
 
-public interface Expansion {
-    List<Node> expandNode(Node root);
+public abstract class Expansion implements Cloneable {
+    public abstract List<Node> expandNode(Node root);
 
-    Collection<State> getExpandedStates();
+    public abstract Collection<State> getExpandedStates();
+
+    @Override
+    public abstract Expansion clone();
 }

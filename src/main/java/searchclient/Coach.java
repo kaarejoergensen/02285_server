@@ -1,81 +1,134 @@
 package searchclient;
 
-import lombok.Getter;
-import org.javatuples.Pair;
-import searchclient.mcts.backpropagation.impl.AdditiveBackpropagation;
-import searchclient.mcts.expansion.impl.AllActionsNoDuplicatesExpansion;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import me.tongfei.progressbar.ProgressBar;
+import me.tongfei.progressbar.ProgressBarBuilder;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import searchclient.mcts.model.Node;
-import searchclient.mcts.search.impl.Basic;
-import searchclient.mcts.selection.impl.UCTSelection;
-import searchclient.mcts.simulation.impl.RandomSimulation;
+import searchclient.mcts.search.MonteCarloTreeSearch;
 import searchclient.nn.NNet;
-import searchclient.nn.impl.PythonNNet;
+import searchclient.nn.Trainer;
+import shared.Action;
 
-import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
-public class Coach {
-    @Getter private NNet nNet;
+@Data
+@AllArgsConstructor
+public class Coach implements Trainer {
+    private static final int NUMBER_OF_EPISODES = 50;
+    private static final int NUMBER_OF_TRAINING_ITERATIONS = 100;
+    private static final int MAX_NUMBER_OF_TRAINING_EPISODES = 20;
+    private static final int MAX_NUMBER_OF_NODES_TO_EXPLORE = 10;
 
-    public Coach() throws IOException {
-        this.nNet = new PythonNNet();
+    private NNet nNet;
+    private MonteCarloTreeSearch monteCarloTreeSearch;
+
+    @Override
+    public void train(State root) {
+        Deque<List<String>> trainingExamples = new ArrayDeque<>();
+        for (int i = 0; i < NUMBER_OF_TRAINING_ITERATIONS; i++) {
+            System.err.println("------------ITERATION " + (i + 1) + " ------");
+            List<String> trainingData = this.runEpisodes(root);
+            if (trainingExamples.size() >= MAX_NUMBER_OF_TRAINING_EPISODES) {
+                trainingExamples.pop();
+            }
+            trainingExamples.add(trainingData);
+
+            List<String> finalTrainingData = trainingExamples.stream().flatMap(List::stream).collect(Collectors.toList());
+            Collections.shuffle(finalTrainingData);
+
+            Path tempPath = Path.of("temp.pth.tar");
+            this.nNet.saveModel(tempPath);
+            NNet oldNNet = this.nNet.clone();
+            oldNNet.loadModel(tempPath);
+
+            float loss = this.nNet.train(finalTrainingData);
+            System.err.println("Training done. Loss: " + loss);
+
+            MonteCarloTreeSearch newModelMCTS = this.monteCarloTreeSearch.clone();
+            newModelMCTS.setNNet(this.nNet);
+            MonteCarloTreeSearch oldModelMCTS = this.monteCarloTreeSearch.clone();
+            oldModelMCTS.setNNet(oldNNet);
+
+            Action[][] oldPlan = oldModelMCTS.solve(new Node(root));
+            Action[][] newPlan = newModelMCTS.solve(new Node(root));
+            if (newPlan.length >= oldPlan.length) {
+                this.nNet.saveModel(Path.of("best.pth.tar"));
+            } else {
+                this.nNet.loadModel(tempPath);
+            }
+        }
     }
 
-    public NNet train(Node root) {
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
-        AtomicBoolean run = new AtomicBoolean(true);
-        Runnable runnable = () -> {
-            System.out.println("Running: " + Thread.currentThread().getName());
-            int iterations = 0;
-            while (run.get() && iterations < 3) {
-                Basic mcts = new Basic(new UCTSelection(0.4), new AllActionsNoDuplicatesExpansion(root.getState()),
-                        new RandomSimulation(), new AdditiveBackpropagation());
-                var trainSet = createMLTrainSet(mcts.runMCTS(new Node(root.getState()), true));
-                float loss = nNet.train(trainSet);
-                try {
-                    TimeUnit.SECONDS.sleep(20);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+    private List<String> runEpisodes(State root) {
+        int cores = Runtime.getRuntime().availableProcessors();
+        ExecutorService executorService = Executors.newFixedThreadPool(cores);
+        List<Callable<List<StateActionTakenSolvedTuple>>> callableList = new ArrayList<>(cores);
+        AtomicInteger numberOfEpisodes = new AtomicInteger(0);
+        ProgressBar progressBar = new ProgressBarBuilder()
+                .setPrintStream(System.err)
+                .setUpdateIntervalMillis(300)
+                .setInitialMax(NUMBER_OF_EPISODES)
+                .setTaskName("Episodes")
+                .build();
+        for (int i = 0; i < cores; i++) {
+            callableList.add(() -> {
+                List<StateActionTakenSolvedTuple> finalList = new ArrayList<>();
+                while (numberOfEpisodes.getAndIncrement() < NUMBER_OF_EPISODES) {
+                    MonteCarloTreeSearch mcts = this.monteCarloTreeSearch.clone();
+                    Node node = new Node(root);
+                    MutableBoolean solved = new MutableBoolean(false);
+                    List<StateActionTakenSolvedTuple> stateActionTakenSolvedTuples = new ArrayList<>();
+                    for (int k = 0; !solved.booleanValue() && k < MAX_NUMBER_OF_NODES_TO_EXPLORE; k++) {
+                        mcts.runMCTS(node);
+                        stateActionTakenSolvedTuples.add(new StateActionTakenSolvedTuple(node.getState(), node.getNumberOfTimesActionTakenMap(), solved));
+                        node = node.getChildStochastic(true);
+                        solved.setValue(node.getState().isGoalState());
+                    }
+                    finalList.addAll(stateActionTakenSolvedTuples);
+                    synchronized (this) {
+                        progressBar.step();
+                    }
                 }
-                System.out.println("Training done. Loss: " + loss + " Thread: " + Thread.currentThread().getName());
-//                if (loss < 0.1) run.set(false);
-                iterations++;
-            }
-            System.out.println("Exiting: " + Thread.currentThread().getName());
-        };
-        Future<?> future = executorService.submit(runnable);
-        Future<?> future1 = executorService.submit(runnable);
-        while (!future.isDone() || !future1.isDone()) {
-            try {
-                Thread.sleep(200);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+                return finalList;
+            });
         }
-        System.err.println("Training done");
-        return nNet;
+        List<StateActionTakenSolvedTuple> stateActionTakenSolvedTuples = new ArrayList<>();
+        try {
+            List<Future<List<StateActionTakenSolvedTuple>>> futures = executorService.invokeAll(callableList);
+            for (var future : futures) {
+                stateActionTakenSolvedTuples.addAll(future.get());
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+        progressBar.close();
+        return stateActionTakenSolvedTuples.stream().map(StateActionTakenSolvedTuple::toString).collect(Collectors.toList());
     }
 
-    private List<String> createMLTrainSet(Node root) {
-        List<String> states = new ArrayList<>();
-        List<Double> winScores = new ArrayList<>();
-        ArrayDeque<Node> queue = new ArrayDeque<>();
-        queue.add(root);
-        while (!queue.isEmpty()) {
-            Node node = queue.pop();
-            states.add(node.getState().toMLString());
-            //TODO: Fix this
-            //winScores.add((double) node.getTotalScore());
-            queue.addAll(node.getChildren());
-        }
+    @Data
+    private static class StateActionTakenSolvedTuple {
+        private final State state;
+        private final Map<Action, Integer> actionTakenMap;
+        private final MutableBoolean solved;
 
-        return states;
+        private static List<Action> allActions = Action.getAllActions();
+
+        public String toString() {
+            int totalNumberOfActionsTaken = this.actionTakenMap.values().stream().reduce(0, Integer::sum);
+            double[] probabilityVector = new double[allActions.size()];
+            for (int i = 0; i < probabilityVector.length; i++) {
+                Integer numberOfTimesTaken = this.actionTakenMap.get(allActions.get(i));
+                probabilityVector[i] = numberOfTimesTaken != null ? (float) numberOfTimesTaken / (float) totalNumberOfActionsTaken : 0f;
+            }
+            return this.state.toMLString() + "|" +
+                    Arrays.toString(probabilityVector) + "|" +
+                    (this.solved.booleanValue() ? "1" : "-1");
+        }
     }
 }

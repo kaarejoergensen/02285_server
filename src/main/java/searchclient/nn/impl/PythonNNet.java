@@ -1,6 +1,5 @@
 package searchclient.nn.impl;
 
-import org.javatuples.Pair;
 import searchclient.State;
 import searchclient.nn.NNet;
 import searchclient.nn.PredictResult;
@@ -10,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PythonNNet extends NNet {
     private static final String PYTHON_PATH = "./venv/bin/python";
@@ -47,7 +47,7 @@ public class PythonNNet extends NNet {
 
     @Override
     public float train(List<String> trainingSet) {
-        this.writeToPython("train", trainingSet.toString());
+        this.writeToPython("train", trainingSet.stream().collect(Collectors.joining(System.lineSeparator())));
         return Float.parseFloat(this.readFromPython());
     }
 
@@ -75,6 +75,16 @@ public class PythonNNet extends NNet {
     public void loadModel(Path fileName) {
         this.writeToPython("loadModel", fileName.toString());
         this.readFromPython();
+    }
+
+    @Override
+    public NNet clone() {
+        try {
+            return new PythonNNet();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     @Override
