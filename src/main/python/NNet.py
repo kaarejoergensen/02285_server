@@ -1,6 +1,8 @@
+import sys
+
 import numpy as np
 import torch
-from torch import optim
+from torch import optim, nn
 from torch.utils.data import DataLoader
 
 from NNetModule import NNetModule
@@ -11,6 +13,9 @@ class NNet():
         self.model = NNetModule()
         if torch.cuda.is_available():
             self.model = self.model.to("cuda")
+            if torch.cuda.device_count() > 1:
+                print("Using", torch.cuda.device_count(), "GPUs", file=sys.stderr, flush=True)
+                self.model = nn.DataParallel(self.model)
         self.optimizer = optim.SGD(self.model.parameters(), lr=0.001, momentum=0.9)
         self.criterion = torch.nn.BCELoss()
         self.priorLoss = 1.0
