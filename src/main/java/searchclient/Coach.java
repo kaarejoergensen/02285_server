@@ -23,10 +23,10 @@ import java.util.stream.Collectors;
 @Data
 @AllArgsConstructor
 public class Coach implements Trainer {
-    private static final int NUMBER_OF_EPISODES = 20;
+    private static final int NUMBER_OF_EPISODES = 50;
     private static final int NUMBER_OF_TRAINING_ITERATIONS = 100;
     private static final int MAX_NUMBER_OF_TRAINING_EPISODES = 20;
-    private static final int MAX_NUMBER_OF_NODES_TO_EXPLORE = 15;
+    private static final int MAX_NUMBER_OF_NODES_TO_EXPLORE = 50;
 
     private static final Path TMP_OLD_MODEL_PATH = Path.of("models/temp_old.pth");
     private static final Path TMP_NEW_MODEL_PATH = Path.of("models/temp_new.pth");
@@ -68,7 +68,7 @@ public class Coach implements Trainer {
 //            Future<Action[][]> futureOldPlan = executorService.submit(() -> oldModelMCTS.solve(new Node(root)));
 //            Future<Action[][]> futureNewPlan = executorService.submit(() -> newModelMCTS.solve(new Node(root)));
 //            try {
-                if (newPlan.length >= oldPlan.length) {
+                if (oldPlan == null || (newPlan != null && newPlan.length >= oldPlan.length)) {
                     System.err.println("Accepting new model");
                     this.nNet.loadModel(TMP_NEW_MODEL_PATH);
                 } else {

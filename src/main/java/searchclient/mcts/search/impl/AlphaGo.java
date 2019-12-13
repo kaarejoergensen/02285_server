@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class AlphaGo extends MonteCarloTreeSearch {
-    private static final int MCTS_LOOP_ITERATIONS = 160;
+    private static final int MCTS_LOOP_ITERATIONS = 400;
 
     private NNet nNet;
 
@@ -28,7 +28,7 @@ public class AlphaGo extends MonteCarloTreeSearch {
     @Override
     public Action[][] solve(Node root) {
         Node node = root;
-        while (true) {
+        for (int i = 0; i < 200; i++) {
             node = this.runMCTS(node).getChildWithMaxScore();
             if (node.getState().isGoalState()) {
                 return node.getState().extractPlan();
@@ -36,6 +36,7 @@ public class AlphaGo extends MonteCarloTreeSearch {
             Optional<Node> possibleGoalNode = this.extractGoalNodeIfPossible(node);
             if (possibleGoalNode.isPresent()) return possibleGoalNode.get().getState().extractPlan();
         }
+	return null;
     }
 
     @Override

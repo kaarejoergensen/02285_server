@@ -28,7 +28,7 @@ class NNet():
     # Train nettverk på denne dataoen
     # Kjøre MCTS en gang til for valideringsett
     # Teste accuracien til nettverket
-    def train(self, trainSet, epochs=2, batch_size=64):
+    def train(self, trainSet, epochs=20, batch_size=64):
         # copy = kopi.deepcopy(self.model)
         # Omgjør states og scores til numpy arrays
         for epoch in range(epochs):
