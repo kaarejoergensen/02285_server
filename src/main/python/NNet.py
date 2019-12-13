@@ -13,9 +13,10 @@ class NNet():
         self.model = NNetModule()
         if torch.cuda.is_available():
             self.model = self.model.to("cuda")
-            if torch.cuda.device_count() > 1:
-                print("Using", torch.cuda.device_count(), "GPUs", file=sys.stderr, flush=True)
-                self.model = nn.DataParallel(self.model)
+            # if torch.cuda.device_count() > 1:
+                # print("Using", torch.cuda.device_count(), "GPUs", file=sys.stderr, flush=True)
+                # print("", file=sys.stderr, flush=True)
+                # self.model = nn.DataParallel(self.model)
         self.optimizer = optim.SGD(self.model.parameters(), lr=0.001, momentum=0.9)
         self.criterion = torch.nn.BCELoss()
         self.priorLoss = 1.0
@@ -32,7 +33,7 @@ class NNet():
         # Omgjør states og scores til numpy arrays
         for epoch in range(epochs):
             self.model.train()
-            train_loader = DataLoader(dataset=trainSet, batch_size=batch_size, shuffle=True)
+            train_loader = DataLoader(dataset=trainSet, batch_size=batch_size, shuffle=True, drop_last=True)
 
             running_loss = 0.0
             for batch in train_loader:
@@ -42,6 +43,7 @@ class NNet():
                     probability_vectors = probability_vectors.to("cuda")
                     wins = wins.to("cuda")
                 self.optimizer.zero_grad()
+                self.model.eval()
                 out_probability_vectors, out_wins = self.model(states)
                 # labels = labels.view(-1, 1)
                 loss_pv = self.loss_pv(probability_vectors, out_probability_vectors)
