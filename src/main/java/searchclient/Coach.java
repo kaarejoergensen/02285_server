@@ -61,19 +61,21 @@ public class Coach implements Trainer {
             ExecutorService executorService = Executors.newFixedThreadPool(2);
 
             System.err.println("Pitting old NN vs new");
-            Future<Action[][]> futureOldPlan = executorService.submit(() -> oldModelMCTS.solve(new Node(root)));
-            Future<Action[][]> futureNewPlan = executorService.submit(() -> newModelMCTS.solve(new Node(root)));
-            try {
-                if (futureNewPlan.get().length >= futureOldPlan.get().length) {
+            Action[][] oldPlan = oldModelMCTS.solve(new Node(root));
+            Action[][] newPlan = newModelMCTS.solve(new Node(root));
+//            Future<Action[][]> futureOldPlan = executorService.submit(() -> oldModelMCTS.solve(new Node(root)));
+//            Future<Action[][]> futureNewPlan = executorService.submit(() -> newModelMCTS.solve(new Node(root)));
+//            try {
+                if (newPlan.length >= oldPlan.length) {
                     System.err.println("Accepting new model");
                     this.nNet.saveModel(BEST_MODEL_PATH);
                 } else {
                     System.err.println("Rejecting new model");
                     this.nNet.loadModel(TMP_MODEL_PATH);
                 }
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
-            }
+//            } catch (InterruptedException | ExecutionException e) {
+//                e.printStackTrace();
+//            }
         }
     }
 
