@@ -104,6 +104,7 @@ public class Coach implements Trainer {
         FileInputStream fis = new FileInputStream(CHECKPOINT_PATH.toFile());
         ObjectInputStream ois = new ObjectInputStream(fis);
         Deque<List<String>> trainingData = (Deque<List<String>>) ois.readObject();
+        System.err.println("Loaded training data of size " + trainingData.size());
         ois.close();
         return trainingData;
     }
