@@ -23,10 +23,10 @@ import java.util.stream.Collectors;
 @Data
 @AllArgsConstructor
 public class Coach implements Trainer {
-    private static final int NUMBER_OF_EPISODES = 5;
+    private static final int NUMBER_OF_EPISODES = 20;
     private static final int NUMBER_OF_TRAINING_ITERATIONS = 100;
     private static final int MAX_NUMBER_OF_TRAINING_EPISODES = 20;
-    private static final int MAX_NUMBER_OF_NODES_TO_EXPLORE = 10;
+    private static final int MAX_NUMBER_OF_NODES_TO_EXPLORE = 15;
 
     private static final Path TMP_MODEL_PATH = Path.of("models/temp.pth");
     private static final Path BEST_MODEL_PATH = Path.of("models/best.pth");

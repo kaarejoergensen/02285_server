@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class AlphaGo extends MonteCarloTreeSearch {
-    private static final int MCTS_LOOP_ITERATIONS = 16;
+    private static final int MCTS_LOOP_ITERATIONS = 160;
 
     private NNet nNet;
 
