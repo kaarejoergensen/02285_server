@@ -84,7 +84,7 @@ public class SearchClient {
         Frontier frontier = null;
         MonteCarloTreeSearch monteCarloTreeSearch = null;
         NNet nNet = new PythonNNet();
-        boolean train = false;
+        boolean train = false, loadCheckpoint = false;
         if (args.length > 0) {
             switch (args[0].toLowerCase(Locale.ROOT)) {
                 case "-bfs":
@@ -128,6 +128,7 @@ public class SearchClient {
                             "-greedy to set the search strategy.");
             }
             train = args.length > 1 && args[1].equalsIgnoreCase("-train");
+            loadCheckpoint = args.length > 2 && args[2].equalsIgnoreCase("-loadcheckpoint");
         } else {
             frontier = new FrontierBestFirst(new HeuristicAStar(initialState));
             System.err.println("Defaulting to astar search. Use arguments -bfs, -dfs, -astar, -wastar, or -greedy to " +
@@ -150,7 +151,7 @@ public class SearchClient {
                 //statusThread.start();
                 if (train) {
                     Coach coach = new Coach(nNet, monteCarloTreeSearch);
-                    coach.train(initialState);
+                    coach.train(initialState, loadCheckpoint);
                 }
                 plan = monteCarloTreeSearch.solve(new Node(initialState));
                 //statusThread.interrupt();

@@ -16,6 +16,7 @@ import java.util.Optional;
 
 public class AlphaGo extends MonteCarloTreeSearch {
     private static final int MCTS_LOOP_ITERATIONS = 400;
+    private static final int SOLVE_TRIES = 100;
 
     private NNet nNet;
 
@@ -28,7 +29,7 @@ public class AlphaGo extends MonteCarloTreeSearch {
     @Override
     public Action[][] solve(Node root) {
         Node node = root;
-        for (int i = 0; i < 200; i++) {
+        for (int i = 0; i < SOLVE_TRIES; i++) {
             node = this.runMCTS(node).getChildWithMaxScore();
             if (node.getState().isGoalState()) {
                 return node.getState().extractPlan();

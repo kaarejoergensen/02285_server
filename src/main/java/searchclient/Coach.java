@@ -11,10 +11,9 @@ import searchclient.nn.NNet;
 import searchclient.nn.Trainer;
 import shared.Action;
 
-import java.io.File;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -31,13 +30,21 @@ public class Coach implements Trainer {
     private static final Path TMP_OLD_MODEL_PATH = Path.of("models/temp_old.pth");
     private static final Path TMP_NEW_MODEL_PATH = Path.of("models/temp_new.pth");
     private static final Path BEST_MODEL_PATH = Path.of("models/best.pth");
+    private static final Path CHECKPOINT_PATH = Path.of("models/checkpoint");
 
     private NNet nNet;
     private MonteCarloTreeSearch monteCarloTreeSearch;
 
     @Override
-    public void train(State root) {
+    public void train(State root, boolean loadCheckpoint) {
         Deque<List<String>> trainingExamples = new ArrayDeque<>();
+        if (loadCheckpoint && Files.exists(CHECKPOINT_PATH)) {
+            try {
+                trainingExamples = this.loadTrainingData();
+            } catch (IOException | ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
         for (int i = 0; i < NUMBER_OF_TRAINING_ITERATIONS; i++) {
             System.err.println("------------ITERATION " + (i + 1) + " ------");
             List<String> trainingData = this.runEpisodes(root);
@@ -78,7 +85,27 @@ public class Coach implements Trainer {
 //            } catch (InterruptedException | ExecutionException e) {
 //                e.printStackTrace();
 //            }
+            try {
+                this.saveTrainingData(trainingExamples);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
+    }
+
+    private void saveTrainingData(Deque<List<String>> trainingData) throws IOException {
+        FileOutputStream fos = new FileOutputStream(CHECKPOINT_PATH.toFile());
+        ObjectOutputStream oos = new ObjectOutputStream(fos);
+        oos.writeObject(trainingData);
+        oos.close();
+    }
+
+    private Deque<List<String>> loadTrainingData() throws IOException, ClassNotFoundException {
+        FileInputStream fis = new FileInputStream(CHECKPOINT_PATH.toFile());
+        ObjectInputStream ois = new ObjectInputStream(fis);
+        Deque<List<String>> trainingData = (Deque<List<String>>) ois.readObject();
+        ois.close();
+        return trainingData;
     }
 
     private List<String> runEpisodes(State root) {
