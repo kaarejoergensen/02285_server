@@ -11,7 +11,10 @@ import searchclient.nn.NNet;
 import searchclient.nn.Trainer;
 import shared.Action;
 
+import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -20,10 +23,13 @@ import java.util.stream.Collectors;
 @Data
 @AllArgsConstructor
 public class Coach implements Trainer {
-    private static final int NUMBER_OF_EPISODES = 50;
+    private static final int NUMBER_OF_EPISODES = 5;
     private static final int NUMBER_OF_TRAINING_ITERATIONS = 100;
     private static final int MAX_NUMBER_OF_TRAINING_EPISODES = 20;
     private static final int MAX_NUMBER_OF_NODES_TO_EXPLORE = 10;
+
+    private static final Path TMP_MODEL_PATH = Path.of("models/temp.pth");
+    private static final Path BEST_MODEL_PATH = Path.of("models/best.pth");
 
     private NNet nNet;
     private MonteCarloTreeSearch monteCarloTreeSearch;
@@ -40,12 +46,9 @@ public class Coach implements Trainer {
             trainingExamples.add(trainingData);
 
             List<String> finalTrainingData = trainingExamples.stream().flatMap(List::stream).collect(Collectors.toList());
-            Collections.shuffle(finalTrainingData);
-
-            Path tempPath = Path.of("temp.pth.tar");
-            this.nNet.saveModel(tempPath);
+            this.nNet.saveModel(TMP_MODEL_PATH);
             NNet oldNNet = this.nNet.clone();
-            oldNNet.loadModel(tempPath);
+            oldNNet.loadModel(TMP_MODEL_PATH);
 
             float loss = this.nNet.train(finalTrainingData);
             System.err.println("Training done. Loss: " + loss);
@@ -55,18 +58,27 @@ public class Coach implements Trainer {
             MonteCarloTreeSearch oldModelMCTS = this.monteCarloTreeSearch.clone();
             oldModelMCTS.setNNet(oldNNet);
 
-            Action[][] oldPlan = oldModelMCTS.solve(new Node(root));
-            Action[][] newPlan = newModelMCTS.solve(new Node(root));
-            if (newPlan.length >= oldPlan.length) {
-                this.nNet.saveModel(Path.of("best.pth.tar"));
-            } else {
-                this.nNet.loadModel(tempPath);
+            ExecutorService executorService = Executors.newFixedThreadPool(2);
+
+            System.err.println("Pitting old NN vs new");
+            Future<Action[][]> futureOldPlan = executorService.submit(() -> oldModelMCTS.solve(new Node(root)));
+            Future<Action[][]> futureNewPlan = executorService.submit(() -> newModelMCTS.solve(new Node(root)));
+            try {
+                if (futureNewPlan.get().length >= futureOldPlan.get().length) {
+                    System.err.println("Accepting new model");
+                    this.nNet.saveModel(BEST_MODEL_PATH);
+                } else {
+                    System.err.println("Rejecting new model");
+                    this.nNet.loadModel(TMP_MODEL_PATH);
+                }
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
             }
         }
     }
 
     private List<String> runEpisodes(State root) {
-        int cores = Runtime.getRuntime().availableProcessors();
+        int cores = 1;//Runtime.getRuntime().availableProcessors();
         ExecutorService executorService = Executors.newFixedThreadPool(cores);
         List<Callable<List<StateActionTakenSolvedTuple>>> callableList = new ArrayList<>(cores);
         AtomicInteger numberOfEpisodes = new AtomicInteger(0);

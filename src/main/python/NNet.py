@@ -8,7 +8,6 @@ from NNetModule import NNetModule
 
 class NNet():
     def __init__(self):
-        self.filepath = "model.pth"  # TODO: Ikke hardkode
         self.model = NNetModule()
         if torch.cuda.is_available():
             self.model = self.model.to("cuda")
@@ -23,44 +22,61 @@ class NNet():
     # Train nettverk på denne dataoen
     # Kjøre MCTS en gang til for valideringsett
     # Teste accuracien til nettverket
-    def train(self, trainSet, epoch=2, batch_size=10):
+    def train(self, trainSet, epochs=2, batch_size=64):
         # copy = kopi.deepcopy(self.model)
         # Omgjør states og scores til numpy arrays
-        #trainSet = StateDataSet(states, scores)
-        train_loader = DataLoader(dataset=trainSet, batch_size=batch_size, shuffle=True)
+        for epoch in range(epochs):
+            self.model.train()
+            train_loader = DataLoader(dataset=trainSet, batch_size=batch_size, shuffle=True)
 
-        running_loss = 0.0
-        for batch in train_loader:
-            input, labels = batch
-            if torch.cuda.is_available():
-                input = input.to("cuda")
-                labels = labels.to("cuda")
-            self.optimizer.zero_grad()
-            score_predication = self.model(input)
-            labels = labels.view(-1, 1)
-            loss = self.criterion(score_predication, labels)
-            loss.backward()
-            self.optimizer.step()
-            running_loss += loss.item()
+            running_loss = 0.0
+            for batch in train_loader:
+                states, probability_vectors, wins = batch
+                if torch.cuda.is_available():
+                    states = states.to("cuda")
+                    probability_vectors = probability_vectors.to("cuda")
+                    wins = wins.to("cuda")
+                self.optimizer.zero_grad()
+                out_probability_vectors, out_wins = self.model(states)
+                # labels = labels.view(-1, 1)
+                loss_pv = self.loss_pv(probability_vectors, out_probability_vectors)
+                loss_w = self.loss_w(wins, out_wins)
+                total_loss = loss_pv + loss_w
 
-        # if(loss.item() > self.priorLoss):
-        #   self.model = copy
-        #  return self.priorLoss
+                #loss = self.criterion(score_predication, labels)
+                self.optimizer.zero_grad()
+                total_loss.backward()
+                self.optimizer.step()
+                running_loss += total_loss.item()
 
-        # self.priorLoss = loss.item()
-        return loss.item()
+            # if(loss.item() > self.priorLoss):
+            #   self.model = copy
+            #  return self.priorLoss
+
+            # self.priorLoss = loss.item()
+        return running_loss / epochs
+
+    def loss_pv(self, targets, outputs):
+        return -torch.sum(targets * outputs) / targets.size()[0]
+
+    def loss_w(self, targets, outputs):
+        return torch.sum((targets - outputs.view(-1)) ** 2) / targets.size()[0]
 
     def predict(self, state):
-        stateTensor = torch.tensor(np.array(state), dtype=torch.float)
+        state_tensor = torch.tensor(np.array(state), dtype=torch.float)
         if torch.cuda.is_available():
-            stateTensor = stateTensor.to("cuda")
-        return self.model(stateTensor)
+            state_tensor = state_tensor.to("cuda")
+        self.model.eval()
+        with torch.no_grad():
+            probability_vector, win = self.model(state_tensor)
 
-    def save_checkpoint(self):
-        torch.save(self.model.state_dict(), self.filepath)
+        return torch.exp(probability_vector).data.cpu().numpy()[0].tolist(), win.data.cpu().numpy()[0].tolist()
+
+    def save_checkpoint(self, filepath):
+        torch.save(self.model.state_dict(), filepath)
 
     def load_checkpoint(self, filepath):
-        self.nnetModule = self.model.load_state_dict(torch.load(self.filepath))
+        self.model.load_state_dict(torch.load(filepath))
 
     def close(self):
         pass

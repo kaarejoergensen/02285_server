@@ -120,7 +120,7 @@ public class SearchClient {
                     break;
                 case "-alpha":
                     monteCarloTreeSearch = new AlphaGo(new AlphaGoSelection(), new AllActionsExpansion(),
-                            new RandomSimulation(), new AdditiveBackpropagation(), new MockNNet(new HeuristicAStar(initialState)));
+                            new RandomSimulation(), new AdditiveBackpropagation(), nNet);
                     break;
                 default:
                     frontier = new FrontierBestFirst(new HeuristicAStar(initialState));
