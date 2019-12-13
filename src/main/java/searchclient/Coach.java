@@ -76,7 +76,9 @@ public class Coach implements Trainer {
 //            Future<Action[][]> futureNewPlan = executorService.submit(() -> newModelMCTS.solve(new Node(root)));
 //            try {
                 if (oldPlan == null || (newPlan != null && newPlan.length >= oldPlan.length)) {
-                    System.err.println("Accepting new model");
+                    System.err.println("Accepting new model. " +
+                            "Old plan: " + (oldPlan != null ? oldPlan.length : "null") +
+                            " New plan: " + (newPlan != null ? newPlan.length : "null"));
                     this.nNet.loadModel(TMP_NEW_MODEL_PATH);
                 } else {
                     System.err.println("Rejecting new model");
