@@ -28,7 +28,8 @@ public class Coach implements Trainer {
     private static final int MAX_NUMBER_OF_TRAINING_EPISODES = 20;
     private static final int MAX_NUMBER_OF_NODES_TO_EXPLORE = 15;
 
-    private static final Path TMP_MODEL_PATH = Path.of("models/temp.pth");
+    private static final Path TMP_OLD_MODEL_PATH = Path.of("models/temp_old.pth");
+    private static final Path TMP_NEW_MODEL_PATH = Path.of("models/temp_new.pth");
     private static final Path BEST_MODEL_PATH = Path.of("models/best.pth");
 
     private NNet nNet;
@@ -46,33 +47,34 @@ public class Coach implements Trainer {
             trainingExamples.add(trainingData);
 
             List<String> finalTrainingData = trainingExamples.stream().flatMap(List::stream).collect(Collectors.toList());
-            this.nNet.saveModel(TMP_MODEL_PATH);
-            NNet oldNNet = this.nNet.clone();
-            oldNNet.loadModel(TMP_MODEL_PATH);
+            this.nNet.saveModel(TMP_OLD_MODEL_PATH);
 
             float loss = this.nNet.train(finalTrainingData);
+            this.nNet.saveModel(TMP_NEW_MODEL_PATH);
             System.err.println("Training done. Loss: " + loss);
 
+            System.err.println("Pitting old NN vs new");
             MonteCarloTreeSearch newModelMCTS = this.monteCarloTreeSearch.clone();
             newModelMCTS.setNNet(this.nNet);
-            MonteCarloTreeSearch oldModelMCTS = this.monteCarloTreeSearch.clone();
-            oldModelMCTS.setNNet(oldNNet);
-
-            ExecutorService executorService = Executors.newFixedThreadPool(2);
-
-            System.err.println("Pitting old NN vs new");
-            Action[][] oldPlan = oldModelMCTS.solve(new Node(root));
             Action[][] newPlan = newModelMCTS.solve(new Node(root));
+
+            this.nNet.loadModel(TMP_OLD_MODEL_PATH);
+            MonteCarloTreeSearch oldModelMCTS = this.monteCarloTreeSearch.clone();
+            oldModelMCTS.setNNet(this.nNet);
+            Action[][] oldPlan = oldModelMCTS.solve(new Node(root));
+
+//            ExecutorService executorService = Executors.newFixedThreadPool(2);
+
 //            Future<Action[][]> futureOldPlan = executorService.submit(() -> oldModelMCTS.solve(new Node(root)));
 //            Future<Action[][]> futureNewPlan = executorService.submit(() -> newModelMCTS.solve(new Node(root)));
 //            try {
                 if (newPlan.length >= oldPlan.length) {
                     System.err.println("Accepting new model");
-                    this.nNet.saveModel(BEST_MODEL_PATH);
+                    this.nNet.loadModel(TMP_NEW_MODEL_PATH);
                 } else {
                     System.err.println("Rejecting new model");
-                    this.nNet.loadModel(TMP_MODEL_PATH);
                 }
+                this.nNet.saveModel(BEST_MODEL_PATH);
 //            } catch (InterruptedException | ExecutionException e) {
 //                e.printStackTrace();
 //            }
