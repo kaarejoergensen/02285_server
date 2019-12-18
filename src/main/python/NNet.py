@@ -83,7 +83,7 @@ class NNet():
         torch.save(self.model.state_dict(), filepath)
 
     def load_checkpoint(self, filepath):
-        self.model.load_state_dict(torch.load(filepath))
+        self.model.load_state_dict(torch.load(filepath, map_location=lambda storage, loc: storage))
 
     def close(self):
         pass

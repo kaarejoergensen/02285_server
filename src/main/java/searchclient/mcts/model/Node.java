@@ -50,11 +50,12 @@ public class Node {
     // Q = The mean score of the next state
     // U = explorationFactor
     public Action chooseBestAction() {
-        if (this.numberOfTimesActionTakenMap.isEmpty()) throw new IllegalArgumentException("No actions possible from node");
+        if (this.meanValueOfActionMap.isEmpty()) throw new IllegalArgumentException("No actions possible from node");
         double bestActionScore = Integer.MIN_VALUE;
         Action bestAction = null;
-        for (Action action : this.numberOfTimesActionTakenMap.keySet()) {
-            double score = this.meanValueOfActionMap.get(action) + this.explorationFactor(action);
+        double sumOfActionsTaken = this.sumOfActionsTaken();
+        for (Action action : this.meanValueOfActionMap.keySet()) {
+            double score = this.meanValueOfActionMap.get(action) + this.explorationFactor(action, sumOfActionsTaken);
             if (score > bestActionScore && !action.getType().equals(Action.ActionType.NoOp)) {
                 bestActionScore = score;
                 bestAction = action;
@@ -64,9 +65,9 @@ public class Node {
     }
 
     // U = c_(puct) * P(s,a) * sqrt(sum_b(N(s,b)))/(1 + N(s,a)
-    private double explorationFactor(Action action) {
+    private double explorationFactor(Action action, double sumOfActionsTaken) {
         return explorationProbability * this.actionProbabilityMap.get(action) *
-                Math.sqrt(this.sumOfOtherAction(action)) / (1 + this.numberOfTimesActionTakenMap.get(action));
+                Math.sqrt(sumOfActionsTaken) / (1 + this.numberOfTimesActionTakenMap.get(action));
     }
 
     // Step 4: Select a move deterministically (with greatest N (number of times visited))
@@ -85,28 +86,27 @@ public class Node {
         //TODO: Add temperature
         //int temperature = train ? 1 : 0;
         Map<Action, Double> probabilityMap = new HashMap<>();
+        double sumOfActionsTaken = this.sumOfActionsTaken();
         for (Map.Entry<Action, Integer> actionEntry : this.numberOfTimesActionTakenMap.entrySet()) {
             Action action = actionEntry.getKey();
-            double probability = (double) actionEntry.getValue() / (double) this.sumOfOtherAction(action);
+            double probability = (double) actionEntry.getValue() / sumOfActionsTaken;
             probabilityMap.put(action, probability);
         }
         List<Map.Entry<Action, Double>> probabilityList = new ArrayList<>(probabilityMap.entrySet());
         Collections.shuffle(probabilityList, new Random());
-        double p = Math.random();
+        double randomNumber = Math.random();
         double cumulativeProbability = 0.0;
         for (Map.Entry<Action, Double> actionDoubleEntry : probabilityList) {
             cumulativeProbability += actionDoubleEntry.getValue();
-            if (p != cumulativeProbability) {
+            if (randomNumber <= cumulativeProbability) {
                 return this.actionChildMap.get(actionDoubleEntry.getKey());
             }
         }
         return null;
     }
 
-    public int sumOfOtherAction(Action action) {
-        return this.numberOfTimesActionTakenMap.entrySet().stream().
-                filter(e -> !e.getKey().equals(action)).
-                map(Map.Entry::getValue).
+    public int sumOfActionsTaken() {
+        return this.numberOfTimesActionTakenMap.values().stream().
                 reduce(0, Integer::sum);
     }
 

@@ -29,7 +29,7 @@ public class Coach implements Trainer {
 
     private static final Path TMP_OLD_MODEL_PATH = Path.of("models/temp_old.pth");
     private static final Path TMP_NEW_MODEL_PATH = Path.of("models/temp_new.pth");
-    private static final Path BEST_MODEL_PATH = Path.of("models/best.pth");
+    public static final Path BEST_MODEL_PATH = Path.of("models/best.pth");
     private static final Path CHECKPOINT_PATH = Path.of("models/checkpoint");
 
     private NNet nNet;

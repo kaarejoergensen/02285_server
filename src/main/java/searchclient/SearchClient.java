@@ -22,6 +22,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -84,7 +85,7 @@ public class SearchClient {
         Frontier frontier = null;
         MonteCarloTreeSearch monteCarloTreeSearch = null;
         NNet nNet = new PythonNNet();
-        boolean train = false, loadCheckpoint = false;
+        boolean train = false, loadCheckpoint = false, loadBest = false;
         if (args.length > 0) {
             switch (args[0].toLowerCase(Locale.ROOT)) {
                 case "-bfs":
@@ -127,8 +128,21 @@ public class SearchClient {
                     System.err.println("Defaulting to astar search. Use arguments -bfs, -dfs, -astar, -wastar, or " +
                             "-greedy to set the search strategy.");
             }
-            train = args.length > 1 && args[1].equalsIgnoreCase("-train");
-            loadCheckpoint = args.length > 2 && args[2].equalsIgnoreCase("-loadcheckpoint");
+            if (args.length > 1) {
+                for (int i = 1; i < args.length; i++) {
+                    switch (args[i]) {
+                        case "-train":
+                            train = true;
+                            break;
+                        case "-checkpoint":
+                            loadCheckpoint = true;
+                            break;
+                        case "-best":
+                            loadBest = true;
+                            break;
+                    }
+                }
+            }
         } else {
             frontier = new FrontierBestFirst(new HeuristicAStar(initialState));
             System.err.println("Defaulting to astar search. Use arguments -bfs, -dfs, -astar, -wastar, or -greedy to " +
@@ -149,6 +163,9 @@ public class SearchClient {
             else {
                 //StatusThread statusThread = new StatusThread(startTime, monteCarloTreeSearch.getExpandedStates());
                 //statusThread.start();
+                if (loadBest && Files.exists(Coach.BEST_MODEL_PATH)) {
+                    nNet.loadModel(Coach.BEST_MODEL_PATH);
+                }
                 if (train) {
                     Coach coach = new Coach(nNet, monteCarloTreeSearch);
                     coach.train(initialState, loadCheckpoint);
