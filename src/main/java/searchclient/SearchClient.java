@@ -1,7 +1,9 @@
 package searchclient;
 
 import searchclient.level.Level;
+import searchclient.mcts.backpropagation.Backpropagation;
 import searchclient.mcts.backpropagation.impl.AdditiveBackpropagation;
+import searchclient.mcts.backpropagation.impl.AdditiveRAVEBackpropagation;
 import searchclient.mcts.expansion.impl.AllActionsExpansion;
 import searchclient.mcts.expansion.impl.AllActionsNoDuplicatesExpansion;
 import searchclient.mcts.model.Node;
@@ -86,7 +88,26 @@ public class SearchClient {
         MonteCarloTreeSearch monteCarloTreeSearch = null;
         NNet nNet = new PythonNNet();
         boolean train = false, loadCheckpoint = false, loadBest = false;
+        Backpropagation backpropagation = new AdditiveBackpropagation();
         if (args.length > 0) {
+            if (args.length > 1) {
+                for (int i = 1; i < args.length; i++) {
+                    switch (args[i]) {
+                        case "-train":
+                            train = true;
+                            break;
+                        case "-checkpoint":
+                            loadCheckpoint = true;
+                            break;
+                        case "-best":
+                            loadBest = true;
+                            break;
+                        case "-rave":
+                            backpropagation = new AdditiveRAVEBackpropagation();
+                            break;
+                    }
+                }
+            }
             switch (args[0].toLowerCase(Locale.ROOT)) {
                 case "-bfs":
                     frontier = new FrontierBFS();
@@ -121,27 +142,12 @@ public class SearchClient {
                     break;
                 case "-alpha":
                     monteCarloTreeSearch = new AlphaGo(new AlphaGoSelection(), new AllActionsExpansion(),
-                            new RandomSimulation(), new AdditiveBackpropagation(), nNet);
+                            new RandomSimulation(), backpropagation, nNet);
                     break;
                 default:
                     frontier = new FrontierBestFirst(new HeuristicAStar(initialState));
                     System.err.println("Defaulting to astar search. Use arguments -bfs, -dfs, -astar, -wastar, or " +
                             "-greedy to set the search strategy.");
-            }
-            if (args.length > 1) {
-                for (int i = 1; i < args.length; i++) {
-                    switch (args[i]) {
-                        case "-train":
-                            train = true;
-                            break;
-                        case "-checkpoint":
-                            loadCheckpoint = true;
-                            break;
-                        case "-best":
-                            loadBest = true;
-                            break;
-                    }
-                }
             }
         } else {
             frontier = new FrontierBestFirst(new HeuristicAStar(initialState));
