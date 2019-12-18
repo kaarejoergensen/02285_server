@@ -116,6 +116,7 @@ public class Coach implements Trainer {
         ExecutorService executorService = Executors.newFixedThreadPool(cores);
         List<Callable<List<StateActionTakenSolvedTuple>>> callableList = new ArrayList<>(cores);
         AtomicInteger numberOfEpisodes = new AtomicInteger(0);
+        AtomicInteger numberOfSolvedEpisodes = new AtomicInteger(0);
         ProgressBar progressBar = new ProgressBarBuilder()
                 .setPrintStream(System.err)
                 .setUpdateIntervalMillis(300)
@@ -136,6 +137,7 @@ public class Coach implements Trainer {
                         node = node.getChildStochastic(true);
                         solved.setValue(node.getState().isGoalState());
                     }
+                    if (solved.booleanValue()) numberOfSolvedEpisodes.getAndIncrement();
                     finalList.addAll(stateActionTakenSolvedTuples);
                     synchronized (this) {
                         progressBar.step();
@@ -154,6 +156,7 @@ public class Coach implements Trainer {
             e.printStackTrace();
         }
         progressBar.close();
+        System.err.println("Episodes done. Solution found in  " + numberOfSolvedEpisodes.intValue() + "/" + numberOfEpisodes.intValue());
         return stateActionTakenSolvedTuples.stream().map(StateActionTakenSolvedTuple::toString).collect(Collectors.toList());
     }
 
