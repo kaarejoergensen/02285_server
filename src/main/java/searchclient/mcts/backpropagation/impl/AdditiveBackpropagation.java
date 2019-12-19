@@ -4,7 +4,7 @@ import searchclient.mcts.backpropagation.Backpropagation;
 import searchclient.mcts.model.Node;
 import shared.Action;
 
-public class AdditiveBackpropagation implements Backpropagation {
+public class AdditiveBackpropagation extends Backpropagation {
 
     @Override
     public void backpropagate(float score, Node nodeToExplore, Node root) {
@@ -16,5 +16,10 @@ public class AdditiveBackpropagation implements Backpropagation {
             parent.addScore(actionPerformed, score);
             tempNode = parent;
         }
+    }
+
+    @Override
+    public Backpropagation clone() {
+        return new AdditiveRAVEBackpropagation();
     }
 }

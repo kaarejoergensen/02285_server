@@ -67,7 +67,7 @@ public class OneTree extends MonteCarloTreeSearch {
 
     @Override
     public MonteCarloTreeSearch clone() {
-        return new OneTree(this.selection, this.expansion.clone(), this.simulation, this.backpropagation);
+        return new OneTree(this.selection, this.expansion.clone(), this.simulation, this.backpropagation.clone());
     }
 
     private Node nextRoot(Node root) {

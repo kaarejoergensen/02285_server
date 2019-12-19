@@ -68,7 +68,7 @@ public class Basic extends MonteCarloTreeSearch {
 
     @Override
     public MonteCarloTreeSearch clone() {
-        return new Basic(this.selection, this.expansion.clone(), this.simulation, this.backpropagation, this.nNet);
+        return new Basic(this.selection, this.expansion.clone(), this.simulation, this.backpropagation.clone(), this.nNet);
     }
 
 }

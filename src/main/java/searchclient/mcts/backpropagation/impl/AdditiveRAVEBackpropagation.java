@@ -9,7 +9,7 @@ import shared.Action;
 
 import java.util.*;
 
-public class AdditiveRAVEBackpropagation implements Backpropagation {
+public class AdditiveRAVEBackpropagation extends Backpropagation {
     Map<StateActionPair, List<Node>> nodeMap = new HashMap<>();
 
     @Override
@@ -33,6 +33,11 @@ public class AdditiveRAVEBackpropagation implements Backpropagation {
             tempNode = tempNode.getParent();
             this.nodeMap.put(stateActionPair, nodeList);
         }
+    }
+
+    @Override
+    public Backpropagation clone() {
+        return new AdditiveRAVEBackpropagation();
     }
 
     @Data
