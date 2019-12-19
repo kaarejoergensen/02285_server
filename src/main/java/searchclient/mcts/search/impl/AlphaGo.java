@@ -28,17 +28,21 @@ public class AlphaGo extends MonteCarloTreeSearch {
     @Override
     public Action[][] solve(Node root) {
         Node node = root;
-        for (int i = 0; i < SOLVE_TRIES; i++) {
+        Action[][] solution = null;
+        int i;
+        for (i = 0; i < SOLVE_TRIES && solution == null; i++) {
             node = this.runMCTS(node).getChildWithMaxScore();
             if (node.getState().isGoalState()) {
-                System.err.println("Solution found in " + i + " iterations.");
-                return node.getState().extractPlan();
+                solution = node.getState().extractPlan();
             }
             Optional<Node> possibleGoalNode = this.extractGoalNodeIfPossible(node);
-            if (possibleGoalNode.isPresent()) return possibleGoalNode.get().getState().extractPlan();
+            if (possibleGoalNode.isPresent()) solution = possibleGoalNode.get().getState().extractPlan();
         }
-        System.err.println("No solution found in " + SOLVE_TRIES + " iterations.");
-	    return null;
+        if (solution == null)
+            System.err.println("No solution found in " + SOLVE_TRIES + " iterations.");
+        else
+            System.err.println("Solution found in " + i + " iterations.");
+	    return solution;
     }
 
     @Override
