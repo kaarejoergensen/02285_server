@@ -23,6 +23,11 @@ public class UCTSelection extends Selection {
         return node;
     }
 
+    @Override
+    public String toString() {
+        return "UCTS";
+    }
+
     private Node findBestNodeWithUCT(Node node) {
         return null;
         //TODO: Fix this

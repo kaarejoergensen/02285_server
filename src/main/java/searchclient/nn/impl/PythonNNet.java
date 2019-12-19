@@ -88,6 +88,11 @@ public class PythonNNet extends NNet {
     }
 
     @Override
+    public String toString() {
+        return "PNNET";
+    }
+
+    @Override
     public void close() throws IOException {
         this.writeToPython("close", "");
         this.readFromPython();

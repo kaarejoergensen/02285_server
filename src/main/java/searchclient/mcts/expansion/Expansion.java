@@ -13,4 +13,7 @@ public abstract class Expansion implements Cloneable {
 
     @Override
     public abstract Expansion clone();
+
+    @Override
+    public abstract String toString();
 }

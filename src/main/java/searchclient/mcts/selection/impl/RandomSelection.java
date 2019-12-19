@@ -21,6 +21,11 @@ public class RandomSelection extends Selection {
     }
 
     @Override
+    public String toString() {
+        return "RS";
+    }
+
+    @Override
     public int compare(Node o1, Node o2) {
         return random.nextInt(3) - 1;
     }

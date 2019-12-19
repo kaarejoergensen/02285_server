@@ -8,7 +8,6 @@ import org.apache.commons.lang3.mutable.MutableBoolean;
 import searchclient.mcts.model.Node;
 import searchclient.mcts.search.MonteCarloTreeSearch;
 import searchclient.nn.NNet;
-import searchclient.nn.Trainer;
 import shared.Action;
 
 import java.io.*;
@@ -21,33 +20,30 @@ import java.util.stream.Collectors;
 
 @Data
 @AllArgsConstructor
-public class Coach implements Trainer {
+public class Coach {
     private static final int NUMBER_OF_EPISODES = 50;
     private static final int NUMBER_OF_TRAINING_ITERATIONS = 100;
     private static final int MAX_NUMBER_OF_TRAINING_EPISODES = 20;
     private static final int MAX_NUMBER_OF_NODES_TO_EXPLORE = 50;
 
-    private static final Path TMP_OLD_MODEL_PATH = Path.of("models/temp_old.pth");
-    private static final Path TMP_NEW_MODEL_PATH = Path.of("models/temp_new.pth");
-    public static final Path BEST_MODEL_PATH = Path.of("models/best.pth");
-    private static final Path CHECKPOINT_PATH = Path.of("models/checkpoint");
+    private static final String MODEL_FOLDER_NAME = "models";
+    private static final String TMP_OLD_MODEL ="temp_old.pth";
+    private static final String TMP_NEW_MODEL = "temp_new.pth";
+    private static final String BEST_MODEL = "best.pth";
+    private static final String CHECKPOINT = "checkpoint";
 
     private NNet nNet;
     private MonteCarloTreeSearch monteCarloTreeSearch;
 
-    @Override
-    public void train(State root, boolean loadCheckpoint) {
+    public void train(State root, boolean loadCheckpoint) throws IOException, ClassNotFoundException {
+        this.createFolders(root.levelName);
         Deque<List<String>> trainingExamples = new ArrayDeque<>();
-        if (loadCheckpoint && Files.exists(CHECKPOINT_PATH)) {
-            try {
-                trainingExamples = this.loadTrainingData();
-            } catch (IOException | ClassNotFoundException e) {
-                e.printStackTrace();
-            }
+        if (loadCheckpoint && Files.exists(getCheckpointPath(root.levelName))) {
+            trainingExamples = this.loadTrainingData(root.levelName);
         }
         for (int i = 0; i < NUMBER_OF_TRAINING_ITERATIONS; i++) {
             System.err.println("------------ITERATION " + (i + 1) + " ------");
-            if (!loadCheckpoint || i != 0) {
+            if (!loadCheckpoint || trainingExamples.isEmpty() || i != 0) {
                 List<String> trainingData = this.runEpisodes(root);
                 if (trainingExamples.size() >= MAX_NUMBER_OF_TRAINING_EPISODES) {
                     trainingExamples.pop();
@@ -58,10 +54,10 @@ public class Coach implements Trainer {
             }
 
             List<String> finalTrainingData = trainingExamples.stream().flatMap(List::stream).collect(Collectors.toList());
-            this.nNet.saveModel(TMP_OLD_MODEL_PATH);
+            this.nNet.saveModel(getTmpOldPath(root.levelName));
 
             float loss = this.nNet.train(finalTrainingData);
-            this.nNet.saveModel(TMP_NEW_MODEL_PATH);
+            this.nNet.saveModel(getTmpNewPath(root.levelName));
             System.err.println("Training done. Loss: " + loss);
 
             System.err.println("Solving with new NN");
@@ -69,50 +65,69 @@ public class Coach implements Trainer {
             newModelMCTS.setNNet(this.nNet);
             Action[][] newPlan = newModelMCTS.solve(new Node(root));
             System.err.println("Solving with old NN");
-            this.nNet.loadModel(TMP_OLD_MODEL_PATH);
+            this.nNet.loadModel(getTmpOldPath(root.levelName));
             MonteCarloTreeSearch oldModelMCTS = this.monteCarloTreeSearch.clone();
             oldModelMCTS.setNNet(this.nNet);
             Action[][] oldPlan = oldModelMCTS.solve(new Node(root));
 
-//            ExecutorService executorService = Executors.newFixedThreadPool(2);
-
-//            Future<Action[][]> futureOldPlan = executorService.submit(() -> oldModelMCTS.solve(new Node(root)));
-//            Future<Action[][]> futureNewPlan = executorService.submit(() -> newModelMCTS.solve(new Node(root)));
-//            try {
-                if (oldPlan == null || (newPlan != null && newPlan.length >= oldPlan.length)) {
-                    System.err.println("Accepting new model. " +
-                            "Old plan: " + (oldPlan != null ? oldPlan.length : "null") +
-                            " New plan: " + (newPlan != null ? newPlan.length : "null"));
-                    this.nNet.loadModel(TMP_NEW_MODEL_PATH);
-                } else {
-                    System.err.println("Rejecting new model");
-                }
-                this.nNet.saveModel(BEST_MODEL_PATH);
-//            } catch (InterruptedException | ExecutionException e) {
-//                e.printStackTrace();
-//            }
-            try {
-                this.saveTrainingData(trainingExamples);
-            } catch (IOException e) {
-                e.printStackTrace();
+            String planString = "Old plan: " + (oldPlan != null ? oldPlan.length : "null") +
+                    " New plan: " + (newPlan != null ? newPlan.length : "null");
+            if (oldPlan == null || (newPlan != null && newPlan.length >= oldPlan.length)) {
+                System.err.println("Accepting new model. " + planString);
+                this.nNet.loadModel(getTmpNewPath(root.levelName));
+                this.nNet.saveModel(getBestPath(root.levelName));
+            } else {
+                System.err.println("Rejecting new model. " + planString);
             }
+            this.saveTrainingData(trainingExamples, root.levelName);
         }
     }
 
-    private void saveTrainingData(Deque<List<String>> trainingData) throws IOException {
-        FileOutputStream fos = new FileOutputStream(CHECKPOINT_PATH.toFile());
+    private void saveTrainingData(Deque<List<String>> trainingData, String levelName) throws IOException {
+        FileOutputStream fos = new FileOutputStream(getCheckpointPath(levelName).toFile());
         ObjectOutputStream oos = new ObjectOutputStream(fos);
         oos.writeObject(trainingData);
         oos.close();
     }
 
-    private Deque<List<String>> loadTrainingData() throws IOException, ClassNotFoundException {
-        FileInputStream fis = new FileInputStream(CHECKPOINT_PATH.toFile());
+    private Deque<List<String>> loadTrainingData(String levelName) throws IOException, ClassNotFoundException {
+        FileInputStream fis = new FileInputStream(getCheckpointPath(levelName).toFile());
         ObjectInputStream ois = new ObjectInputStream(fis);
         Deque<List<String>> trainingData = (Deque<List<String>>) ois.readObject();
         System.err.println("Loaded training data of size " + trainingData.size());
         ois.close();
         return trainingData;
+    }
+
+    private void createFolders(String levelName) throws IOException {
+        Path folderPath = Path.of(getFolderPath(this.monteCarloTreeSearch, levelName));
+        if (!Files.isDirectory(folderPath)) {
+            Files.createDirectories(folderPath);
+        }
+    }
+
+    public static Path getBestPath(MonteCarloTreeSearch monteCarloTreeSearch, String levelName) {
+        return Path.of(getFolderPath(monteCarloTreeSearch, levelName) + BEST_MODEL);
+    }
+
+    private Path getCheckpointPath(String levelName) {
+        return Path.of(getFolderPath(this.monteCarloTreeSearch, levelName) + CHECKPOINT);
+    }
+
+    private Path getBestPath(String levelName) {
+        return Path.of(getFolderPath(this.monteCarloTreeSearch, levelName) + BEST_MODEL);
+    }
+
+    private Path getTmpNewPath(String levelName) {
+        return Path.of(getFolderPath(this.monteCarloTreeSearch, levelName) + TMP_NEW_MODEL);
+    }
+
+    private Path getTmpOldPath(String levelName) {
+        return Path.of(getFolderPath(this.monteCarloTreeSearch, levelName) + TMP_OLD_MODEL);
+    }
+
+    private static String getFolderPath(MonteCarloTreeSearch monteCarloTreeSearch, String levelName) {
+        return MODEL_FOLDER_NAME + "/" + monteCarloTreeSearch.toString() + "/" + levelName + "/";
     }
 
     private List<String> runEpisodes(State root) {

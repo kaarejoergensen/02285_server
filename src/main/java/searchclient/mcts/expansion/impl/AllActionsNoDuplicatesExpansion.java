@@ -40,4 +40,9 @@ public class AllActionsNoDuplicatesExpansion extends Expansion {
     public Expansion clone() {
         return new AllActionsNoDuplicatesExpansion(this.root);
     }
+
+    @Override
+    public String toString() {
+        return "AANDE";
+    }
 }

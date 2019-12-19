@@ -31,4 +31,7 @@ public abstract class MonteCarloTreeSearch implements Cloneable {
 
     @Override
     public abstract MonteCarloTreeSearch clone();
+
+    @Override
+    public abstract String toString();
 }

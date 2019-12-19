@@ -5,7 +5,7 @@ import searchclient.State;
 import searchclient.mcts.model.Node;
 import searchclient.mcts.simulation.Simulation;
 
-public class AllPairsShortestPath implements Simulation {
+public class AllPairsShortestPath extends Simulation {
     private Heuristic heuristic;
 
     public AllPairsShortestPath(State initialState) {
@@ -25,5 +25,10 @@ public class AllPairsShortestPath implements Simulation {
         }
 
         return (float) (1f / Math.sqrt(this.heuristic.h(n)));
+    }
+
+    @Override
+    public String toString() {
+        return "APSPS";
     }
 }

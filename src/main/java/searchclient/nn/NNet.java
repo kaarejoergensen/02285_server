@@ -18,4 +18,7 @@ public abstract class NNet implements Closeable, Cloneable {
 
     @Override
     public abstract NNet clone();
+
+    @Override
+    public abstract String toString();
 }

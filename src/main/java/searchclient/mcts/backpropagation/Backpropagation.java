@@ -7,4 +7,7 @@ public abstract class Backpropagation implements Cloneable {
 
     @Override
     public abstract Backpropagation clone();
+
+    @Override
+    public abstract String toString();
 }

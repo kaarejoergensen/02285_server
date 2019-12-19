@@ -63,6 +63,11 @@ public class MockNNet extends NNet {
     }
 
     @Override
+    public String toString() {
+        return "MNNET";
+    }
+
+    @Override
     public void close() {
     }
 }

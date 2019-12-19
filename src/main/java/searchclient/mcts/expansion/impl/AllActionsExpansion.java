@@ -33,4 +33,9 @@ public class AllActionsExpansion extends Expansion {
         return new AllActionsExpansion();
     }
 
+    @Override
+    public String toString() {
+        return "AAE";
+    }
+
 }

@@ -25,10 +25,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class SearchClient {
     public static State parseLevel(BufferedReader serverMessages) throws IOException {
@@ -168,8 +168,8 @@ public class SearchClient {
             else {
                 //StatusThread statusThread = new StatusThread(startTime, monteCarloTreeSearch.getExpandedStates());
                 //statusThread.start();
-                if (loadBest && Files.exists(Coach.BEST_MODEL_PATH)) {
-                    nNet.loadModel(Coach.BEST_MODEL_PATH);
+                if (loadBest && Files.exists(Coach.getBestPath(monteCarloTreeSearch, initialState.levelName))) {
+                    nNet.loadModel(Coach.getBestPath(monteCarloTreeSearch, initialState.levelName));
                 }
                 if (train) {
                     Coach coach = new Coach(nNet, monteCarloTreeSearch);
@@ -181,6 +181,8 @@ public class SearchClient {
             }
         } catch (OutOfMemoryError ex) {
             System.err.println("Maximum memory usage exceeded.");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
         }
 
         // Print plan to server.

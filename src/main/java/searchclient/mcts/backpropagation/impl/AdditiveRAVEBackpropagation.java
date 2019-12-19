@@ -40,6 +40,11 @@ public class AdditiveRAVEBackpropagation extends Backpropagation {
         return new AdditiveRAVEBackpropagation();
     }
 
+    @Override
+    public String toString() {
+        return "ARB";
+    }
+
     @Data
     @AllArgsConstructor
     private static class StateActionPair {

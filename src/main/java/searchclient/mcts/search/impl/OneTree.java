@@ -70,6 +70,11 @@ public class OneTree extends MonteCarloTreeSearch {
         return new OneTree(this.selection, this.expansion.clone(), this.simulation, this.backpropagation.clone());
     }
 
+    @Override
+    public String toString() {
+        return "OT_" + this.selection.toString() + "_" + this.expansion.toString() + "_" + this.backpropagation.toString();
+    }
+
     private Node nextRoot(Node root) {
         this.currentDepth = 0;
         this.frontier.addAll(root.getChildren());

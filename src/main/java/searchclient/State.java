@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 public class State {
     private static final Random RNG = new Random(1);
 
+    public String levelName;
     public DistanceMap distanceMap;
 
     public int[] agentRows;
@@ -39,8 +40,9 @@ public class State {
      * Constructs an initial state.
      * Arguments are not copied, and therefore should not be modified after being passed in.
      */
-    public State(DistanceMap distanceMap, int[] agentRows, int[] agentCols, Farge[] agentColors, boolean[][] walls,
+    public State(String levelName, DistanceMap distanceMap, int[] agentRows, int[] agentCols, Farge[] agentColors, boolean[][] walls,
                  Map<Coordinate, Box> boxMap, Map<Coordinate, Character> goals) {
+        this.levelName = levelName;
         this.distanceMap = distanceMap;
         this.agentRows = agentRows;
         this.agentCols = agentCols;
@@ -79,6 +81,7 @@ public class State {
      */
     private State(State parent, Action[] jointAction) {
         // Copy parent.
+        this.levelName = parent.levelName;
         this.distanceMap = parent.distanceMap;
         this.agentRows = Arrays.copyOf(parent.agentRows, parent.agentRows.length);
         this.agentCols = Arrays.copyOf(parent.agentCols, parent.agentCols.length);

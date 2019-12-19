@@ -22,4 +22,9 @@ public class AdditiveBackpropagation extends Backpropagation {
     public Backpropagation clone() {
         return new AdditiveRAVEBackpropagation();
     }
+
+    @Override
+    public String toString() {
+        return "AB";
+    }
 }

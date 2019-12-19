@@ -97,4 +97,9 @@ public class AlphaGo extends MonteCarloTreeSearch {
     public MonteCarloTreeSearch clone()  {
         return new AlphaGo(this.selection, this.expansion.clone(), this.backpropagation.clone(), this.nNet);
     }
+
+    @Override
+    public String toString() {
+        return "AG_" + this.selection.toString() + "_" + this.expansion.toString() + "_" + this.backpropagation.toString() + "_" + this.nNet.toString();
+    }
 }

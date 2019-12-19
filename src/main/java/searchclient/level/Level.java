@@ -68,6 +68,6 @@ public class Level {
     }
 
     public State toState(){
-        return new State(distanceMap, agentRows, agentCols, agentColors, walls, boxMap, goals);
+        return new State(name, distanceMap, agentRows, agentCols, agentColors, walls, boxMap, goals);
     }
 }

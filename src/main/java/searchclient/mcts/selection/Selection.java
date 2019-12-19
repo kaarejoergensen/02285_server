@@ -6,4 +6,7 @@ import java.util.Comparator;
 
 public abstract class Selection implements Comparator<Node> {
     public abstract Node selectPromisingNode(Node rootNode);
+
+    @Override
+    public abstract String toString();
 }

@@ -25,6 +25,11 @@ public class AlphaGoSelection extends Selection {
     }
 
     @Override
+    public String toString() {
+        return "AGS";
+    }
+
+    @Override
     public int compare(Node o1, Node o2) {
         return 0;
     }

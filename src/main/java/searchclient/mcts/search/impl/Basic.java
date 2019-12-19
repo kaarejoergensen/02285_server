@@ -71,4 +71,9 @@ public class Basic extends MonteCarloTreeSearch {
         return new Basic(this.selection, this.expansion.clone(), this.simulation, this.backpropagation.clone(), this.nNet);
     }
 
+    @Override
+    public String toString() {
+        return "Basic_" + this.selection.toString() + "_" + this.expansion.toString() + "_" + this.simulation.toString() + "_" + this.backpropagation.toString() + "_" + this.nNet.toString();
+    }
+
 }
