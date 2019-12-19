@@ -156,7 +156,7 @@ public class Coach implements Trainer {
             e.printStackTrace();
         }
         progressBar.close();
-        System.err.println("Episodes done. Solution found in  " + numberOfSolvedEpisodes.intValue() + "/" + numberOfEpisodes.intValue());
+        System.err.println("Episodes done. Solution found in  " + numberOfSolvedEpisodes.intValue() + "/" + (numberOfEpisodes.intValue() - 1));
         return stateActionTakenSolvedTuples.stream().map(StateActionTakenSolvedTuple::toString).collect(Collectors.toList());
     }
 
