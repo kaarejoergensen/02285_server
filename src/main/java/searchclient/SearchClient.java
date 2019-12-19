@@ -141,8 +141,7 @@ public class SearchClient {
                             new AllPairsShortestPath(initialState), new AdditiveBackpropagation());
                     break;
                 case "-alpha":
-                    monteCarloTreeSearch = new AlphaGo(new AlphaGoSelection(), new AllActionsExpansion(),
-                            new RandomSimulation(), backpropagation, nNet);
+                    monteCarloTreeSearch = new AlphaGo(new AlphaGoSelection(), new AllActionsExpansion(), backpropagation, nNet);
                     break;
                 default:
                     frontier = new FrontierBestFirst(new HeuristicAStar(initialState));

@@ -5,7 +5,6 @@ import searchclient.mcts.expansion.Expansion;
 import searchclient.mcts.model.Node;
 import searchclient.mcts.search.MonteCarloTreeSearch;
 import searchclient.mcts.selection.Selection;
-import searchclient.mcts.simulation.Simulation;
 import searchclient.nn.NNet;
 import searchclient.nn.PredictResult;
 import shared.Action;
@@ -20,9 +19,9 @@ public class AlphaGo extends MonteCarloTreeSearch {
 
     private NNet nNet;
 
-    public AlphaGo(Selection selection, Expansion expansion, Simulation simulation, Backpropagation backpropagation,
+    public AlphaGo(Selection selection, Expansion expansion, Backpropagation backpropagation,
                    NNet nNet) {
-        super(selection, expansion, simulation, backpropagation);
+        super(selection, expansion, null, backpropagation);
         this.nNet = nNet;
     }
 
@@ -85,6 +84,6 @@ public class AlphaGo extends MonteCarloTreeSearch {
 
     @Override
     public MonteCarloTreeSearch clone()  {
-        return new AlphaGo(this.selection, this.expansion.clone(), this.simulation, this.backpropagation.clone(), this.nNet);
+        return new AlphaGo(this.selection, this.expansion.clone(), this.backpropagation.clone(), this.nNet);
     }
 }
