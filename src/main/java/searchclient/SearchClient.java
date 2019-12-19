@@ -177,6 +177,7 @@ public class SearchClient {
                     coach.train(initialState, loadCheckpoint);
                 }
                 plan = monteCarloTreeSearch.solve(new Node(initialState));
+                nNet.close();
                 //statusThread.interrupt();
             }
         } catch (OutOfMemoryError ex) {
