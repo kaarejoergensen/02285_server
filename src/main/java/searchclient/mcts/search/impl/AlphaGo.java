@@ -1,7 +1,5 @@
 package searchclient.mcts.search.impl;
 
-import me.tongfei.progressbar.ProgressBar;
-import me.tongfei.progressbar.ProgressBarBuilder;
 import searchclient.mcts.backpropagation.Backpropagation;
 import searchclient.mcts.expansion.Expansion;
 import searchclient.mcts.model.Node;
@@ -30,23 +28,16 @@ public class AlphaGo extends MonteCarloTreeSearch {
     @Override
     public Action[][] solve(Node root) {
         Node node = root;
-        ProgressBar progressBar = new ProgressBarBuilder()
-                .setPrintStream(System.err)
-                .setUpdateIntervalMillis(300)
-                .setInitialMax(SOLVE_TRIES)
-                .setTaskName("Iterations")
-                .build();
         for (int i = 0; i < SOLVE_TRIES; i++) {
             node = this.runMCTS(node).getChildWithMaxScore();
             if (node.getState().isGoalState()) {
-                progressBar.close();
+                System.err.println("Solution found in " + i + " iterations.");
                 return node.getState().extractPlan();
             }
             Optional<Node> possibleGoalNode = this.extractGoalNodeIfPossible(node);
             if (possibleGoalNode.isPresent()) return possibleGoalNode.get().getState().extractPlan();
-            progressBar.step();
         }
-        progressBar.close();
+        System.err.println("No solution found in " + SOLVE_TRIES + " iterations.");
 	    return null;
     }
 
