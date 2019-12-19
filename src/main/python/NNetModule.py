@@ -6,7 +6,7 @@ import torch.nn.functional as F
 class NNetModule(nn.Module):
         def __init__(self):
             super(NNetModule, self).__init__()
-            self.board_x, self.board_y = 5, 5 * 3
+            self.board_x, self.board_y = 10, 10 * 3
             self.action_size = 96
             self.num_channels = 512
             self.dropout = 0.3
