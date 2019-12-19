@@ -47,11 +47,15 @@ public class Coach implements Trainer {
         }
         for (int i = 0; i < NUMBER_OF_TRAINING_ITERATIONS; i++) {
             System.err.println("------------ITERATION " + (i + 1) + " ------");
-            List<String> trainingData = this.runEpisodes(root);
-            if (trainingExamples.size() >= MAX_NUMBER_OF_TRAINING_EPISODES) {
-                trainingExamples.pop();
+            if (!loadCheckpoint || i != 0) {
+                List<String> trainingData = this.runEpisodes(root);
+                if (trainingExamples.size() >= MAX_NUMBER_OF_TRAINING_EPISODES) {
+                    trainingExamples.pop();
+                }
+                trainingExamples.add(trainingData);
+            } else {
+                System.err.println("Skipping first episode due to checkpoint load");
             }
-            trainingExamples.add(trainingData);
 
             List<String> finalTrainingData = trainingExamples.stream().flatMap(List::stream).collect(Collectors.toList());
             this.nNet.saveModel(TMP_OLD_MODEL_PATH);
@@ -60,11 +64,11 @@ public class Coach implements Trainer {
             this.nNet.saveModel(TMP_NEW_MODEL_PATH);
             System.err.println("Training done. Loss: " + loss);
 
-            System.err.println("Pitting old NN vs new");
+            System.err.println("Solving with new NN");
             MonteCarloTreeSearch newModelMCTS = this.monteCarloTreeSearch.clone();
             newModelMCTS.setNNet(this.nNet);
             Action[][] newPlan = newModelMCTS.solve(new Node(root));
-
+            System.err.println("Solving with old NN");
             this.nNet.loadModel(TMP_OLD_MODEL_PATH);
             MonteCarloTreeSearch oldModelMCTS = this.monteCarloTreeSearch.clone();
             oldModelMCTS.setNNet(this.nNet);
