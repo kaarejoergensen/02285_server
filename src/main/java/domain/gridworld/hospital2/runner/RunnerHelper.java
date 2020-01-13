@@ -76,10 +76,11 @@ class RunnerHelper {
         }
     }
 
-    static void exchangeActions(BufferedReader clientReader, BufferedWriter clientWriter, BufferedWriter logWriter,
+    static Pair<Long, Double> exchangeActions(BufferedReader clientReader, BufferedWriter clientWriter, BufferedWriter logWriter,
                                 StaticState staticState, Timeout timeout, long startNS, List<State> states, boolean allowDiscardingPastStates) throws RunException {
         clientLogger.debug("Beginning action/comment message exchanges.");
-        long numMessages = 0;
+        long numMessages = 0, numActions = 0;
+        double maxMemoryUsage = 0;
         Action[] jointAction = new Action[staticState.getNumAgents()];
         String clientMsg;
         try {
@@ -122,7 +123,14 @@ class RunnerHelper {
             // Process message.
             ++numMessages;
             if (clientMsg.startsWith("#")) {
-                clientLogger.log(CustomLoggerConfigFactory.messageLevel, clientMsg.substring(1));
+                if (clientMsg.startsWith("#memory")) {
+                    String[] memoryMsg = clientMsg.split(" ");
+                    double memory = Double.parseDouble(memoryMsg[1]);
+                    if (memory > maxMemoryUsage)
+                        maxMemoryUsage = memory;
+                } else {
+                    clientLogger.log(CustomLoggerConfigFactory.messageLevel, clientMsg.substring(1));
+                }
             } else {
                 // Parse action string.
                 String[] actionMsg = clientMsg.split(";");
@@ -165,9 +173,11 @@ class RunnerHelper {
                 } catch (IOException e) {
                     throw new RunException("Could not write to log file. " + e.getMessage(), e);
                 }
+                numActions++;
             }
         }
         clientLogger.debug("Messages exchanged: " + numMessages + ".");
+        return Pair.with(numActions, maxMemoryUsage);
     }
 
     /**
@@ -190,15 +200,17 @@ class RunnerHelper {
         return result.getValue1();
     }
 
-    static void writeLogSummary(BufferedWriter logWriter, boolean solved, long numActions, long time) throws RunException {
+    static void writeLogSummary(BufferedWriter logWriter, boolean solved, long numActions, long time, double memory) throws RunException {
         try {
             logWriter.write("#end" + System.lineSeparator());
             logWriter.write("#solved" + System.lineSeparator());
-            logWriter.write(solved ? "true" : "false" + System.lineSeparator());
+            logWriter.write((solved ? "true" : "false") + System.lineSeparator());
             logWriter.write("#numactions" + System.lineSeparator());
             logWriter.write(numActions + System.lineSeparator());
             logWriter.write("#time" + System.lineSeparator());
             logWriter.write(time + System.lineSeparator());
+            logWriter.write("#memory" + System.lineSeparator());
+            logWriter.write(String.format("%4.2f MB", memory) + System.lineSeparator());
             logWriter.write("#end" + System.lineSeparator());
             logWriter.flush();
         } catch (IOException e) {

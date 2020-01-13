@@ -86,7 +86,7 @@ public class SearchClient {
         // Select search strategy.
         Frontier frontier = null;
         MonteCarloTreeSearch monteCarloTreeSearch = null;
-        NNet nNet = new PythonNNet();
+        NNet nNet = null;
         boolean train = false, loadCheckpoint = false, loadBest = false;
         Backpropagation backpropagation = new AdditiveBackpropagation();
         if (args.length > 0) {
@@ -133,14 +133,17 @@ public class SearchClient {
                     frontier = new FrontierBestFirst(new HeuristicGreedy(initialState));
                     break;
                 case "-basic":
+                    nNet = new MockNNet(new HeuristicAStar(initialState));
                     monteCarloTreeSearch = new Basic(new UCTSelection(0.4), new AllActionsNoDuplicatesExpansion(initialState),
-                            new RandomSimulation(), new AdditiveBackpropagation(), new MockNNet(new HeuristicAStar(initialState)));
+                            new RandomSimulation(), new AdditiveBackpropagation(), nNet);
                     break;
                 case "-onetree":
+                    nNet = new MockNNet(new HeuristicAStar(initialState));
                     monteCarloTreeSearch = new OneTree(new UCTSelection(0.4), new AllActionsNoDuplicatesExpansion(initialState),
                             new AllPairsShortestPath(initialState), new AdditiveBackpropagation());
                     break;
                 case "-alpha":
+                    nNet = new PythonNNet();
                     monteCarloTreeSearch = new AlphaGo(new AlphaGoSelection(), new AllActionsExpansion(), backpropagation, nNet);
                     break;
                 default:
@@ -162,8 +165,14 @@ public class SearchClient {
                 HashSet<State> explored = new HashSet<>(65536);
                 StatusThread statusThread = new StatusThread(startTime, explored, frontier);
                 statusThread.start();
-                plan = SearchClient.search(initialState, frontier, explored);
-                statusThread.interrupt();
+                try {
+                    plan = SearchClient.search(initialState, frontier, explored);
+                } catch (Exception e) {
+                    System.err.println("Exception caught in Search");
+                    e.printStackTrace(System.err);
+                } finally {
+                    statusThread.interrupt();
+                }
             }
             else {
                 //StatusThread statusThread = new StatusThread(startTime, monteCarloTreeSearch.getExpandedStates());
@@ -256,6 +265,7 @@ public class SearchClient {
                 this.printSearchStatusFrontier();
             else
                 this.printSearchStatusNoFrontier();
+            System.out.println("#memory " + Memory.used());
         }
 
         private void printSearchStatusFrontier() {

@@ -7,6 +7,7 @@ import domain.gridworld.hospital2.state.objects.StaticState;
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.javatuples.Pair;
 import shared.Action;
 
 import java.io.*;
@@ -26,6 +27,9 @@ public class Hospital2Runner {
     private boolean allowDiscardingPastStates;
 
     private List<State> states;
+    @Getter private long  numActions;
+    @Getter private double maxMemoryUsage;
+    @Getter private long timeTaken;
     @Getter private StaticState staticState;
 
     public Hospital2Runner(String level, State initialState, StaticState staticState) {
@@ -57,6 +61,10 @@ public class Hospital2Runner {
         return this.states.get(stateID);
     }
 
+    public boolean isLatestStateSolved() {
+        return this.isSolved(this.getLatestState());
+    }
+
     public String[] getStatus() {
         State state = this.getLatestState();
 
@@ -64,7 +72,7 @@ public class Hospital2Runner {
 
         String[] status = new String[3];
         status[0] = String.format("Level solved: %s.", solved);
-        status[1] = String.format("Actions used: %d.", this.getNumStates() - 1);
+        status[1] = String.format("Actions used: %d.", this.getNumActions());
         status[2] = String.format("Last action time: %.3f seconds.", state.getStateTime() / 1_000_000_000d);
 
         return status;
@@ -83,11 +91,13 @@ public class Hospital2Runner {
 
         this.clientName = RunnerHelper.readClientName(clientReader, timeout, startNS, timeoutNS);
         RunnerHelper.writeLevelToClientAndLog(clientWriter, logWriter, level, clientName, timeout);
-        RunnerHelper.exchangeActions(clientReader, clientWriter, logWriter, this.staticState, timeout,
+        Pair<Long, Double> actionsMaxMemoryPair = RunnerHelper.exchangeActions(clientReader, clientWriter, logWriter, this.staticState, timeout,
                 startNS, states, allowDiscardingPastStates);
+        this.numActions = actionsMaxMemoryPair.getValue0();
+        this.maxMemoryUsage = actionsMaxMemoryPair.getValue1();
         RunnerHelper.writeLogSummary(logWriter, this.isSolved(this.getLatestState()),
-                this.getNumStates(), this.getLatestState().getStateTime());
-
+                this.numActions, this.getLatestState().getStateTime(), this.maxMemoryUsage);
+        this.timeTaken = System.nanoTime() - startNS;
         clientLogger.debug("Protocol finished.");
     }
 

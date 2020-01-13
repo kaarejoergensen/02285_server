@@ -4,6 +4,7 @@ import client.Client;
 import client.Timeout;
 import domain.Domain;
 import domain.ParseException;
+import domain.gridworld.hospital2.Hospital2Domain;
 import gui.PlaybackManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -269,6 +270,8 @@ public class Server {
             logZipStream.putNextEntry(new ZipEntry("summary.txt"));
             BufferedWriter logWriter =
                     new BufferedWriter(new OutputStreamWriter(logZipStream, StandardCharsets.US_ASCII.newEncoder()));
+            double solutionLength = 0, time = 0, memoryUsage = 0;
+            int solved = 0;
             for (Domain domain : domains) {
                 logWriter.write("Level name: ");
                 logWriter.write(domain.getLevelName());
@@ -277,6 +280,29 @@ public class Server {
                     logWriter.write(statusLine);
                     logWriter.newLine();
                 }
+                logWriter.newLine();
+                logWriter.flush();
+
+                if (domain instanceof Hospital2Domain) {
+                    solutionLength += ((Hospital2Domain) domain).getNumActions();
+                    time += (((Hospital2Domain) domain).getTime() / 1_000_000_000d);
+                    memoryUsage += ((Hospital2Domain) domain).getMaxMemoryUsage();
+                    if (((Hospital2Domain) domain).isSolved()) solved++;
+                }
+            }
+            if (domains.stream().anyMatch(d -> d instanceof Hospital2Domain)) {
+                int domainSize = domains.size();
+                logWriter.write("Solved: ");
+                logWriter.write(solved + "/" + domainSize);
+                logWriter.newLine();
+                logWriter.write("Average solution length: ");
+                logWriter.write(String.format("%4.2f", solutionLength / domainSize));
+                logWriter.newLine();
+                logWriter.write("Average time: ");
+                logWriter.write(String.format("%4.2f s", time / domainSize));
+                logWriter.newLine();
+                logWriter.write("Average memory usage: ");
+                logWriter.write(String.format("%4.2f MB", memoryUsage / domainSize));
                 logWriter.newLine();
                 logWriter.flush();
             }
