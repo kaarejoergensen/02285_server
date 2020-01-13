@@ -1,0 +1,19 @@
+#domain
+hospital2
+#levelname
+2_Dungeon_Easy_1
+#colors
+Orange:0,A
+#initial
++++++
++ A++
++ 0++
++++++
++++++
+#goal
++++++
++ A++
++ 0++
++++++
++++++
+#end

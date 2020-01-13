@@ -1,0 +1,25 @@
+#domain
+hospital2
+#levelname
+4_RandomWalk_Medium_1
+#colors
+Blue:0,1,A,B
+#initial
+++++++++
++0 1 +++
++     ++
++ ++A ++
+++++  ++
+++++  B+
+++++++ +
+++++++++
+#goal
+++++++++
++0   +++
++     ++
++1++B ++
+++++  ++
+++++  A+
+++++++ +
+++++++++
+#end
