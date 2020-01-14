@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class PythonNNet extends NNet {
-    private static final String PYTHON_PATH = "python3";
+    private static final String PYTHON_PATH = "./venv/bin/python";
     private static final String SCRIPT_PATH = "./src/main/python/Main.py";
 
     private Process process;

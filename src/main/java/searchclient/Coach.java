@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
+import me.tongfei.progressbar.ProgressBarStyle;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import searchclient.mcts.model.Node;
 import searchclient.mcts.search.MonteCarloTreeSearch;
@@ -142,6 +143,7 @@ public class Coach {
                 .setUpdateIntervalMillis(300)
                 .setInitialMax(NUMBER_OF_EPISODES)
                 .setTaskName("Episodes")
+                .setStyle(ProgressBarStyle.ASCII)
                 .build();
         for (int i = 0; i < cores; i++) {
             callableList.add(() -> {
@@ -161,6 +163,8 @@ public class Coach {
                     finalList.addAll(stateActionTakenSolvedTuples);
                     synchronized (this) {
                         progressBar.step();
+                        progressBar.setExtraMessage(numberOfSolvedEpisodes.intValue() + "/"
+                                + numberOfEpisodes.intValue() + " solved.");
                     }
                 }
                 return finalList;
