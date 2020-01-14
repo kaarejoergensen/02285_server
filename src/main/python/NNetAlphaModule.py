@@ -65,17 +65,18 @@ class OutBlock(nn.Module):
 
 
 class NNetAlphaModule(nn.Module):
-    def __init__(self):
+    def __init__(self, resblocks=5):
         super(NNetAlphaModule, self).__init__()
         channels, x, y, action_size = 5, 15, 10, 96
+        self.resblocks = resblocks
         self.conv = ConvBlock(channels, x, y)
-        for block in range(19):
+        for block in range(self.resblocks):
             setattr(self, "res_%i" % block, ResBlock())
         self.outblock = OutBlock(channels, x, y, action_size)
 
     def forward(self, s):
         s = self.conv(s)
-        for block in range(19):
+        for block in range(self.resblocks):
             s = getattr(self, "res_%i" % block)(s)
         s = self.outblock(s)
         return s
