@@ -50,6 +50,7 @@ public class Coach {
                     trainingExamples.pop();
                 }
                 trainingExamples.add(trainingData);
+                this.saveTrainingData(trainingExamples, root.levelName);
             } else {
                 System.err.println("Skipping first episode due to checkpoint load");
             }
@@ -80,7 +81,6 @@ public class Coach {
             } else {
                 System.err.println("Rejecting new model. " + planString);
             }
-            this.saveTrainingData(trainingExamples, root.levelName);
         }
     }
 
