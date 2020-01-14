@@ -67,7 +67,7 @@ class OutBlock(nn.Module):
 class NNetAlphaModule(nn.Module):
     def __init__(self):
         super(NNetAlphaModule, self).__init__()
-        channels, x, y, action_size = 3, 15, 10, 96
+        channels, x, y, action_size = 5, 15, 10, 96
         self.conv = ConvBlock(channels, x, y)
         for block in range(19):
             setattr(self, "res_%i" % block, ResBlock())
