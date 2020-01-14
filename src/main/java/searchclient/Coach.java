@@ -127,7 +127,8 @@ public class Coach {
     }
 
     private static String getFolderPath(MonteCarloTreeSearch monteCarloTreeSearch, String levelName) {
-        return MODEL_FOLDER_NAME + "/" + monteCarloTreeSearch.toString() + "/" + levelName + "/";
+        return MODEL_FOLDER_NAME + "/shared";
+        //return MODEL_FOLDER_NAME + "/" + monteCarloTreeSearch.toString() + "/" + levelName + "/";
     }
 
     private List<String> runEpisodes(State root) {
