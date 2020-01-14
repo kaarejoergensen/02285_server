@@ -6,11 +6,13 @@ from torch import optim, nn
 from torch.utils.data import DataLoader
 
 from NNetModule import NNetModule
+from NNetAlphaModule import NNetAlphaModule
 
 
 class NNet():
     def __init__(self):
-        self.model = NNetModule()
+        #self.model = NNetModule()
+        self.model = NNetAlphaModule()
         if torch.cuda.is_available():
             self.model = self.model.to("cuda")
             # if torch.cuda.device_count() > 1:

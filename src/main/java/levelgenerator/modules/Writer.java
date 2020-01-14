@@ -1,5 +1,7 @@
 package levelgenerator.modules;
 
+import lombok.Getter;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
@@ -7,7 +9,7 @@ import java.io.PrintWriter;
 public class Writer {
 
     public String folder;
-    public String path;
+    @Getter public String path;
 
     public Writer(String destinationFolder){
         folder = destinationFolder;

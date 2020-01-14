@@ -11,6 +11,10 @@ import java.util.stream.Collectors;
 
 public class State {
     private static final Random RNG = new Random(1);
+    public static final int MAX_WIDTH = 15;
+    public static final int MAX_HEIGHT = 10;
+
+    private int heightDiff, widthDiff;
 
     public String levelName;
     public DistanceMap distanceMap;
@@ -58,18 +62,24 @@ public class State {
     }
 
     private void createWallsAndGoalsByteRepresentation() {
-        this.wallsAndGoalsByteRepresentation = new byte[this.walls.length * 2][this.walls[0].length];
+        this.wallsAndGoalsByteRepresentation = new byte[MAX_HEIGHT * 2][MAX_WIDTH];
+        this.heightDiff = Math.round((MAX_HEIGHT - this.walls.length) / 2f);
+        this.widthDiff = Math.round((MAX_WIDTH - this.walls[0].length) / 2f);
+        if (this.heightDiff < 0 || this.widthDiff < 0) {
+            System.err.println("Map too big for ML");
+            return;
+        }
         for (Map.Entry<Coordinate, Character> entry : this.goals.entrySet()) {
             Coordinate goalCoordinate = entry.getKey();
             if ('A' <= entry.getValue() && entry.getValue() <= 'Z')
-                this.wallsAndGoalsByteRepresentation[goalCoordinate.getRow()][goalCoordinate.getCol()] = 1;
+                this.wallsAndGoalsByteRepresentation[this.heightDiff + goalCoordinate.getRow()][this.widthDiff + goalCoordinate.getCol()] = 1;
             else
-                this.wallsAndGoalsByteRepresentation[goalCoordinate.getRow()][goalCoordinate.getCol()] = -1;
+                this.wallsAndGoalsByteRepresentation[this.heightDiff + goalCoordinate.getRow()][this.widthDiff + goalCoordinate.getCol()] = -1;
         }
         for (int row = 0; row < this.walls.length; row++) {
             for (int col = 0; col < this.walls[row].length; col++) {
                 if (!this.walls[row][col]) {
-                    this.wallsAndGoalsByteRepresentation[this.walls.length + row][col] = 1;
+                    this.wallsAndGoalsByteRepresentation[this.heightDiff + MAX_HEIGHT + row][this.widthDiff + col] = 1;
                 }
             }
         }
@@ -96,6 +106,8 @@ public class State {
         this.jointAction = Arrays.copyOf(jointAction, jointAction.length);
         this.g = parent.g + 1;
         this.wallsAndGoalsByteRepresentation = parent.wallsAndGoalsByteRepresentation;
+        this.heightDiff = parent.heightDiff;
+        this.widthDiff = parent.widthDiff;
 
         // Apply each action.
         int numAgents = this.agentRows.length;
@@ -447,7 +459,10 @@ public class State {
     }
 
     public String toMLString() {
-        byte[][] byteRepresentation = new byte[this.wallsAndGoalsByteRepresentation.length + this.walls.length][this.walls[0].length];
+        if (this.heightDiff < 0 || this.widthDiff < 0) {
+            throw new IllegalArgumentException("Map too big for ML");
+        }
+        byte[][] byteRepresentation = new byte[this.wallsAndGoalsByteRepresentation.length + MAX_HEIGHT][MAX_WIDTH];
         for (int i = 0; i < this.wallsAndGoalsByteRepresentation.length; i++) {
             byteRepresentation[i] = Arrays.copyOf(this.wallsAndGoalsByteRepresentation[i], this.wallsAndGoalsByteRepresentation[i].length);
         }
@@ -456,12 +471,12 @@ public class State {
         for (int row = 0; row < this.walls.length; row++) {
             for (int col = 0; col < this.walls[row].length; col++) {
                 if (this.agentRows[0] == row && this.agentCols[0] == col) {
-                    byteRepresentation[this.walls.length * 2 + row][col] = 1;
+                    byteRepresentation[MAX_HEIGHT * 2 + this.heightDiff + row][this.widthDiff + col] = 1;
                 } else {
                     Coordinate coordinate = new Coordinate(row, col);
                     Box box = this.boxMap.get(coordinate);
                     if (box != null) {
-                        byteRepresentation[this.walls.length * 2 + row][col] = -1;
+                        byteRepresentation[MAX_HEIGHT * 2 + this.heightDiff + row][this.widthDiff + col] = -1;
                     }
                 }
 

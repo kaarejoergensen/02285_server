@@ -6,12 +6,11 @@ import torch.nn.functional as F
 class NNetModule(nn.Module):
         def __init__(self):
             super(NNetModule, self).__init__()
-            self.board_x, self.board_y = 10, 10 * 3
+            self.board_x, self.board_y = 15, 10 * 3
             self.action_size = 96
             self.num_channels = 512
             self.dropout = 0.3
             # Inputs to hidden layer linear transformation
-            # Tester med
 
             self.conv1 = nn.Conv2d(1, self.num_channels, 3, stride=1, padding=1)
             self.conv2 = nn.Conv2d(self.num_channels, self.num_channels, 3, stride=1, padding=1)
