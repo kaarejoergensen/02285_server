@@ -74,7 +74,7 @@ public class Coach {
 
             String planString = "Old plan: " + (oldPlan != null ? oldPlan.length : "null") +
                     " New plan: " + (newPlan != null ? newPlan.length : "null");
-            if (oldPlan == null || (newPlan != null && newPlan.length >= oldPlan.length)) {
+            if (oldPlan == null || (newPlan != null && newPlan.length <= oldPlan.length)) {
                 System.err.println("Accepting new model. " + planString);
                 this.nNet.loadModel(getTmpNewPath(root.levelName));
                 this.nNet.saveModel(getBestPath(root.levelName));
