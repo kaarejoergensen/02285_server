@@ -20,7 +20,7 @@ public class AdditiveBackpropagation extends Backpropagation {
 
     @Override
     public Backpropagation clone() {
-        return new AdditiveRAVEBackpropagation();
+        return new AdditiveBackpropagation();
     }
 
     @Override
