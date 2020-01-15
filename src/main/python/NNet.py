@@ -19,6 +19,7 @@ class NNet():
                 # print("Using", torch.cuda.device_count(), "GPUs", file=sys.stderr, flush=True)
                 # print("", file=sys.stderr, flush=True)
                 # self.model = nn.DataParallel(self.model)
+        print(next(self.model.parameters()).device, file=sys.stderr, flush=True)
         self.optimizer = optim.SGD(self.model.parameters(), lr=0.001, momentum=0.9)
         self.criterion = torch.nn.BCELoss()
         self.priorLoss = 1.0
