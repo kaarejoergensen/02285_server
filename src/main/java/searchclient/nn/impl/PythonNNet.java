@@ -1,5 +1,6 @@
 package searchclient.nn.impl;
 
+import lombok.Getter;
 import searchclient.State;
 import searchclient.nn.NNet;
 import searchclient.nn.PredictResult;
@@ -13,30 +14,34 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class PythonNNet extends NNet {
-    private static final String PYTHON_PATH = "./venv/bin/python";
     private static final String SCRIPT_PATH = "./src/main/python/Main.py";
 
     private static final String TEMP_PATH = "models/";
     private static final String TEMP_NAME = "temp.pth";
 
-    private String pythonPath = PYTHON_PATH;
+    @Getter private String pythonPath;
 
     private Process process;
     private BufferedReader clientReader;
     private BufferedWriter clientWriter;
 
-    public PythonNNet() throws IOException {
-        this.run();
-    }
-
     public PythonNNet(String pythonPath) throws IOException {
         this.pythonPath = pythonPath;
-        this.run();
+        this.run(null);
     }
 
-    private void run() throws IOException {
+    public PythonNNet(String pythonPath, int gpu) throws IOException {
+        this.pythonPath = pythonPath;
+        this.run(gpu);
+    }
+
+    private void run(Integer gpu) throws IOException {
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdownPython));
         ProcessBuilder processBuilder = new ProcessBuilder(this.pythonPath, SCRIPT_PATH).redirectError(ProcessBuilder.Redirect.INHERIT);
+        if (gpu != null) {
+            processBuilder.command().add("--gpu");
+            processBuilder.command().add(gpu.toString());
+        }
         this.process = processBuilder.start();
 
         InputStream clientIn = process.getInputStream();

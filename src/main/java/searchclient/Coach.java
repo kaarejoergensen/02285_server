@@ -36,6 +36,7 @@ public class Coach {
 
     private NNet nNet;
     private MonteCarloTreeSearch monteCarloTreeSearch;
+    private Integer gpus;
 
     public void train(State root, boolean loadCheckpoint) throws IOException, ClassNotFoundException {
         this.createFolders(root.levelName);
@@ -135,6 +136,10 @@ public class Coach {
 
     private List<String> runEpisodes(State root) {
         int cores = Runtime.getRuntime().availableProcessors();
+        int numberOfThreadsPrGPU = cores;
+        if (gpus != null) {
+            numberOfThreadsPrGPU = cores / gpus;
+        }
         ExecutorService executorService = Executors.newFixedThreadPool(cores);
         List<Callable<List<StateActionTakenSolvedTuple>>> callableList = new ArrayList<>(cores);
         AtomicInteger numberOfEpisodes = new AtomicInteger(0);
@@ -154,11 +159,26 @@ public class Coach {
                 return Collections.emptyList();
             }
         }
+        AtomicInteger gpuUsed = new AtomicInteger(0);
+        AtomicInteger gpu = new AtomicInteger(0);
         for (int i = 0; i < cores; i++) {
+            int finalNumberOfThreadsPrGPU = numberOfThreadsPrGPU;
             callableList.add(() -> {
                 List<StateActionTakenSolvedTuple> finalList = new ArrayList<>();
                 MonteCarloTreeSearch mcts = this.monteCarloTreeSearch.clone();
-                PythonNNet newNNet = (PythonNNet) this.nNet.clone();
+                PythonNNet newNNet;
+                if (gpus != null) {
+                    synchronized (this) {
+                        if (gpuUsed.get() >= finalNumberOfThreadsPrGPU) {
+                            gpu.incrementAndGet();
+                            gpuUsed.set(0);
+                        }
+                        newNNet = new PythonNNet(((PythonNNet)this.nNet).getPythonPath(), gpu.intValue());
+                        gpuUsed.incrementAndGet();
+                    }
+                } else {
+                    newNNet = (PythonNNet) this.nNet.clone();
+                }
                 newNNet.loadTempModel();
                 mcts.setNNet(newNNet);
                 while (numberOfEpisodes.getAndIncrement() < NUMBER_OF_EPISODES) {

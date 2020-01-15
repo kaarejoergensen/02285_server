@@ -31,6 +31,8 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SearchClient {
+    private static final String PYTHON_PATH = "./venv/bin/python";
+
     public static State parseLevel(BufferedReader serverMessages) throws IOException {
         // We can assume that the level file is conforming to specification, since the server verifies this.
         Level level = new Level(serverMessages);
@@ -87,8 +89,9 @@ public class SearchClient {
         Frontier frontier = null;
         MonteCarloTreeSearch monteCarloTreeSearch = null;
         NNet nNet = null;
+        Integer gpus = null;
         boolean train = false, loadCheckpoint = false, loadBest = false;
-        String pythonPath = null;
+        String pythonPath = PYTHON_PATH;
         Backpropagation backpropagation = new AdditiveBackpropagation();
         if (args.length > 0) {
             if (args.length > 1) {
@@ -108,6 +111,9 @@ public class SearchClient {
                             break;
                         case  "-python":
                             pythonPath = args[i + 1];
+                            break;
+                        case "-gpus":
+                            gpus = Integer.parseInt(args[i + 1]);
                             break;
                     }
                 }
@@ -147,10 +153,7 @@ public class SearchClient {
                             new AllPairsShortestPath(initialState), new AdditiveBackpropagation());
                     break;
                 case "-alpha":
-                    if (pythonPath != null)
-                        nNet = new PythonNNet(pythonPath);
-                    else
-                        nNet = new PythonNNet();
+                    nNet = new PythonNNet(pythonPath);
                     monteCarloTreeSearch = new AlphaGo(new AlphaGoSelection(), new AllActionsExpansion(), backpropagation, nNet);
                     break;
                 default:
@@ -188,7 +191,7 @@ public class SearchClient {
                     nNet.loadModel(Coach.getBestPath(monteCarloTreeSearch, initialState.levelName));
                 }
                 if (train) {
-                    Coach coach = new Coach(nNet, monteCarloTreeSearch);
+                    Coach coach = new Coach(nNet, monteCarloTreeSearch, gpus);
                     coach.train(initialState, loadCheckpoint);
                 }
                 plan = monteCarloTreeSearch.solve(new Node(initialState));

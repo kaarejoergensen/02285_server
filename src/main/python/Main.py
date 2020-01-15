@@ -2,6 +2,7 @@ import ast
 import sys
 import threading
 import time
+from argparse import ArgumentParser
 from queue import Queue
 
 from NNet import NNet
@@ -34,10 +35,10 @@ class Main:
         return lines
 
 
-def main():
+def main(gpu):
     server_messages = sys.stdin
     parser = Main(server_messages)
-    nnet = NNet()
+    nnet = NNet(gpu)
     while True:
         lines = parser.receive()
         method = lines.pop(0)
@@ -74,4 +75,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    parser = ArgumentParser()
+    parser.add_argument("--gpu", type=float, default=0, help="GPU to use")
+    args = parser.parse_args()
+    main(args.gpu)
