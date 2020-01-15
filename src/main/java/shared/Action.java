@@ -6,6 +6,9 @@ import lombok.Getter;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 
 @Getter
@@ -47,6 +50,14 @@ public class Action {
         this.name = this.generateName();
     }
 
+    public Action(String name, ActionType type, MoveDirection agentMoveDirection, MoveDirection boxMoveDirection, Farge color) {
+        this.name = name;
+        this.type = type;
+        this.agentMoveDirection = agentMoveDirection;
+        this.boxMoveDirection = boxMoveDirection;
+        this.color = color;
+    }
+
     private String generateName(){
         if (type.equals(ActionType.NoOp)) return type.name();
         StringBuilder stringBuilder = new StringBuilder(type.name());
@@ -59,6 +70,51 @@ public class Action {
         }
         stringBuilder.append(")");
         return stringBuilder.toString();
+    }
+
+    public static Action transposeVertical(Action org) {
+        return transpose(org, Action::transposeVertical);
+    }
+
+    public static Action transposeHorizontal(Action org) {
+        return transpose(org, Action::transposeHorizontal);
+    }
+
+    public static Action transposeBoth(Action org) {
+        return transpose(org, m -> transposeVertical(transposeHorizontal(m)));
+    }
+
+    private static Action transpose(Action org, Function<MoveDirection, MoveDirection> transposeMove) {
+        return new Action(org.name, org.type,
+                transposeMove.apply(org.agentMoveDirection), transposeMove.apply(org.boxMoveDirection), org.color);
+    }
+
+    private static MoveDirection transposeVertical(MoveDirection moveDirection) {
+        switch (moveDirection) {
+            case EAST:
+                return MoveDirection.WEST;
+            case WEST:
+                return MoveDirection.EAST;
+            case NORTH:
+            case SOUTH:
+            case NONE:
+            default:
+                return moveDirection;
+        }
+    }
+
+    private static MoveDirection transposeHorizontal(MoveDirection moveDirection) {
+        switch (moveDirection) {
+            case NORTH:
+                return MoveDirection.SOUTH;
+            case SOUTH:
+                return MoveDirection.NORTH;
+            case EAST:
+            case WEST:
+            case NONE:
+            default:
+                return moveDirection;
+        }
     }
 
     public short getAgentDeltaRow() {

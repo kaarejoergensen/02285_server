@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Data
@@ -208,7 +209,7 @@ public class Coach {
                     List<StateActionTakenSolvedTuple> stateActionTakenSolvedTuples = new ArrayList<>();
                     for (int k = 0; !solved.booleanValue() && k < MAX_NUMBER_OF_NODES_TO_EXPLORE; k++) {
                         mcts.runMCTS(node);
-                        stateActionTakenSolvedTuples.add(new StateActionTakenSolvedTuple(node.getState(), node.getNumberOfTimesActionTakenMap(), solved));
+                        stateActionTakenSolvedTuples.addAll(allPermutations(node, solved));
                         node = node.getChildStochastic(true);
                         solved.setValue(node.getState().isGoalState());
                     }
@@ -238,9 +239,44 @@ public class Coach {
         return stateActionTakenSolvedTuples;
     }
 
+    public List<StateActionTakenSolvedTuple> allPermutations(Node node, MutableBoolean solved) {
+        List<StateActionTakenSolvedTuple> result = new ArrayList<>();
+
+        List<String> mlStates = node.getState().getAllMLTranspositions();
+
+        var map = node.getNumberOfTimesActionTakenMap();
+
+        result.add(new StateActionTakenSolvedTuple(mlStates.get(0), map, solved));
+        result.add(new StateActionTakenSolvedTuple(mlStates.get(1), this.transposeActionTakenMapVertical(map), solved));
+        result.add(new StateActionTakenSolvedTuple(mlStates.get(2), this.transposeActionTakenMapHorizontal(map), solved));
+        result.add(new StateActionTakenSolvedTuple(mlStates.get(3), this.transposeActionTakenMapBoth(map), solved));
+
+        return result;
+    }
+
+    private Map<Action, Integer> transposeActionTakenMapVertical(Map<Action, Integer> actionIntegerMap) {
+        return transposeActionTakenMap(actionIntegerMap, Action::transposeVertical);
+    }
+
+    private Map<Action, Integer> transposeActionTakenMapHorizontal(Map<Action, Integer> actionIntegerMap) {
+        return transposeActionTakenMap(actionIntegerMap, Action::transposeHorizontal);
+    }
+
+    private Map<Action, Integer> transposeActionTakenMapBoth(Map<Action, Integer> actionIntegerMap) {
+        return transposeActionTakenMap(actionIntegerMap, Action::transposeBoth);
+    }
+
+    private Map<Action, Integer> transposeActionTakenMap(Map<Action, Integer> actionIntegerMap, Function<Action, Action> actionPermutation) {
+        Map<Action, Integer> map = new HashMap<>();
+        for (Map.Entry<Action, Integer> entry : actionIntegerMap.entrySet()) {
+            map.put(actionPermutation.apply(entry.getKey()), entry.getValue());
+        }
+        return map;
+    }
+
     @Data
     private static class StateActionTakenSolvedTuple {
-        private final State state;
+        private final String state;
         private final Map<Action, Integer> actionTakenMap;
         private final MutableBoolean solved;
 
@@ -253,7 +289,7 @@ public class Coach {
                 Integer numberOfTimesTaken = this.actionTakenMap.get(allActions.get(i));
                 probabilityVector[i] = numberOfTimesTaken != null ? (float) numberOfTimesTaken / (float) totalNumberOfActionsTaken : 0f;
             }
-            return this.state.toMLString() + "|" +
+            return this.state + "|" +
                     Arrays.toString(probabilityVector) + "|" +
                     (this.solved.booleanValue() ? "1" : "-1");
         }

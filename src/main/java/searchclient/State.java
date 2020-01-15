@@ -24,7 +24,7 @@ public class State {
     public Farge[] agentColors;
     private Set<Farge> agentFarges;
 
-    public byte[][] wallsAndGoalsByteRepresentation;
+    public byte[][][] wallsAndGoalsByteRepresentation;
 
     public boolean[][] walls;
 
@@ -62,7 +62,8 @@ public class State {
     }
 
     private void createWallsAndGoalsByteRepresentation() {
-        this.wallsAndGoalsByteRepresentation = new byte[MAX_HEIGHT * 3][MAX_WIDTH];
+        this.wallsAndGoalsByteRepresentation = new byte[12][MAX_HEIGHT][MAX_WIDTH];
+
         this.heightDiff = Math.round((MAX_HEIGHT - this.walls.length) / 2f);
         this.widthDiff = Math.round((MAX_WIDTH - this.walls[0].length) / 2f);
         if (this.heightDiff < 0 || this.widthDiff < 0) {
@@ -71,17 +72,24 @@ public class State {
         }
         for (Map.Entry<Coordinate, Character> entry : this.goals.entrySet()) {
             Coordinate goalCoordinate = entry.getKey();
-            if ('A' <= entry.getValue() && entry.getValue() <= 'Z')
-                this.wallsAndGoalsByteRepresentation[this.heightDiff + goalCoordinate.getRow()][this.widthDiff + goalCoordinate.getCol()] = 1;
-            else
-                this.wallsAndGoalsByteRepresentation[MAX_HEIGHT + this.heightDiff + goalCoordinate.getRow()][this.widthDiff + goalCoordinate.getCol()] = 1;
+            if ('A' <= entry.getValue() && entry.getValue() <= 'Z') {
+                this.wallsAndGoalsByteRepresentation[0][this.heightDiff + goalCoordinate.getRow()][this.widthDiff + goalCoordinate.getCol()] = 1;
+            }
+            else {
+                this.wallsAndGoalsByteRepresentation[1][this.heightDiff + goalCoordinate.getRow()][this.widthDiff + goalCoordinate.getCol()] = 1;
+            }
         }
         for (int row = 0; row < this.walls.length; row++) {
             for (int col = 0; col < this.walls[row].length; col++) {
                 if (!this.walls[row][col]) {
-                    this.wallsAndGoalsByteRepresentation[MAX_HEIGHT * 2 + this.heightDiff + row][this.widthDiff + col] = 1;
+                    this.wallsAndGoalsByteRepresentation[2][this.heightDiff + row][this.widthDiff + col] = 1;
                 }
             }
+        }
+        for (int i = 3; i < 12; i += 3) {
+            this.wallsAndGoalsByteRepresentation[i] = this.transpose(this.wallsAndGoalsByteRepresentation[0], i);
+            this.wallsAndGoalsByteRepresentation[i + 1] = this.transpose(this.wallsAndGoalsByteRepresentation[1], i);
+            this.wallsAndGoalsByteRepresentation[i + 2] = this.transpose(this.wallsAndGoalsByteRepresentation[2], i);
         }
     }
 
@@ -458,31 +466,88 @@ public class State {
         return s.toString();
     }
 
+    public byte[][] transposeHorizontal(byte[][] in) {
+        byte[][] res = new byte[in.length][in[0].length];
+        for (int i = 0; i < in.length; i++) {
+            res[in.length - i - 1] = Arrays.copyOf(in[i], in[i].length);
+        }
+        return res;
+    }
+
+    public byte[][] transposeVertical(byte[][] in) {
+        byte[][] res = new byte[in.length][in[0].length];
+        for (int i = 0; i < in.length; i++) {
+            for (int j = 0; j < in[i].length; j++) {
+                res[i][in[i].length - j - 1] = in[i][j];
+            }
+        }
+        return res;
+    }
+
+    private byte[][] transpose(byte[][] in, int mode) {
+        switch (mode) {
+            case 0:
+                return in;
+            case 3:
+                return this.transposeVertical(in);
+            case 6:
+                return this.transposeHorizontal(in);
+            case 9:
+            default:
+                return this.transposeHorizontal(this.transposeVertical(in));
+        }
+    }
+
+
     public String toMLString() {
         if (this.heightDiff < 0 || this.widthDiff < 0) {
             throw new IllegalArgumentException("Map too big for ML");
         }
-        byte[][] byteRepresentation = new byte[this.wallsAndGoalsByteRepresentation.length + MAX_HEIGHT * 2][MAX_WIDTH];
-        for (int i = 0; i < this.wallsAndGoalsByteRepresentation.length; i++) {
-            byteRepresentation[i] = Arrays.copyOf(this.wallsAndGoalsByteRepresentation[i], this.wallsAndGoalsByteRepresentation[i].length);
+        byte[][][] byteRepresentation = new byte[5][MAX_HEIGHT][MAX_WIDTH];
+
+        byteRepresentation[0] = this.wallsAndGoalsByteRepresentation[0];
+        byteRepresentation[1] = this.wallsAndGoalsByteRepresentation[1];
+        byteRepresentation[2] = this.wallsAndGoalsByteRepresentation[2];
+        this.buildByteRepresentation(byteRepresentation);
+
+        return Arrays.deepToString(byteRepresentation);
+    }
+
+    public List<String> getAllMLTranspositions() {
+        if (this.heightDiff < 0 || this.widthDiff < 0) {
+            throw new IllegalArgumentException("Map too big for ML");
+        }
+        List<String> res = new ArrayList<>();
+
+        for (int i = 0; i < 12; i+=3) {
+            byte[][][] byteRepresentation = new byte[5][MAX_HEIGHT][MAX_WIDTH];
+
+            byteRepresentation[0] = this.wallsAndGoalsByteRepresentation[i];
+            byteRepresentation[1] = this.wallsAndGoalsByteRepresentation[i + 1];
+            byteRepresentation[2] = this.wallsAndGoalsByteRepresentation[i + 2];
+            this.buildByteRepresentation(byteRepresentation);
+            byteRepresentation[3] = this.transpose(byteRepresentation[3], i);
+            byteRepresentation[4] = this.transpose(byteRepresentation[4], i);
+
+            res.add(Arrays.deepToString(byteRepresentation));
         }
 
-//        for (byte agent = 0; agent < this.agentCols.length; agent++) {
+        return res;
+    }
+
+    public void buildByteRepresentation(byte[][][] in) {
         for (int row = 0; row < this.walls.length; row++) {
             for (int col = 0; col < this.walls[row].length; col++) {
                 if (this.agentRows[0] == row && this.agentCols[0] == col) {
-                    byteRepresentation[MAX_HEIGHT * 3 + this.heightDiff + row][this.widthDiff + col] = 1;
+                    in[3][this.heightDiff + row][this.widthDiff + col] = 1;
                 } else {
                     Coordinate coordinate = new Coordinate(row, col);
                     Box box = this.boxMap.get(coordinate);
                     if (box != null) {
-                        byteRepresentation[MAX_HEIGHT * 4 + this.heightDiff + row][this.widthDiff + col] = 1;
+                        in[4][this.heightDiff + row][this.widthDiff + col] = 1;
                     }
                 }
-
             }
-//            }
         }
-        return Arrays.deepToString(byteRepresentation);
     }
 }
