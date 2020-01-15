@@ -90,7 +90,7 @@ public class AlphaGo extends MonteCarloTreeSearch {
 
     @Override
     public MonteCarloTreeSearch clone()  {
-        return new AlphaGo(this.selection, this.expansion.clone(), this.backpropagation.clone(), this.nNet.clone());
+        return new AlphaGo(this.selection, this.expansion.clone(), this.backpropagation.clone(), this.nNet);
     }
 
     @Override

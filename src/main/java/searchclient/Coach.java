@@ -148,8 +148,10 @@ public class Coach {
         for (int i = 0; i < cores; i++) {
             callableList.add(() -> {
                 List<StateActionTakenSolvedTuple> finalList = new ArrayList<>();
+                MonteCarloTreeSearch mcts = this.monteCarloTreeSearch.clone();
+                mcts.setNNet(this.nNet.clone());
                 while (numberOfEpisodes.getAndIncrement() < NUMBER_OF_EPISODES) {
-                    MonteCarloTreeSearch mcts = this.monteCarloTreeSearch.clone();
+                    mcts = this.monteCarloTreeSearch.clone();
                     Node node = new Node(root);
                     MutableBoolean solved = new MutableBoolean(false);
                     List<StateActionTakenSolvedTuple> stateActionTakenSolvedTuples = new ArrayList<>();
