@@ -162,7 +162,7 @@ public class Coach {
                 newNNet.loadTempModel();
                 mcts.setNNet(newNNet);
                 while (numberOfEpisodes.getAndIncrement() < NUMBER_OF_EPISODES) {
-                    mcts = this.monteCarloTreeSearch.clone();
+                    mcts = mcts.clone();
                     Node node = new Node(root);
                     MutableBoolean solved = new MutableBoolean(false);
                     List<StateActionTakenSolvedTuple> stateActionTakenSolvedTuples = new ArrayList<>();
