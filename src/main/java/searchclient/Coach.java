@@ -133,7 +133,7 @@ public class Coach {
     }
 
     private List<String> runEpisodes(State root) {
-        int cores = 1;//Runtime.getRuntime().availableProcessors();
+        int cores = 2;//Runtime.getRuntime().availableProcessors();
         ExecutorService executorService = Executors.newFixedThreadPool(cores);
         List<Callable<List<StateActionTakenSolvedTuple>>> callableList = new ArrayList<>(cores);
         AtomicInteger numberOfEpisodes = new AtomicInteger(0);

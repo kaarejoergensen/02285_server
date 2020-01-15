@@ -6,6 +6,7 @@ import searchclient.nn.PredictResult;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
@@ -14,6 +15,9 @@ import java.util.stream.Collectors;
 public class PythonNNet extends NNet {
     private static final String PYTHON_PATH = "./venv/bin/python";
     private static final String SCRIPT_PATH = "./src/main/python/Main.py";
+
+    private static final String TEMP_PATH = "models/";
+    private static final String TEMP_NAME = "temp.pth";
 
     private Process process;
     private BufferedReader clientReader;
@@ -80,7 +84,14 @@ public class PythonNNet extends NNet {
     @Override
     public NNet clone() {
         try {
-            return new PythonNNet();
+            if (!Files.isDirectory(Path.of(TEMP_PATH))) {
+                Files.createDirectories(Path.of(TEMP_PATH));
+            }
+            Path temp = Path.of(TEMP_PATH + TEMP_NAME);
+            this.saveModel(temp);
+            NNet nnet = new PythonNNet();
+            nnet.loadModel(temp);
+            return nnet;
         } catch (IOException e) {
             e.printStackTrace();
             return null;
