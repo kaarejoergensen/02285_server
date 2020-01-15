@@ -12,6 +12,7 @@ from NNetAlphaModule import NNetAlphaModule
 class NNet():
     def __init__(self, gpu):
         #self.model = NNetModule()
+        self.device = torch.device('cuda:' + str(gpu))
         self.model = NNetAlphaModule(resblocks=19)
         if torch.cuda.is_available():
             self.model = self.model.to("cuda")
@@ -19,7 +20,7 @@ class NNet():
                 # print("Using", torch.cuda.device_count(), "GPUs", file=sys.stderr, flush=True)
                 # print("", file=sys.stderr, flush=True)
                 # self.model = nn.DataParallel(self.model)
-            self.model = self.model.to(torch.device('cuda:' + str(gpu)))
+            self.model = self.model.to(self.device)
         print(next(self.model.parameters()).device, file=sys.stderr, flush=True)
         self.optimizer = optim.SGD(self.model.parameters(), lr=0.001, momentum=0.9)
         self.criterion = torch.nn.BCELoss()
@@ -46,6 +47,9 @@ class NNet():
                     states = states.to("cuda")
                     probability_vectors = probability_vectors.to("cuda")
                     wins = wins.to("cuda")
+                    states = states.to(self.device)
+                    probability_vectors = probability_vectors.to(self.device)
+                    wins = wins.to(self.device)
                 self.optimizer.zero_grad()
                 self.model.eval()
                 out_probability_vectors, out_wins = self.model(states)
@@ -77,6 +81,7 @@ class NNet():
         state_tensor = torch.tensor(np.array(state), dtype=torch.float)
         if torch.cuda.is_available():
             state_tensor = state_tensor.to("cuda")
+            state_tensor = state_tensor.to(self.device)
         self.model.eval()
         with torch.no_grad():
             probability_vector, win = self.model(state_tensor)
