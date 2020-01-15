@@ -21,7 +21,6 @@ class NNet():
                 # print("", file=sys.stderr, flush=True)
                 # self.model = nn.DataParallel(self.model)
             self.model = self.model.to(self.device)
-        print(next(self.model.parameters()).device, file=sys.stderr, flush=True)
         self.optimizer = optim.SGD(self.model.parameters(), lr=0.001, momentum=0.9)
         self.criterion = torch.nn.BCELoss()
         self.priorLoss = 1.0
