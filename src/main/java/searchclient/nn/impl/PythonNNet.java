@@ -51,47 +51,57 @@ public class PythonNNet extends NNet {
 
     @Override
     public float train(List<String> trainingSet) {
-        this.writeToPython("train", trainingSet.stream().collect(Collectors.joining(System.lineSeparator())));
-        return Float.parseFloat(this.readFromPython());
+        writeToPython("train", trainingSet.stream().collect(Collectors.joining(System.lineSeparator())), clientWriter);
+        return Float.parseFloat(readFromPython(clientReader));
     }
 
     @Override
     public PredictResult predict(State state) {
-        this.writeToPython("predict", state.toMLString());
-        double[] probabilityVector = this.parseProbabilityVector(this.readFromPython());
-        float score = Float.parseFloat(this.readFromPython().replaceAll("[\\[\\]]", ""));
-        float loss = Float.parseFloat(this.readFromPython());
+        writeToPython("predict", state.toMLString(), clientWriter);
+        return readPredictResult(clientReader);
+    }
+
+    private static synchronized PredictResult readPredictResult(BufferedReader clientReader) {
+        double[] probabilityVector = parseProbabilityVector(readFromPython(clientReader));
+        float score = Float.parseFloat(readFromPython(clientReader).replaceAll("[\\[\\]]", ""));
+        float loss = Float.parseFloat(readFromPython(clientReader));
         return new PredictResult(probabilityVector, score, loss);
     }
 
-    private double[] parseProbabilityVector(String string) {
+    private static double[] parseProbabilityVector(String string) {
         return Arrays.stream(string.replaceAll("[\\[\\] ]", "").split(","))
                 .mapToDouble(Double::parseDouble).toArray();
     }
 
     @Override
     public void saveModel(Path fileName) {
-        this.writeToPython("saveModel", fileName.toString());
-        this.readFromPython();
+        writeToPython("saveModel", fileName.toString(), clientWriter);
+        readFromPython(clientReader);
     }
 
     @Override
     public void loadModel(Path fileName) {
-        this.writeToPython("loadModel", fileName.toString());
-        this.readFromPython();
+        writeToPython("loadModel", fileName.toString(), clientWriter);
+        readFromPython(clientReader);
+    }
+
+    public void saveTempModel() throws IOException {
+        if (!Files.isDirectory(Path.of(TEMP_PATH))) {
+            Files.createDirectories(Path.of(TEMP_PATH));
+        }
+        Path temp = Path.of(TEMP_PATH + TEMP_NAME);
+        this.saveModel(temp);
+    }
+
+    public void loadTempModel() {
+        Path temp = Path.of(TEMP_PATH + TEMP_NAME);
+        this.loadModel(temp);
     }
 
     @Override
     public NNet clone() {
         try {
-            if (!Files.isDirectory(Path.of(TEMP_PATH))) {
-                Files.createDirectories(Path.of(TEMP_PATH));
-            }
-            Path temp = Path.of(TEMP_PATH + TEMP_NAME);
-            this.saveModel(temp);
-            NNet nnet = new PythonNNet();
-            nnet.loadModel(temp);
-            return nnet;
+            return new PythonNNet();
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -105,8 +115,8 @@ public class PythonNNet extends NNet {
 
     @Override
     public void close() throws IOException {
-        this.writeToPython("close", "");
-        this.readFromPython();
+        writeToPython("close", "", clientWriter);
+        readFromPython(clientReader);
         this.clientWriter.close();
         this.clientReader.close();
         try {
@@ -117,36 +127,32 @@ public class PythonNNet extends NNet {
         if (this.process.isAlive()) this.process.destroy();
     }
 
-    private String readFromPython() {
+    private static synchronized String readFromPython(BufferedReader clientReader) {
         String line = "";
-        synchronized (this) {
-            try {
-                line = this.clientReader.readLine();
-                if (line == null) {
-                    System.err.println("Read from python failed: null line received");
-                    System.exit(-1);
-                }
-            } catch (IOException e) {
-                System.err.println("Read from python failed: " + e.getMessage());
+        try {
+            line = clientReader.readLine();
+            if (line == null) {
+                System.err.println("Read from python failed: null line received");
                 System.exit(-1);
             }
+        } catch (IOException e) {
+            System.err.println("Read from python failed: " + e.getMessage());
+            System.exit(-1);
         }
         return line;
     }
 
-    private void writeToPython(String method, String args) {
-        synchronized (this) {
-            try {
-                this.clientWriter.write(method + System.lineSeparator());
-                this.clientWriter.flush();
-                this.clientWriter.write(args + System.lineSeparator());
-                this.clientWriter.flush();
-                this.clientWriter.write("done" + System.lineSeparator());
-                this.clientWriter.flush();
-            } catch (IOException e) {
-                System.err.println("Write to python failed: " + e.getMessage());
-                System.exit(-1);
-            }
+    private static synchronized void writeToPython(String method, String args, BufferedWriter clientWriter) {
+        try {
+            clientWriter.write(method + System.lineSeparator());
+            clientWriter.flush();
+            clientWriter.write(args + System.lineSeparator());
+            clientWriter.flush();
+            clientWriter.write("done" + System.lineSeparator());
+            clientWriter.flush();
+        } catch (IOException e) {
+            System.err.println("Write to python failed: " + e.getMessage());
+            System.exit(-1);
         }
     }
 }

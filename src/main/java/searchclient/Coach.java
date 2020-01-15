@@ -9,6 +9,7 @@ import org.apache.commons.lang3.mutable.MutableBoolean;
 import searchclient.mcts.model.Node;
 import searchclient.mcts.search.MonteCarloTreeSearch;
 import searchclient.nn.NNet;
+import searchclient.nn.impl.PythonNNet;
 import shared.Action;
 
 import java.io.*;
@@ -145,11 +146,21 @@ public class Coach {
                 .setTaskName("Episodes")
                 .setStyle(ProgressBarStyle.ASCII)
                 .build();
+        if (this.nNet instanceof PythonNNet) {
+            try {
+                ((PythonNNet) this.nNet).saveTempModel();
+            } catch (IOException e) {
+                e.printStackTrace();
+                return Collections.emptyList();
+            }
+        }
         for (int i = 0; i < cores; i++) {
             callableList.add(() -> {
                 List<StateActionTakenSolvedTuple> finalList = new ArrayList<>();
                 MonteCarloTreeSearch mcts = this.monteCarloTreeSearch.clone();
-                mcts.setNNet(this.nNet.clone());
+                PythonNNet newNNet = (PythonNNet) this.nNet.clone();
+                newNNet.loadTempModel();
+                mcts.setNNet(newNNet);
                 while (numberOfEpisodes.getAndIncrement() < NUMBER_OF_EPISODES) {
                     mcts = this.monteCarloTreeSearch.clone();
                     Node node = new Node(root);
