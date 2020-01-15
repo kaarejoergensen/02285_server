@@ -19,6 +19,8 @@ public class PythonNNet extends NNet {
     private static final String TEMP_PATH = "models/";
     private static final String TEMP_NAME = "temp.pth";
 
+    private String pythonPath = PYTHON_PATH;
+
     private Process process;
     private BufferedReader clientReader;
     private BufferedWriter clientWriter;
@@ -27,9 +29,14 @@ public class PythonNNet extends NNet {
         this.run();
     }
 
+    public PythonNNet(String pythonPath) throws IOException {
+        this.pythonPath = pythonPath;
+        this.run();
+    }
+
     private void run() throws IOException {
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdownPython));
-        ProcessBuilder processBuilder = new ProcessBuilder(PYTHON_PATH, SCRIPT_PATH).redirectError(ProcessBuilder.Redirect.INHERIT);
+        ProcessBuilder processBuilder = new ProcessBuilder(this.pythonPath, SCRIPT_PATH).redirectError(ProcessBuilder.Redirect.INHERIT);
         this.process = processBuilder.start();
 
         InputStream clientIn = process.getInputStream();

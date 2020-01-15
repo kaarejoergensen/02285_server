@@ -88,6 +88,7 @@ public class SearchClient {
         MonteCarloTreeSearch monteCarloTreeSearch = null;
         NNet nNet = null;
         boolean train = false, loadCheckpoint = false, loadBest = false;
+        String pythonPath = null;
         Backpropagation backpropagation = new AdditiveBackpropagation();
         if (args.length > 0) {
             if (args.length > 1) {
@@ -104,6 +105,9 @@ public class SearchClient {
                             break;
                         case "-rave":
                             backpropagation = new AdditiveRAVEBackpropagation();
+                            break;
+                        case  "-python":
+                            pythonPath = args[i + 1];
                             break;
                     }
                 }
@@ -143,7 +147,10 @@ public class SearchClient {
                             new AllPairsShortestPath(initialState), new AdditiveBackpropagation());
                     break;
                 case "-alpha":
-                    nNet = new PythonNNet();
+                    if (pythonPath != null)
+                        nNet = new PythonNNet(pythonPath);
+                    else
+                        nNet = new PythonNNet();
                     monteCarloTreeSearch = new AlphaGo(new AlphaGoSelection(), new AllActionsExpansion(), backpropagation, nNet);
                     break;
                 default:
