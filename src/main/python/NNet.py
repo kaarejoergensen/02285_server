@@ -12,7 +12,7 @@ from NNetAlphaModule import NNetAlphaModule
 class NNet():
     def __init__(self):
         #self.model = NNetModule()
-        self.model = NNetAlphaModule()
+        self.model = NNetAlphaModule(resblocks=19)
         if torch.cuda.is_available():
             self.model = self.model.to("cuda")
             # if torch.cuda.device_count() > 1:
