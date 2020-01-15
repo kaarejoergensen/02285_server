@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 
 class ConvBlock(nn.Module):
-    def __init__(self, channels, x, y, planes=512):
+    def __init__(self, channels, x, y, planes=128):
         super(ConvBlock, self).__init__()
         self.channels, self.x, self.y = channels, x, y
         self.conv1 = nn.Conv2d(channels, planes, 3, stride=1, padding=1)
@@ -17,7 +17,7 @@ class ConvBlock(nn.Module):
 
 
 class ResBlock(nn.Module):
-    def __init__(self, inplanes=512, planes=512, stride=1, downsample=None):
+    def __init__(self, inplanes=128, planes=128, stride=1, downsample=None):
         super(ResBlock, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=3, stride=stride,
                                padding=1, bias=False)
@@ -38,7 +38,7 @@ class ResBlock(nn.Module):
 
 
 class OutBlock(nn.Module):
-    def __init__(self, channels, x, y, action_size, planes=512):
+    def __init__(self, channels, x, y, action_size, planes=128):
         super(OutBlock, self).__init__()
         self.channels, self.x, self.y, self.action_size = channels, x, y, action_size
         self.conv = nn.Conv2d(planes, channels, kernel_size=1)  # value head
