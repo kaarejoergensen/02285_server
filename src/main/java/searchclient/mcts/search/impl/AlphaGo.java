@@ -9,6 +9,7 @@ import searchclient.nn.NNet;
 import searchclient.nn.PredictResult;
 import shared.Action;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -62,6 +63,10 @@ public class AlphaGo extends MonteCarloTreeSearch {
 
     private void setProbabilityMap(double[] probabilityVector, Node node) {
         List<Action> actions = Action.getAllActions();
+        if (probabilityVector.length < actions.size()) {
+            System.err.println("SHORTER!");
+            System.err.println(Arrays.toString(probabilityVector));
+        }
         for (int i = 0; i < actions.size(); i++) {
             if (node.getActionProbabilityMap().containsKey(actions.get(i))) {
                 node.getActionProbabilityMap().put(actions.get(i), probabilityVector[i]);
