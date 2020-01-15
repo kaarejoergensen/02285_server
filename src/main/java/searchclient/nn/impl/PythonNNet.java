@@ -58,20 +58,20 @@ public class PythonNNet extends NNet {
 
     @Override
     public float train(List<String> trainingSet) {
-        writeToPython("train", trainingSet.stream().collect(Collectors.joining(System.lineSeparator())), clientWriter);
-        return Float.parseFloat(readFromPython(clientReader));
+        this.writeToPython("train", trainingSet.stream().collect(Collectors.joining(System.lineSeparator())));
+        return Float.parseFloat(this.readFromPython());
     }
 
     @Override
     public PredictResult predict(State state) {
-        writeToPython("predict", state.toMLString(), clientWriter);
-        return readPredictResult(clientReader);
+        this.writeToPython("predict", state.toMLString());
+        return this.readPredictResult(clientReader);
     }
 
-    private static synchronized PredictResult readPredictResult(BufferedReader clientReader) {
-        double[] probabilityVector = parseProbabilityVector(readFromPython(clientReader));
-        float score = Float.parseFloat(readFromPython(clientReader).replaceAll("[\\[\\]]", ""));
-        float loss = Float.parseFloat(readFromPython(clientReader));
+    private PredictResult readPredictResult(BufferedReader clientReader) {
+        double[] probabilityVector = parseProbabilityVector(this.readFromPython());
+        float score = Float.parseFloat(this.readFromPython().replaceAll("[\\[\\]]", ""));
+        float loss = Float.parseFloat(this.readFromPython());
         return new PredictResult(probabilityVector, score, loss);
     }
 
@@ -82,14 +82,14 @@ public class PythonNNet extends NNet {
 
     @Override
     public void saveModel(Path fileName) {
-        writeToPython("saveModel", fileName.toString(), clientWriter);
-        readFromPython(clientReader);
+        this.writeToPython("saveModel", fileName.toString());
+        this.readFromPython();
     }
 
     @Override
     public void loadModel(Path fileName) {
-        writeToPython("loadModel", fileName.toString(), clientWriter);
-        readFromPython(clientReader);
+        this.writeToPython("loadModel", fileName.toString());
+        this.readFromPython();
     }
 
     public void saveTempModel() throws IOException {
@@ -122,8 +122,8 @@ public class PythonNNet extends NNet {
 
     @Override
     public void close() throws IOException {
-        writeToPython("close", "", clientWriter);
-        readFromPython(clientReader);
+        this.writeToPython("close", "");
+        this.readFromPython();
         this.clientWriter.close();
         this.clientReader.close();
         try {
@@ -134,10 +134,10 @@ public class PythonNNet extends NNet {
         if (this.process.isAlive()) this.process.destroy();
     }
 
-    private static synchronized String readFromPython(BufferedReader clientReader) {
+    private String readFromPython() {
         String line = "";
         try {
-            line = clientReader.readLine();
+            line = this.clientReader.readLine();
             if (line == null) {
                 System.err.println("Read from python failed: null line received");
                 System.exit(-1);
@@ -149,14 +149,14 @@ public class PythonNNet extends NNet {
         return line;
     }
 
-    private static synchronized void writeToPython(String method, String args, BufferedWriter clientWriter) {
+    private void writeToPython(String method, String args) {
         try {
-            clientWriter.write(method + System.lineSeparator());
-            clientWriter.flush();
-            clientWriter.write(args + System.lineSeparator());
-            clientWriter.flush();
-            clientWriter.write("done" + System.lineSeparator());
-            clientWriter.flush();
+            this.clientWriter.write(method + System.lineSeparator());
+            this.clientWriter.flush();
+            this.clientWriter.write(args + System.lineSeparator());
+            this.clientWriter.flush();
+            this.clientWriter.write("done" + System.lineSeparator());
+            this.clientWriter.flush();
         } catch (IOException e) {
             System.err.println("Write to python failed: " + e.getMessage());
             System.exit(-1);
