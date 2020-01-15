@@ -64,16 +64,36 @@ public class Coach {
             this.nNet.saveModel(getTmpNewPath(root.levelName));
             System.err.println("Training done. Loss: " + loss);
 
-            System.err.println("Solving with new NN");
-            MonteCarloTreeSearch newModelMCTS = this.monteCarloTreeSearch.clone();
-            newModelMCTS.setNNet(this.nNet);
-            Action[][] newPlan = newModelMCTS.solve(new Node(root));
-            System.err.println("Solving with old NN");
-            this.nNet.loadModel(getTmpOldPath(root.levelName));
-            MonteCarloTreeSearch oldModelMCTS = this.monteCarloTreeSearch.clone();
-            oldModelMCTS.setNNet(this.nNet);
-            Action[][] oldPlan = oldModelMCTS.solve(new Node(root));
+            ExecutorService executorService = Executors.newFixedThreadPool(2);
+            Callable<Action[][]> newModelCallable = () -> {
+                System.err.println("Solving with new NN");
+                MonteCarloTreeSearch newModelMCTS = this.monteCarloTreeSearch.clone();
+                newModelMCTS.setNNet(this.nNet);
+                return newModelMCTS.solve(new Node(root));
+            };
 
+            Callable<Action[][]> oldModelCallable = () -> {
+                System.err.println("Solving with old NN");
+                MonteCarloTreeSearch oldModelMCTS = this.monteCarloTreeSearch.clone();
+                NNet pythonNNet = this.nNet.clone();
+                pythonNNet.loadModel(getTmpOldPath(root.levelName));
+                oldModelMCTS.setNNet(pythonNNet);
+                Action[][] plan = oldModelMCTS.solve(new Node(root));
+                pythonNNet.close();
+                return plan;
+            };
+
+            Future<Action[][]> newPlanFuture = executorService.submit(newModelCallable);
+            Future<Action[][]> oldPlanFuture = executorService.submit(oldModelCallable);
+            Action[][] newPlan;
+            Action[][] oldPlan;
+            try {
+                newPlan = newPlanFuture.get();
+                oldPlan = oldPlanFuture.get();
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+                return;
+            }
             String planString = "Old plan: " + (oldPlan != null ? oldPlan.length : "null") +
                     " New plan: " + (newPlan != null ? newPlan.length : "null");
             if (oldPlan == null || (newPlan != null && newPlan.length <= oldPlan.length)) {
@@ -141,7 +161,7 @@ public class Coach {
             numberOfThreadsPrGPU = cores / gpus;
         }
         ExecutorService executorService = Executors.newFixedThreadPool(cores);
-        List<Callable<List<StateActionTakenSolvedTuple>>> callableList = new ArrayList<>(cores);
+        List<Callable<List<String>>> callableList = new ArrayList<>(cores);
         AtomicInteger numberOfEpisodes = new AtomicInteger(0);
         AtomicInteger numberOfSolvedEpisodes = new AtomicInteger(0);
         ProgressBar progressBar = new ProgressBarBuilder()
@@ -200,12 +220,13 @@ public class Coach {
                                 + numberOfEpisodes.intValue() + " solved.");
                     }
                 }
-                return finalList;
+                newNNet.close();
+                return finalList.stream().map(StateActionTakenSolvedTuple::toString).collect(Collectors.toList());
             });
         }
-        List<StateActionTakenSolvedTuple> stateActionTakenSolvedTuples = new ArrayList<>();
+        List<String> stateActionTakenSolvedTuples = new ArrayList<>();
         try {
-            List<Future<List<StateActionTakenSolvedTuple>>> futures = executorService.invokeAll(callableList);
+            List<Future<List<String>>> futures = executorService.invokeAll(callableList);
             for (var future : futures) {
                 stateActionTakenSolvedTuples.addAll(future.get());
             }
@@ -214,7 +235,7 @@ public class Coach {
         }
         progressBar.close();
         System.err.println("Episodes done. Solution found in  " + numberOfSolvedEpisodes.intValue() + "/" + (numberOfEpisodes.intValue() - 1));
-        return stateActionTakenSolvedTuples.stream().map(StateActionTakenSolvedTuple::toString).collect(Collectors.toList());
+        return stateActionTakenSolvedTuples;
     }
 
     @Data
