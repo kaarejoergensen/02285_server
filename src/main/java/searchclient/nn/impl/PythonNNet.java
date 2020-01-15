@@ -108,7 +108,7 @@ public class PythonNNet extends NNet {
     @Override
     public NNet clone() {
         try {
-            return new PythonNNet();
+            return new PythonNNet(this.pythonPath);
         } catch (IOException e) {
             e.printStackTrace();
             return null;
