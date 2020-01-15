@@ -127,3 +127,4 @@ buildNumber.properties
 /logs/
 /models/
 Out_Error_Searchclient.out
+.DS_Store
