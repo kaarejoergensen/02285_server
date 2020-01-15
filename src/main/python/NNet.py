@@ -16,8 +16,9 @@ class NNet():
         self.model = NNetAlphaModule(resblocks=19)
         if torch.cuda.is_available():
             self.model = self.model.to("cuda")
-            # if torch.cuda.device_count() > 1:
-                # print("Using", torch.cuda.device_count(), "GPUs", file=sys.stderr, flush=True)
+            if torch.cuda.device_count() > 1:
+                print("Using", torch.cuda.device_count(), "GPUs", file=sys.stderr, flush=True)
+                print("Using" + str(gpu), file=sys.stderr, flush=True)
                 # print("", file=sys.stderr, flush=True)
                 # self.model = nn.DataParallel(self.model)
             self.model = self.model.to(self.device)

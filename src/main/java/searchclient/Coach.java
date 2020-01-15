@@ -165,13 +165,13 @@ public class Coach {
         List<Callable<List<String>>> callableList = new ArrayList<>(cores);
         AtomicInteger numberOfEpisodes = new AtomicInteger(0);
         AtomicInteger numberOfSolvedEpisodes = new AtomicInteger(0);
-        ProgressBar progressBar = new ProgressBarBuilder()
-                .setPrintStream(System.err)
-                .setUpdateIntervalMillis(300)
-                .setInitialMax(NUMBER_OF_EPISODES)
-                .setTaskName("Episodes")
-                .setStyle(ProgressBarStyle.ASCII)
-                .build();
+//        ProgressBar progressBar = new ProgressBarBuilder()
+//                .setPrintStream(System.err)
+//                .setUpdateIntervalMillis(300)
+//                .setInitialMax(NUMBER_OF_EPISODES)
+//                .setTaskName("Episodes")
+//                .setStyle(ProgressBarStyle.ASCII)
+//                .build();
         if (this.nNet instanceof PythonNNet) {
             try {
                 ((PythonNNet) this.nNet).saveTempModel();
@@ -215,11 +215,11 @@ public class Coach {
                     }
                     if (solved.booleanValue()) numberOfSolvedEpisodes.getAndIncrement();
                     finalList.addAll(stateActionTakenSolvedTuples);
-                    synchronized (this) {
-                        progressBar.step();
-                        progressBar.setExtraMessage(numberOfSolvedEpisodes.intValue() + "/"
-                                + NUMBER_OF_EPISODES + " solved.");
-                    }
+//                    synchronized (this) {
+//                        progressBar.step();
+//                        progressBar.setExtraMessage(numberOfSolvedEpisodes.intValue() + "/"
+//                                + NUMBER_OF_EPISODES + " solved.");
+//                    }
                 }
                 newNNet.close();
                 return finalList.stream().map(StateActionTakenSolvedTuple::toString).collect(Collectors.toList());
@@ -234,7 +234,7 @@ public class Coach {
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
-        progressBar.close();
+//        progressBar.close();
         System.err.println("Episodes done. Solution found in  " + numberOfSolvedEpisodes.intValue() + "/" + (numberOfEpisodes.intValue() - 1));
         return stateActionTakenSolvedTuples;
     }
