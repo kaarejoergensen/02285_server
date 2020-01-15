@@ -4,11 +4,11 @@ import torch.nn.functional as F
 
 
 class ConvBlock(nn.Module):
-    def __init__(self, channels, x, y, planes=128):
+    def __init__(self, channels, x, y, planes=512):
         super(ConvBlock, self).__init__()
         self.channels, self.x, self.y = channels, x, y
         self.conv1 = nn.Conv2d(channels, planes, 3, stride=1, padding=1)
-        self.bn1 = nn.BatchNorm2d(128)
+        self.bn1 = nn.BatchNorm2d(planes)
 
     def forward(self, s):
         s = s.view(-1, self.channels, self.x, self.y)  # batch_size x channels x board_x x board_y
@@ -17,7 +17,7 @@ class ConvBlock(nn.Module):
 
 
 class ResBlock(nn.Module):
-    def __init__(self, inplanes=128, planes=128, stride=1, downsample=None):
+    def __init__(self, inplanes=512, planes=512, stride=1, downsample=None):
         super(ResBlock, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=3, stride=stride,
                                padding=1, bias=False)
@@ -38,15 +38,15 @@ class ResBlock(nn.Module):
 
 
 class OutBlock(nn.Module):
-    def __init__(self, channels, x, y, action_size):
+    def __init__(self, channels, x, y, action_size, planes=512):
         super(OutBlock, self).__init__()
         self.channels, self.x, self.y, self.action_size = channels, x, y, action_size
-        self.conv = nn.Conv2d(128, channels, kernel_size=1)  # value head
+        self.conv = nn.Conv2d(planes, channels, kernel_size=1)  # value head
         self.bn = nn.BatchNorm2d(channels)
         self.fc1 = nn.Linear(channels * x * y, 32)
         self.fc2 = nn.Linear(32, 1)
 
-        self.conv1 = nn.Conv2d(128, 32, kernel_size=1)  # policy head
+        self.conv1 = nn.Conv2d(planes, 32, kernel_size=1)  # policy head
         self.bn1 = nn.BatchNorm2d(32)
         self.logsoftmax = nn.LogSoftmax(dim=1)
         self.fc = nn.Linear(x * y * 32, action_size)

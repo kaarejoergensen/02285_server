@@ -218,7 +218,7 @@ public class Coach {
                     synchronized (this) {
                         progressBar.step();
                         progressBar.setExtraMessage(numberOfSolvedEpisodes.intValue() + "/"
-                                + numberOfEpisodes.intValue() + " solved.");
+                                + NUMBER_OF_EPISODES + " solved.");
                     }
                 }
                 newNNet.close();
