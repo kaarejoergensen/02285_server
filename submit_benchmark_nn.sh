@@ -25,8 +25,8 @@
 #BSUB -N
 ### -- Specify the output and error file. %J is the job-id --
 ### -- -o and -e mean append, -oo and -eo mean overwrite --
-#BSUB -oo Out_Error_Searchclient.out
-#BSUB -eo Out_Error_Searchclient.out
+#BSUB -oo nn_benchmark.out
+#BSUB -eo nn_benchmark.out
 
 
 # here follow the commands you want to execute 
