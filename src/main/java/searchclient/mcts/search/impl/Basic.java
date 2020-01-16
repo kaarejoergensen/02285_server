@@ -8,7 +8,11 @@ import searchclient.mcts.selection.Selection;
 import searchclient.mcts.simulation.Simulation;
 import shared.Action;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Basic extends MonteCarloTreeSearch {
     private static final int MCTS_LOOP_ITERATIONS = 400;
@@ -20,15 +24,37 @@ public class Basic extends MonteCarloTreeSearch {
 
     @Override
     public Action[][] solve(Node root) {
-        Node node = root;
         Action[][] solution = null;
-        int i;
-        for (i = 0; i < SOLVE_TRIES && solution == null; i++) {
-            node = this.runMCTS(node);
+        int cores = Runtime.getRuntime().availableProcessors();
+        ExecutorService executorService = Executors.newFixedThreadPool(cores);
+        List<Callable<Node>> callableList = new ArrayList<>(cores);
+        final AtomicInteger i = new AtomicInteger(0);
+        for (int j = 0; j < cores; j++) {
+            callableList.add(() -> {
+                Node node1 = root;
+                for (int k = 0; k < i.get(); k++) {
+                    node1 = node1.getChildWithMaxScore();
+                }
+                return runMCTS(node1);
+            });
+        }
+        for (; i.get() < SOLVE_TRIES && solution == null; i.incrementAndGet()) {
+            Node node = null;
+            try {
+                List<Future<Node>> futures = executorService.invokeAll(callableList);
+                for (var future : futures) {
+                    node = future.get();
+                }
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+                return null;
+            }
+            assert node != null;
             if (node.getState().isGoalState()) {
                 solution = node.getState().extractPlan();
             }
         }
+        executorService.shutdown();
         if (solution == null)
             System.err.println("No solution found in " + SOLVE_TRIES + " iterations.");
         else
@@ -50,7 +76,7 @@ public class Basic extends MonteCarloTreeSearch {
 
             this.backpropagation.backpropagate(score, promisingNode, root);
         }
-        return root.getChildWithMaxScore();
+        return root;
     }
 
     @Override
