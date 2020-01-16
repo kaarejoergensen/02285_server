@@ -50,7 +50,7 @@ public class SearchClient {
     /**
      * Implements the Graph-Search algorithm from R&N figure 3.7.
      */
-    public static Action[][] search(State initialState, Frontier frontier, AtomicInteger count) {
+    public static Action[][] search(State initialState, Frontier frontier, HashSet<State> explored) {
         System.err.format("Starting %s.\n", frontier.getName());
 
         frontier.add(initialState);
@@ -61,16 +61,19 @@ public class SearchClient {
         for (int j = 0; j < cores; j++) {
             callableList.add(() -> {
                 while (true) {
-                    State leafState = frontier.pop();
-                    if (leafState == null) return null;
+                    if (frontier.isEmpty()) {
+                        return null;
+                    }
 
+                    State leafState = frontier.pop();
+                    if (leafState == null) continue;
                     if (leafState.isGoalState()) {
-                        frontier.setEmpty();
                         return leafState.extractPlan();
                     }
-                    count.incrementAndGet();
+
+                    explored.add(leafState);
                     for (State s : leafState.getExpandedStates()) {
-                        if (!s.isExpanded()) {
+                        if (!explored.contains(s) && !frontier.contains(s)) {
                             frontier.add(s);
                         }
                     }
@@ -191,11 +194,10 @@ public class SearchClient {
         try {
             if (monteCarloTreeSearch == null) {
                 HashSet<State> explored = new HashSet<>(65536);
-                AtomicInteger count = new AtomicInteger(0);
-                StatusThread statusThread = new StatusThread(startTime, count, frontier);
+                StatusThread statusThread = new StatusThread(startTime, explored, frontier);
                 statusThread.start();
                 try {
-                    plan = SearchClient.search(initialState, frontier, count);
+                    plan = SearchClient.search(initialState, frontier, explored);
                 } catch (Exception e) {
                     System.err.println("Exception caught in Search");
                     e.printStackTrace(System.err);
@@ -248,7 +250,6 @@ public class SearchClient {
 
         private long startTime;
         private Collection<?> explored;
-        private AtomicInteger count;
         private Frontier frontier;
 
         private AtomicBoolean running = new AtomicBoolean(false);
@@ -257,12 +258,6 @@ public class SearchClient {
         StatusThread(long startTime, Collection<?> explored, Frontier frontier) {
             this.startTime = startTime;
             this.explored = explored;
-            this.frontier = frontier;
-        }
-
-        StatusThread(long startTime, AtomicInteger count, Frontier frontier) {
-            this.startTime = startTime;
-            this.count = count;
             this.frontier = frontier;
         }
 
@@ -307,7 +302,7 @@ public class SearchClient {
         private void printSearchStatusFrontier() {
             String statusTemplate = "#Explored: %,8d, #Frontier: %,8d, #Generated: %,8d, Time: %3.3f s\n%s\n";
             double elapsedTime = (System.nanoTime() - startTime) / 1_000_000_000d;
-            System.err.format(statusTemplate, count.intValue(), frontier.size(), count.intValue() + frontier.size(),
+            System.err.format(statusTemplate, explored.size(), frontier.size(), explored.size() + frontier.size(),
                     elapsedTime, Memory.stringRep());
         }
 

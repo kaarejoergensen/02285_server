@@ -40,8 +40,6 @@ public class State {
     private int _hash = 0;
     private Action[][] applicableActions;
 
-    private ArrayList<State> expandedStates;
-
     /**
      * Constructs an initial state.
      * Arguments are not copied, and therefore should not be modified after being passed in.
@@ -207,7 +205,6 @@ public class State {
     }
 
     public synchronized ArrayList<State> getExpandedStates() {
-        if (this.expandedStates != null) return this.expandedStates;
         int numAgents = this.agentRows.length;
 
         // Determine list of applicable actions for each individual agent.
@@ -247,12 +244,7 @@ public class State {
         }
 
         Collections.shuffle(expandedStates, State.RNG);
-        this.expandedStates = expandedStates;
         return expandedStates;
-    }
-
-    public synchronized boolean isExpanded() {
-        return this.expandedStates != null;
     }
 
     private boolean isApplicable(int agent, Action action) {

@@ -234,6 +234,7 @@ public class Coach {
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
+        executorService.shutdown();
         progressBar.close();
         System.err.println("Episodes done. Solution found in  " + numberOfSolvedEpisodes.intValue() + "/" + (numberOfEpisodes.intValue() - 1));
         return stateActionTakenSolvedTuples;
