@@ -4,10 +4,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 
@@ -190,6 +187,10 @@ public class Action {
             }
         }
         return actions;
+    }
+
+    public String toString() {
+        return "Action(" + this.getName() + ")";
     }
 
     public enum ActionType {

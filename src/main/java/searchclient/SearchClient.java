@@ -88,7 +88,7 @@ public class SearchClient {
         // Select search strategy.
         Frontier frontier = null;
         MonteCarloTreeSearch monteCarloTreeSearch = null;
-        NNet nNet = null;
+        NNet nNet = new MockNNet(new HeuristicAStar(initialState));
         Integer gpus = null;
         boolean train = false, loadCheckpoint = false, loadBest = false;
         String pythonPath = PYTHON_PATH;
@@ -143,18 +143,18 @@ public class SearchClient {
                     frontier = new FrontierBestFirst(new HeuristicGreedy(initialState));
                     break;
                 case "-basic":
-                    nNet = new MockNNet(new HeuristicAStar(initialState));
-                    monteCarloTreeSearch = new Basic(new UCTSelection(0.4), new AllActionsNoDuplicatesExpansion(initialState),
-                            new RandomSimulation(), new AdditiveBackpropagation(), nNet);
+                    monteCarloTreeSearch = new Basic(new AlphaGoSelection(), new AllActionsExpansion(),
+                            new RandomSimulation(), backpropagation);
                     break;
                 case "-onetree":
                     nNet = new MockNNet(new HeuristicAStar(initialState));
                     monteCarloTreeSearch = new OneTree(new UCTSelection(0.4), new AllActionsNoDuplicatesExpansion(initialState),
-                            new AllPairsShortestPath(initialState), new AdditiveBackpropagation());
+                            new AllPairsShortestPath(initialState), backpropagation);
                     break;
                 case "-alpha":
                     nNet = new PythonNNet(pythonPath);
-                    monteCarloTreeSearch = new AlphaGo(new AlphaGoSelection(), new AllActionsExpansion(), backpropagation, nNet);
+                    monteCarloTreeSearch = new AlphaGo(new AlphaGoSelection(), new AllActionsExpansion(),
+                            backpropagation, nNet);
                     break;
                 default:
                     frontier = new FrontierBestFirst(new HeuristicAStar(initialState));
@@ -185,8 +185,8 @@ public class SearchClient {
                 }
             }
             else {
-                //StatusThread statusThread = new StatusThread(startTime, monteCarloTreeSearch.getExpandedStates());
-                //statusThread.start();
+                StatusThread statusThread = new StatusThread(startTime, monteCarloTreeSearch.getExpandedStates());
+                statusThread.start();
                 if (loadBest && Files.exists(Coach.getBestPath(monteCarloTreeSearch, initialState.levelName))) {
                     nNet.loadModel(Coach.getBestPath(monteCarloTreeSearch, initialState.levelName));
                 }
@@ -196,7 +196,7 @@ public class SearchClient {
                 }
                 plan = monteCarloTreeSearch.solve(new Node(initialState));
                 nNet.close();
-                //statusThread.interrupt();
+                statusThread.interrupt();
             }
         } catch (OutOfMemoryError ex) {
             System.err.println("Maximum memory usage exceeded.");

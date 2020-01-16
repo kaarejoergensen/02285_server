@@ -1,42 +1,39 @@
 package searchclient.mcts.search.impl;
 
-import lombok.Setter;
 import searchclient.mcts.backpropagation.Backpropagation;
 import searchclient.mcts.expansion.Expansion;
 import searchclient.mcts.model.Node;
 import searchclient.mcts.search.MonteCarloTreeSearch;
 import searchclient.mcts.selection.Selection;
 import searchclient.mcts.simulation.Simulation;
-import searchclient.nn.NNet;
 import shared.Action;
 
 import java.util.Collection;
 
 public class Basic extends MonteCarloTreeSearch {
-    private static final int MCTS_LOOP_ITERATIONS = 1600;
-    private NNet nNet;
-    private boolean train = false;
+    private static final int MCTS_LOOP_ITERATIONS = 400;
+    private static final int SOLVE_TRIES = 10000;
 
-    public Basic(Selection selection, Expansion expansion, Simulation simulation, Backpropagation backpropagation,
-                 NNet nNet) {
+    public Basic(Selection selection, Expansion expansion, Simulation simulation, Backpropagation backpropagation) {
         super(selection, expansion, simulation, backpropagation);
-        this.nNet = nNet;
     }
 
     @Override
     public Action[][] solve(Node root) {
         Node node = root;
-        int iterations = 0;
-        while (true) {
-            System.out.println("Try nr... " + iterations++);
+        Action[][] solution = null;
+        int i;
+        for (i = 0; i < SOLVE_TRIES && solution == null; i++) {
             node = this.runMCTS(node);
             if (node.getState().isGoalState()) {
-                return node.getState().extractPlan();
-            }
-            if(iterations % 10 == 0){
-                System.out.println("Hmm... det tar litt tid det her eller hva");
+                solution = node.getState().extractPlan();
             }
         }
+        if (solution == null)
+            System.err.println("No solution found in " + SOLVE_TRIES + " iterations.");
+        else
+            System.err.println("Solution found in " + i + " iterations.");
+        return solution;
     }
 
     @Override
@@ -44,16 +41,16 @@ public class Basic extends MonteCarloTreeSearch {
         for (int i = 0; i < MCTS_LOOP_ITERATIONS; i++) {
             Node promisingNode = this.selection.selectPromisingNode(root);
 
-            if (!train && promisingNode.getState().isGoalState())
+            if (promisingNode.getState().isGoalState())
                 return promisingNode;
 
             this.expansion.expandNode(promisingNode);
 
-            float score = train ? this.simulation.simulatePlayout(promisingNode) : this.nNet.predict(promisingNode.getState()).getScore();
+            float score =  this.simulation.simulatePlayout(promisingNode);
 
             this.backpropagation.backpropagate(score, promisingNode, root);
         }
-        return train ? root : root.getChildWithMaxScore();
+        return root.getChildWithMaxScore();
     }
 
     @Override
@@ -62,18 +59,13 @@ public class Basic extends MonteCarloTreeSearch {
     }
 
     @Override
-    public void setNNet(NNet nNet) {
-        this.nNet = nNet;
-    }
-
-    @Override
     public MonteCarloTreeSearch clone() {
-        return new Basic(this.selection, this.expansion.clone(), this.simulation, this.backpropagation.clone(), this.nNet);
+        return new Basic(this.selection, this.expansion.clone(), this.simulation, this.backpropagation.clone());
     }
 
     @Override
     public String toString() {
-        return "Basic_" + this.selection.toString() + "_" + this.expansion.toString() + "_" + this.simulation.toString() + "_" + this.backpropagation.toString() + "_" + this.nNet.toString();
+        return "Basic_" + this.selection.toString() + "_" + this.expansion.toString() + "_" + this.simulation.toString() + "_" + this.backpropagation.toString();
     }
 
 }

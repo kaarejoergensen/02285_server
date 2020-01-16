@@ -12,14 +12,7 @@ public class AlphaGoSelection extends Selection {
             if (node.getState().isGoalState())
                 return node;
             Action action = node.chooseBestAction();
-            if (action.getType().equals(Action.ActionType.NoOp)) {
-                System.out.println();
-            }
-            Node newNode = node.getActionChildMap().get(action);
-            if (newNode == null) {
-                System.out.println("NULL");
-            }
-            node = newNode;
+            node = node.getActionChildMap().get(action);
         }
         return node;
     }
