@@ -5,13 +5,13 @@
 ### -- set the job Name -- 
 #BSUB -J Benchmark
 ### -- ask for number of cores (default: 1) -- 
-#BSUB -n 1
+#BSUB -n 12
 ### -- specify that the cores must be on the same host -- 
 #BSUB -R "span[hosts=1]"
 ### -- specify that we need 2GB of memory per core/slot -- 
-#BSUB -R "rusage[mem=32GB]"
+#BSUB -R "rusage[mem=6GB]"
 ### -- specify that we want the job to get killed if it exceeds 3 GB per core/slot -- 
-#BSUB -M 32GB
+#BSUB -M 6GB
 ### -- set walltime limit: hh:mm -- 
 #BSUB -W 24:00 
 ### -- set the email address -- 

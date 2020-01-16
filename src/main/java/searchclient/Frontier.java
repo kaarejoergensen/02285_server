@@ -1,30 +1,20 @@
 package searchclient;
 
 import java.util.ArrayDeque;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.PriorityQueue;
 
 public abstract class Frontier {
-    protected final HashSet<State> set = new HashSet<>(65536);
-
     abstract void add(State s);
 
     abstract State pop();
 
     abstract String getName();
 
-    public boolean isEmpty() {
-        return set.isEmpty();
-    }
+    abstract void setEmpty();
 
-    public int size() {
-        return set.size();
-    }
+    abstract int size();
 
-    public boolean contains(State s) {
-        return set.contains(s);
-    }
 }
 
 class FrontierBFS extends Frontier {
@@ -32,20 +22,27 @@ class FrontierBFS extends Frontier {
 
     @Override
     public void add(State s) {
-        this.queue.addLast(s);
-        this.set.add(s);
+        this.queue.add(s);
     }
 
     @Override
     public State pop() {
-        State s = this.queue.pollFirst();
-        this.set.remove(s);
-        return s;
+        return this.queue.poll();
     }
 
     @Override
     public String getName() {
         return "breadth-first search";
+    }
+
+    @Override
+    void setEmpty() {
+        this.queue.clear();
+    }
+
+    @Override
+    public int size() {
+        return this.queue.size();
     }
 }
 
@@ -55,19 +52,26 @@ class FrontierDFS extends Frontier {
     @Override
     public void add(State s) {
         frontier.add(s);
-        set.add(s);
     }
 
     @Override
     public State pop() {
-        State n = frontier.removeLast();
-        set.remove(n);
-        return n;
+        return frontier.removeLast();
     }
 
     @Override
     public String getName() {
         return "depth-first search";
+    }
+
+    @Override
+    void setEmpty() {
+        this.frontier.clear();
+    }
+
+    @Override
+    public int size() {
+        return this.frontier.size();
     }
 }
 
@@ -83,18 +87,25 @@ class FrontierBestFirst extends Frontier {
     @Override
     public void add(State s) {
         this.queue.add(s);
-        this.set.add(s);
     }
 
     @Override
     public State pop() {
-        State s = this.queue.poll();
-        this.set.remove(s);
-        return s;
+        return this.queue.poll();
     }
 
     @Override
     public String getName() {
         return String.format("best-first search using %s", this.heuristic.toString());
+    }
+
+    @Override
+    void setEmpty() {
+        this.queue.clear();
+    }
+
+    @Override
+    public int size() {
+        return this.queue.size();
     }
 }
