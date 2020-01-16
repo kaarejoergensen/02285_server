@@ -1,6 +1,10 @@
 export JAVA_HOME=~/Downloads/jdk-12.0.2
 java=~/Downloads/jdk-12.0.2/bin/java
 ~/apache-maven-3.5.0/bin/mvn clean install
+mkdir -p logs/mcts/basic
+mkdir -p logs/mcts/randomwalk
+mkdir -p logs/mcts/dungeon
+
 rm -rf logs/mcts/basic/*
 rm -rf logs/mcts/randomwalk/*
 rm -rf logs/mcts/dungeon/*
