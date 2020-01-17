@@ -206,8 +206,6 @@ public class SearchClient {
                 }
             }
             else {
-                StatusThread statusThread = new StatusThread(startTime, monteCarloTreeSearch.getExpandedStates());
-                statusThread.start();
                 if (loadBest && Files.exists(Coach.getBestPath(monteCarloTreeSearch, initialState.levelName))) {
                     nNet.loadModel(Coach.getBestPath(monteCarloTreeSearch, initialState.levelName));
                 }
@@ -215,6 +213,8 @@ public class SearchClient {
                     Coach coach = new Coach(nNet, monteCarloTreeSearch, gpus);
                     coach.train(initialState, loadCheckpoint);
                 }
+                StatusThread statusThread = new StatusThread(startTime, monteCarloTreeSearch.getExpandedStates());
+                statusThread.start();
                 plan = monteCarloTreeSearch.solve(new Node(initialState));
                 nNet.close();
                 statusThread.interrupt();
