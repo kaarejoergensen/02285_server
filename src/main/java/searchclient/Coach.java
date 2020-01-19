@@ -46,6 +46,8 @@ public class Coach {
     public void train(List<State> states, boolean loadCheckpoint) throws IOException, ClassNotFoundException {
         this.createFolders();
         Deque<List<String>> trainingExamples = new ArrayDeque<>();
+        int cores = Runtime.getRuntime().availableProcessors();
+        ExecutorService executorService = Executors.newFixedThreadPool(cores);
         if (loadCheckpoint && Files.exists(getCheckpointPath())) {
             trainingExamples = this.loadTrainingData();
         }
@@ -69,48 +71,18 @@ public class Coach {
             this.nNet.saveModel(getTmpNewPath());
             System.err.println("Training done. Loss: " + loss);
 
-            ExecutorService executorService = Executors.newFixedThreadPool(2);
-
             System.err.println("Solving " + states.size() + " different levels.");
             int difference = 0;
-            for (State state : states) {
-                Callable<Action[][]> newModelCallable = () -> {
-                    MonteCarloTreeSearch newModelMCTS = this.monteCarloTreeSearch.clone();
-                    newModelMCTS.setNNet(this.nNet);
-                    return newModelMCTS.solve(new Node(state));
-                };
-
-                Callable<Action[][]> oldModelCallable = () -> {
-                    MonteCarloTreeSearch oldModelMCTS = this.monteCarloTreeSearch.clone();
-                    NNet pythonNNet = this.nNet.clone();
-                    pythonNNet.loadModel(getTmpOldPath());
-                    oldModelMCTS.setNNet(pythonNNet);
-                    Action[][] plan = oldModelMCTS.solve(new Node(state));
-                    pythonNNet.close();
-                    return plan;
-                };
-
-                Future<Action[][]> newPlanFuture = executorService.submit(newModelCallable);
-                Future<Action[][]> oldPlanFuture = executorService.submit(oldModelCallable);
-
-                Action[][] newPlan;
-                Action[][] oldPlan;
-                try {
-                    newPlan = newPlanFuture.get();
-                    oldPlan = oldPlanFuture.get();
-                } catch (InterruptedException | ExecutionException e) {
-                    e.printStackTrace();
-                    return;
+            List<Callable<Integer>> list = states.stream().map(s -> (Callable<Integer>) () -> pit(executorService, s)).collect(Collectors.toList());
+            List<Future<Integer>> futures;
+            try {
+                futures = executorService.invokeAll(list);
+                for (Future<Integer> future : futures) {
+                    difference += future.get();
                 }
-                System.err.println("Old plan: " + (oldPlan != null ? oldPlan.length : "null") +
-                        " New plan: " + (newPlan != null ? newPlan.length : "null"));
-                if (oldPlan != null && newPlan != null) {
-                    difference += (oldPlan.length - newPlan.length);
-                } else if (oldPlan == null) {
-                    difference += 100;
-                } else {
-                    difference -= 100;
-                }
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+                return;
             }
 
             if (difference >= 0) {
@@ -121,6 +93,39 @@ public class Coach {
                 System.err.println("Rejecting new model. Old plan is " + Math.abs(difference) + " shorter.");
             }
         }
+        executorService.shutdown();
+    }
+
+    private int pit(ExecutorService executorService, State state) throws ExecutionException, InterruptedException {
+        Callable<Action[][]> newModelCallable = () -> getActions(state, getTmpNewPath());
+        Callable<Action[][]> oldModelCallable = () -> getActions(state, getTmpOldPath());
+
+        Future<Action[][]> newPlanFuture = executorService.submit(newModelCallable);
+        Future<Action[][]> oldPlanFuture = executorService.submit(oldModelCallable);
+
+        Action[][] newPlan;
+        Action[][] oldPlan;
+        newPlan = newPlanFuture.get();
+        oldPlan = oldPlanFuture.get();
+        System.err.println("Old plan: " + (oldPlan != null ? oldPlan.length : "null") +
+                " New plan: " + (newPlan != null ? newPlan.length : "null"));
+        if (oldPlan != null && newPlan != null) {
+            return  (oldPlan.length - newPlan.length);
+        } else if (oldPlan == null) {
+            return 100;
+        } else {
+            return 100;
+        }
+    }
+
+    private Action[][] getActions(State state, Path modelPath) throws IOException {
+        MonteCarloTreeSearch mcts = this.monteCarloTreeSearch.clone();
+        NNet pythonNNet = this.nNet.clone();
+        pythonNNet.loadModel(modelPath);
+        mcts.setNNet(pythonNNet);
+        Action[][] plan = mcts.solve(new Node(state));
+        pythonNNet.close();
+        return plan;
     }
 
 
