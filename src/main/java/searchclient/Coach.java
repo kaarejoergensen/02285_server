@@ -174,6 +174,7 @@ public class Coach {
         for (State state : states) {
             result.addAll(this.runEpisodes(state, NUMBER_OF_EPISODES / states.size()));
         }
+        System.err.println("All episodes done. " + result.size() + " states generated.");
         return result;
     }
     
