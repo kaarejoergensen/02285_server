@@ -97,8 +97,8 @@ public class Coach {
     }
 
     private int pit(ExecutorService executorService, State state) throws ExecutionException, InterruptedException {
-        Callable<Action[][]> newModelCallable = () -> getActions(state, getTmpNewPath());
-        Callable<Action[][]> oldModelCallable = () -> getActions(state, getTmpOldPath());
+        Callable<Action[][]> newModelCallable = () -> getActions(state, getTmpNewPath(), 0);
+        Callable<Action[][]> oldModelCallable = () -> getActions(state, getTmpOldPath(), this.gpus > 1 ? 1 : 0);
 
         Future<Action[][]> newPlanFuture = executorService.submit(newModelCallable);
         Future<Action[][]> oldPlanFuture = executorService.submit(oldModelCallable);
@@ -118,9 +118,9 @@ public class Coach {
         }
     }
 
-    private Action[][] getActions(State state, Path modelPath) throws IOException {
+    private Action[][] getActions(State state, Path modelPath, int gpu) throws IOException {
         MonteCarloTreeSearch mcts = this.monteCarloTreeSearch.clone();
-        NNet pythonNNet = this.nNet.clone();
+        NNet pythonNNet = new PythonNNet(((PythonNNet)this.nNet).getPythonPath(), gpu);
         pythonNNet.loadModel(modelPath);
         mcts.setNNet(pythonNNet);
         Action[][] plan = mcts.solve(new Node(state));
