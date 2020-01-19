@@ -59,7 +59,7 @@ public class Coach {
                 trainingExamples.add(trainingData);
                 this.saveTrainingData(trainingExamples);
             } else {
-                System.err.println("Skipping first episode due to checkpoint load");
+                System.err.println("Skipping first iteration due to checkpoint load");
             }
 
             List<String> finalTrainingData = trainingExamples.stream().flatMap(List::stream).collect(Collectors.toList());
@@ -71,18 +71,16 @@ public class Coach {
 
             ExecutorService executorService = Executors.newFixedThreadPool(2);
 
+            System.err.println("Solving " + states.size() + " different levels.");
             int difference = 0;
-
             for (State state : states) {
                 Callable<Action[][]> newModelCallable = () -> {
-                    System.err.println("Solving with new NN");
                     MonteCarloTreeSearch newModelMCTS = this.monteCarloTreeSearch.clone();
                     newModelMCTS.setNNet(this.nNet);
                     return newModelMCTS.solve(new Node(state));
                 };
 
                 Callable<Action[][]> oldModelCallable = () -> {
-                    System.err.println("Solving with old NN");
                     MonteCarloTreeSearch oldModelMCTS = this.monteCarloTreeSearch.clone();
                     NNet pythonNNet = this.nNet.clone();
                     pythonNNet.loadModel(getTmpOldPath());
