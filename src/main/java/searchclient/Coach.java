@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 public class Coach {
     private static final int NUMBER_OF_EPISODES = 50;
     private static final int NUMBER_OF_TRAINING_ITERATIONS = 100;
-    private static final int MAX_NUMBER_OF_TRAINING_EPISODES = 20;
+    private static final int MAX_NUMBER_OF_TRAINING_EPISODES = 5;
     private static final int MAX_NUMBER_OF_NODES_TO_EXPLORE = 50;
 
     private static final String MODEL_FOLDER_NAME = "models/shared/";
