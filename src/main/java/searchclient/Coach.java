@@ -178,6 +178,9 @@ public class Coach {
         if (gpus != null) {
             numberOfThreadsPrGPU = cores / gpus;
         }
+        if (totalNumberOfEpisodes < cores) {
+            totalNumberOfEpisodes = cores;
+        }
         ExecutorService executorService = Executors.newFixedThreadPool(cores);
         List<Callable<List<String>>> callableList = new ArrayList<>(cores);
         AtomicInteger numberOfEpisodes = new AtomicInteger(0);
