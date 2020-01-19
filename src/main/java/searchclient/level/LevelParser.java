@@ -78,7 +78,7 @@ public class LevelParser {
             line = file.readLine();
         }
         if(print_debugger) System.err.println("Map Details Determined. Height:[" + height + "] Width:[" + width + "]");
-        level.setMapDetails(height, width);
+        level.setMapDetails(width, height);
     }
 
     public void initialState() throws IOException{

@@ -1,19 +1,23 @@
 package levelgenerator.pgl;
 
 import levelgenerator.Complexity;
+import searchclient.State;
+import searchclient.level.*;
 import shared.Action;
 import shared.Farge;
 
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 public abstract class RandomLevel implements PGL{
     //Info
     private int levelNumber;
     public Complexity complexity;
-
 
     //Canvas
     public int width;
@@ -27,9 +31,6 @@ public abstract class RandomLevel implements PGL{
     //Colors
     public char[][] elementColors;
     public ArrayList<Farge> fargeList;
-
-
-
 
     public RandomLevel(Complexity c, int levelNumber){
 
@@ -56,7 +57,7 @@ public abstract class RandomLevel implements PGL{
     public void randomAssignAvailableColors(){
         int maxColors = fargeList.size();
         //TODO: Dette skal fikses når wizard baner skal kunne genereres
-        int colorCount = complexity.colors > complexity.agents ? complexity.agents : complexity.colors;
+        int colorCount = Math.min(complexity.colors, complexity.agents);
 
         for(int i = colorCount; i < maxColors; i++){
             int removeIndex = ThreadLocalRandom.current().nextInt(0, fargeList.size());
@@ -187,53 +188,113 @@ public abstract class RandomLevel implements PGL{
         return cellCount;
     }
 
+    public State toState() {
+        Level level = new Level();
+        level.domain = "hospital2";
+        level.name = getName();
+        for (int i = 0; i < fargeList.size(); i++) {
+            for (char c : elementColors[i]) {
+                if (c == '\0') break;
+                if ('0' <= c && c <= '9') {
+                    level.agentColors[c - '0'] = fargeList.get(i);
+                } else if ('A' <= c && c <= 'Z') {
+                    level.boxColors[c - 'A'] = fargeList.get(i);
+                }
+            }
+        }
+        level.setMapDetails(width, height);
+        level.initiateMapDependentArrays();
+        LevelNode[][] tiles = new LevelNode[level.height][level.width];
+        for (int row = 0; row < height; row++) {
+            for (int col = 0; col < width; col++) {
+                char c = initStateElements[row][col];
+                if (walls[row][col] == '+') {
+                    level.walls[row][col] = true;
+                } else if ('0' <= c && c <= '9') {
+                    level.agentRows[c - '0'] = row;
+                    level.agentCols[c - '0'] = col;
+                    ++level.numAgents;
+                } else if ('A' <= c && c <= 'Z') {
+                    Box box = new Box(c, level.boxColors[c - 'A']);
+                    level.boxMap.put(new Coordinate(row, col), box);
+                }
+                if (walls[row][col] != '+') {
+                    LevelNode node = new LevelNode(new Coordinate(row, col));
+                    tiles[row][col] = node;
+                    if (row > 0 && tiles[row - 1][col] != null) {
+                        node.addEdge(tiles[row - 1][col]);
+                        tiles[row - 1][col].addEdge(node);
+                    }
+                    if (col > 0 && tiles[row][col - 1] != null) {
+                        node.addEdge(tiles[row][col - 1]);
+                        tiles[row][col - 1].addEdge(node);
+                    }
+                }
+            }
+        }
+        List<LevelNode> levelNodes = Arrays.stream(tiles).flatMap(Arrays::stream)
+                .filter(Objects::nonNull).collect(Collectors.toList());
+        level.distanceMap = new DistanceMap(levelNodes);
+        level.agentRows = Arrays.copyOf(level.agentRows, level.numAgents);
+        level.agentCols = Arrays.copyOf(level.agentCols, level.numAgents);
+
+        for (int row = 0; row < goalStateElements.length; row++) {
+            for (int col = 0; col < goalStateElements[row].length; col++) {
+                char c = goalStateElements[row][col];
+                if (('0' <= c && c <= '9') || ('A' <= c && c <= 'Z')) {
+                    level.goals.put(new Coordinate(row, col), c);
+                }
+            }
+        }
+        return level.toState();
+    }
+
     public int getTotalSpace(){
         return (width-2) * (height-2);
     }
 
     public String toString(){
-        String out = "#domain" + System.lineSeparator() + "hospital2" + System.lineSeparator() + "#levelname" + System.lineSeparator() +  getName() + System.lineSeparator();
+        StringBuilder out = new StringBuilder("#domain" + System.lineSeparator() + "hospital2" + System.lineSeparator() + "#levelname" + System.lineSeparator() + getName() + System.lineSeparator());
         //Color Section
-        out += "#colors" + System.lineSeparator();
+        out.append("#colors").append(System.lineSeparator());
         for(int i = 0; i < fargeList.size(); i++){
             Farge temp = fargeList.get(i);
-            out += temp.name() + ":" ;
+            out.append(temp.name()).append(":");
             StringBuilder sb = new StringBuilder();
             for(char c : elementColors[i]){
                 if(c == '\0') break;
                 sb.append(c).append(',');
             }
-            out += sb.toString().substring(0, sb.length() - 1) + System.lineSeparator();
+            out.append(sb.toString(), 0, sb.length() - 1).append(System.lineSeparator());
         }
 
 
-        out += "#initial" + System.lineSeparator();
-        out += stateToString(initStateElements);
-        out += "#goal" + System.lineSeparator();
-        out += stateToString(goalStateElements);
-        out += "#end";
-        return out;
+        out.append("#initial").append(System.lineSeparator());
+        out.append(stateToString(initStateElements));
+        out.append("#goal").append(System.lineSeparator());
+        out.append(stateToString(goalStateElements));
+        out.append("#end");
+        return out.toString();
     }
 
 
 
     public String stateToString(char[][] state){
-        String out = "";
+        StringBuilder out = new StringBuilder();
         for(int y = 0; y < height; y++){
             for(int x = 0; x< width; x++){
                 if(walls[y][x] == '+'){
-                    out += walls[y][x];
-                    continue;
+                    out.append(walls[y][x]);
                 }else if(state[y][x] != 0){
-                    out += state[y][x];
+                    out.append(state[y][x]);
                 }
                 else{
-                    out += ' ';
+                    out.append(' ');
                 }
             }
-            out += System.lineSeparator();
+            out.append(System.lineSeparator());
         }
-        return out;
+        return out.toString();
     }
 
     public String wallsToString(){
@@ -241,14 +302,14 @@ public abstract class RandomLevel implements PGL{
     }
 
     public String wallsDebugString(){
-        String out = "";
+        StringBuilder out = new StringBuilder();
         for(int y = 0; y < height; y++){
             for(int x = 0; x< width; x++){
-                out += walls[y][x];
+                out.append(walls[y][x]);
             }
-            out += System.lineSeparator();
+            out.append(System.lineSeparator());
         }
-        return out;
+        return out.toString();
     }
 
     public String getName(){
@@ -261,7 +322,4 @@ public abstract class RandomLevel implements PGL{
         if(complexity.agents > 9) throw new IllegalArgumentException("Agent limit is 9");
         if(complexity.agents > Farge.getClientFarger().length) throw new IllegalArgumentException("Max colors are" + Farge.getClientFarger().length);
     }
-
-
-
 }

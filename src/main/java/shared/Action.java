@@ -138,7 +138,7 @@ public class Action {
     }
 
     public static Action parse(String action) {
-        for(Action a: allActions){
+        for(Action a: getAllActions()){
             if(a.getName().equals(action)) return a;
         }
         return generateNoOp();

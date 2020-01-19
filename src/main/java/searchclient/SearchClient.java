@@ -1,5 +1,9 @@
 package searchclient;
 
+import levelgenerator.Complexity;
+import levelgenerator.pgl.Dungeon.Dungeon;
+import levelgenerator.pgl.RandomLevel;
+import levelgenerator.pgl.RandomWalk.RandomWalk;
 import searchclient.level.Level;
 import searchclient.mcts.backpropagation.Backpropagation;
 import searchclient.mcts.backpropagation.impl.AdditiveBackpropagation;
@@ -110,9 +114,9 @@ public class SearchClient {
         Frontier frontier = null;
         MonteCarloTreeSearch monteCarloTreeSearch = null;
         NNet nNet = new MockNNet(new HeuristicAStar(initialState));
-        Integer gpus = null;
-        boolean train = false, loadCheckpoint = false, loadBest = false;
-        String pythonPath = PYTHON_PATH;
+        Integer gpus = null, numberOfGeneratedStates = null;
+        boolean train = false, loadCheckpoint = false, loadBest = false, generate = false;
+        String pythonPath = PYTHON_PATH, complexityString = null, generateAlgorithm = null;
         Backpropagation backpropagation = new AdditiveBackpropagation();
         if (args.length > 0) {
             if (args.length > 1) {
@@ -136,6 +140,11 @@ public class SearchClient {
                         case "-gpus":
                             gpus = Integer.parseInt(args[i + 1]);
                             break;
+                        case "-generate":
+                            generate = true;
+                            numberOfGeneratedStates = Integer.parseInt(args[i + 1]);
+                            generateAlgorithm = args[i + 2];
+                            complexityString = args[i + 3];
                     }
                 }
             }
@@ -188,6 +197,10 @@ public class SearchClient {
                     "set the search strategy.");
         }
 
+        if (generate && (!(monteCarloTreeSearch instanceof AlphaGo) || !train)) {
+            throw new IllegalArgumentException("Cannot generate levels if not training and mcts instanceof alphago");
+        }
+
         // Search for a plan.
         Action[][] plan = null;
         long startTime = System.nanoTime();
@@ -206,12 +219,35 @@ public class SearchClient {
                 }
             }
             else {
-                if (loadBest && Files.exists(Coach.getBestPath(monteCarloTreeSearch, initialState.levelName))) {
-                    nNet.loadModel(Coach.getBestPath(monteCarloTreeSearch, initialState.levelName));
+                if (loadBest && Files.exists(Coach.getBestPath())) {
+                    nNet.loadModel(Coach.getBestPath());
                 }
                 if (train) {
                     Coach coach = new Coach(nNet, monteCarloTreeSearch, gpus);
-                    coach.train(initialState, loadCheckpoint);
+                    if (generate) {
+                        Complexity complexity = Complexity.fromString(complexityString);
+                        List<State> generatedStates = new ArrayList<>(numberOfGeneratedStates);
+                        RandomLevel pgl;
+                        for(int i = 0 ; i < numberOfGeneratedStates; i++){
+                            switch (generateAlgorithm.toLowerCase()){
+                                case "random walk":
+                                case "randomwalk":
+                                    pgl = new RandomWalk(complexity, i);
+                                    break;
+                                case "dungeon":
+                                    pgl = new Dungeon(complexity, i);
+                                    break;
+                                case "basic":
+                                default:
+                                    pgl = new levelgenerator.pgl.Basic.Basic(complexity, i);
+                                    break;
+                            }
+                            generatedStates.add(pgl.toState());
+                        }
+                        coach.train(generatedStates, loadCheckpoint);
+                    } else {
+                        coach.train(initialState, loadCheckpoint);
+                    }
                 }
                 StatusThread statusThread = new StatusThread(startTime, monteCarloTreeSearch.getExpandedStates());
                 statusThread.start();

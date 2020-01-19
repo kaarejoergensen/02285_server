@@ -11,9 +11,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class Generator {
-
-
-
     private Writer writer;
 
     public Generator(int amountOfLevels, String algorithm, Complexity complexity){
@@ -43,8 +40,6 @@ public class Generator {
             }
             writer.toFile(pgl.toString(), pgl.getName());
         }
-
-
     }
 
 
@@ -56,8 +51,6 @@ public class Generator {
         new Generator(10, "dungeon", Complexity.fromString("easy_3"));
         new Generator(10, "dungeon", Complexity.fromString("medium_1"));
         new Generator(10, "dungeon", Complexity.fromString("medium_2"));
-
-
     }
 
 }
