@@ -263,7 +263,6 @@ public class Coach {
         }
         executorService.shutdown();
         progressBar.close();
-        System.err.println("Episodes done. Solution found in  " + numberOfSolvedEpisodes.intValue() + "/" + totalNumberOfEpisodes);
         return stateActionTakenSolvedTuples;
     }
 
