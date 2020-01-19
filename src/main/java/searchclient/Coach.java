@@ -108,6 +108,8 @@ public class Coach {
                     difference += (oldPlan.length - newPlan.length);
                 } else if (oldPlan == null) {
                     difference += 100;
+                } else {
+                    difference -= 100;
                 }
             }
 
