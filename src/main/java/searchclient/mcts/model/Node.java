@@ -55,8 +55,9 @@ public class Node {
         Action bestAction = null;
         double sumOfActionsTaken = this.sumOfActionsTaken();
         for (Action action : this.meanValueOfActionMap.keySet()) {
+            if (action.getType().equals(Action.ActionType.NoOp)) continue;
             double score = this.meanValueOfActionMap.get(action) + this.explorationFactor(action, sumOfActionsTaken);
-            if (score > bestActionScore && !action.getType().equals(Action.ActionType.NoOp)) {
+            if (score > bestActionScore) {
                 bestActionScore = score;
                 bestAction = action;
             }
@@ -72,9 +73,10 @@ public class Node {
 
     // Step 4: Select a move deterministically (with greatest N (number of times visited))
     public Node getChildWithMaxVisitCount() {
-        if (this.actionChildMap.isEmpty()) throw new IllegalArgumentException("Node has no children");
-        Action actionTakenMostTimes = Collections.max(this.numberOfTimesActionTakenMap.entrySet(),
-                Map.Entry.comparingByValue()).getKey();
+        Action actionTakenMostTimes = this.numberOfTimesActionTakenMap.entrySet().stream()
+                .filter(e -> !e.getKey().getType().equals(Action.ActionType.NoOp))
+                .max(Map.Entry.comparingByValue())
+                .orElseThrow(() -> new IllegalArgumentException("Node has no children")).getKey();
         return this.actionChildMap.get(actionTakenMostTimes);
     }
 
@@ -111,9 +113,10 @@ public class Node {
     }
 
     public Node getChildWithMaxScore() {
-        if (this.actionChildMap.isEmpty()) throw new IllegalArgumentException("Node has no children");
-        Action actionWithMaxScore = Collections.max(this.totalValueOfActionMap.entrySet(),
-                Map.Entry.comparingByValue()).getKey();
+        Action actionWithMaxScore = this.totalValueOfActionMap.entrySet().stream()
+                .filter(e -> !e.getKey().getType().equals(Action.ActionType.NoOp))
+                .max(Map.Entry.comparingByValue())
+                .orElseThrow(() -> new IllegalArgumentException("Node has no children")).getKey();
         return this.actionChildMap.get(actionWithMaxScore);
     }
 

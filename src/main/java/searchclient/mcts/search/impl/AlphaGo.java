@@ -36,8 +36,8 @@ public class AlphaGo extends MonteCarloTreeSearch {
             if (node.getState().isGoalState()) {
                 solution = node.getState().extractPlan();
             }
-            Optional<Node> possibleGoalNode = this.extractGoalNodeIfPossible(node);
-            if (possibleGoalNode.isPresent()) solution = possibleGoalNode.get().getState().extractPlan();
+//            Optional<Node> possibleGoalNode = this.extractGoalNodeIfPossible(node);
+//            if (possibleGoalNode.isPresent()) solution = possibleGoalNode.get().getState().extractPlan();
         }
         if (solution == null)
             System.err.println("No solution found in " + SOLVE_TRIES + " iterations.");
@@ -77,8 +77,10 @@ public class AlphaGo extends MonteCarloTreeSearch {
     private Optional<Node> extractGoalNodeIfPossible(Node root) {
         if (root.getState().isGoalState()) return Optional.of(root);
         if (!root.childrenEmpty()) {
-            Node child = root.getChildWithMaxScore();
-            if (child != null) return this.extractGoalNodeIfPossible(child);
+            for (Node child : root.getChildren()) {
+                Optional<Node> optionalNode = this.extractGoalNodeIfPossible(child);
+                if (optionalNode.isPresent()) return optionalNode;
+            }
         }
         return Optional.empty();
     }

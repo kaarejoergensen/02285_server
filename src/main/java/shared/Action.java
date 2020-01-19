@@ -11,8 +11,7 @@ import java.util.function.Function;
 @Getter
 @EqualsAndHashCode
 public class Action {
-    @Getter
-    private static final List<Action> allActions = generateALlActions();
+    private static List<Action> allActions;
 
     private String name;
     private final ActionType type;
@@ -53,6 +52,13 @@ public class Action {
         this.agentMoveDirection = agentMoveDirection;
         this.boxMoveDirection = boxMoveDirection;
         this.color = color;
+    }
+
+    public static List<Action> getAllActions() {
+        if (Action.allActions == null) {
+            Action.allActions = Action.generateALlActions();
+        }
+        return Action.allActions;
     }
 
     private String generateName(){

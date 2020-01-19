@@ -72,7 +72,7 @@ public class Basic extends MonteCarloTreeSearch {
 
             this.expansion.expandNode(promisingNode);
 
-            float score =  this.simulation.simulatePlayout(promisingNode);
+            float score = this.simulation.simulatePlayout(promisingNode);
 
             this.backpropagation.backpropagate(score, promisingNode, root);
         }
