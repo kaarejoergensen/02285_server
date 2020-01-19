@@ -204,6 +204,7 @@ public class Coach {
         AtomicInteger gpu = new AtomicInteger(0);
         for (int i = 0; i < cores; i++) {
             int finalNumberOfThreadsPrGPU = numberOfThreadsPrGPU;
+            int finalTotalNumberOfEpisodes = totalNumberOfEpisodes;
             callableList.add(() -> {
                 List<StateActionTakenSolvedTuple> finalList = new ArrayList<>();
                 MonteCarloTreeSearch mcts = this.monteCarloTreeSearch.clone();
@@ -222,7 +223,7 @@ public class Coach {
                 }
                 newNNet.loadTempModel();
                 mcts.setNNet(newNNet);
-                while (numberOfEpisodes.getAndIncrement() < totalNumberOfEpisodes) {
+                while (numberOfEpisodes.getAndIncrement() < finalTotalNumberOfEpisodes) {
                     mcts = mcts.clone();
                     Node node = new Node(root);
                     MutableBoolean solved = new MutableBoolean(false);
@@ -238,7 +239,7 @@ public class Coach {
                     synchronized (this) {
                         progressBar.step();
                         progressBar.setExtraMessage(numberOfSolvedEpisodes.intValue() + "/"
-                                + totalNumberOfEpisodes + " solved.");
+                                + finalTotalNumberOfEpisodes + " solved.");
                     }
                 }
                 newNNet.close();
