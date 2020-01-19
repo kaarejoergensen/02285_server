@@ -73,11 +73,11 @@ public class Coach {
 
             System.err.println("Solving " + states.size() + " different levels.");
             int difference = 0;
-            List<Callable<Integer>> list = states.stream().map(s -> (Callable<Integer>) () -> pit(executorService, s)).collect(Collectors.toList());
-            List<Future<Integer>> futures;
+            List<Callable<Integer>> callables = states.stream()
+                    .map(s -> (Callable<Integer>) () -> pit(executorService, s))
+                    .collect(Collectors.toList());
             try {
-                futures = executorService.invokeAll(list);
-                for (Future<Integer> future : futures) {
+                for (Future<Integer> future : executorService.invokeAll(callables)) {
                     difference += future.get();
                 }
             } catch (InterruptedException | ExecutionException e) {
@@ -112,9 +112,9 @@ public class Coach {
         if (oldPlan != null && newPlan != null) {
             return  (oldPlan.length - newPlan.length);
         } else if (oldPlan == null) {
-            return 100;
+            return 1;
         } else {
-            return 100;
+            return -1;
         }
     }
 
