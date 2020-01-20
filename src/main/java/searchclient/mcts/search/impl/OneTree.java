@@ -25,8 +25,9 @@ public class OneTree extends MonteCarloTreeSearch {
     }
 
     @Override
-    public Action[][] solve(Node root) {
-        while (true) {
+    public Action[][] solve(Node root, boolean limitSolveTries) {
+        Action[][] solution = null;
+        for (int i = 0; (!limitSolveTries || i < SOLVE_TRIES) && solution == null; i++) {
             Node promisingNode = this.selection.selectPromisingNode(root);
             List<Node> expandedNodes = this.expansion.expandNode(promisingNode);
             if (expandedNodes.isEmpty()) {
@@ -38,7 +39,7 @@ public class OneTree extends MonteCarloTreeSearch {
             }
             for (Node node : expandedNodes) {
                 if (node.getState().isGoalState()) {
-                    return node.getState().extractPlan();
+                    solution = node.getState().extractPlan();
                 }
 
                 float score = this.simulation.simulatePlayout(node);
@@ -53,6 +54,7 @@ public class OneTree extends MonteCarloTreeSearch {
                 root = this.nextRoot(root);
             }
         }
+        return solution;
     }
 
     @Override

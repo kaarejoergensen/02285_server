@@ -115,7 +115,7 @@ public class SearchClient {
         MonteCarloTreeSearch monteCarloTreeSearch = null;
         NNet nNet = new MockNNet(new HeuristicAStar(initialState));
         Integer gpus = null, numberOfGeneratedStates = null;
-        boolean train = false, loadCheckpoint = false, loadBest = false, generate = false;
+        boolean train = false, loadCheckpoint = false, loadBest = false, generate = false, limitSolveTries = true;
         String pythonPath = PYTHON_PATH, complexityString = null, generateAlgorithm = null;
         Backpropagation backpropagation = new AdditiveBackpropagation();
         if (args.length > 0) {
@@ -145,6 +145,9 @@ public class SearchClient {
                             numberOfGeneratedStates = Integer.parseInt(args[i + 1]);
                             generateAlgorithm = args[i + 2];
                             complexityString = args[i + 3];
+                        case "-nolimit":
+                            limitSolveTries = false;
+                            break;
                     }
                 }
             }
@@ -223,7 +226,7 @@ public class SearchClient {
                     nNet.loadModel(Coach.getBestPath());
                 }
                 if (train) {
-                    Coach coach = new Coach(nNet, monteCarloTreeSearch, gpus);
+                    Coach coach = new Coach(nNet, monteCarloTreeSearch, gpus, limitSolveTries);
                     if (generate) {
                         Complexity complexity = Complexity.fromString(complexityString);
                         List<State> generatedStates = new ArrayList<>(numberOfGeneratedStates);
@@ -251,7 +254,7 @@ public class SearchClient {
                 }
                 StatusThread statusThread = new StatusThread(startTime, monteCarloTreeSearch.getExpandedStates());
                 statusThread.start();
-                plan = monteCarloTreeSearch.solve(new Node(initialState));
+                plan = monteCarloTreeSearch.solve(new Node(initialState), limitSolveTries);
                 nNet.close();
                 statusThread.interrupt();
             }

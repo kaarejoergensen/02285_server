@@ -16,14 +16,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Basic extends MonteCarloTreeSearch {
     private static final int MCTS_LOOP_ITERATIONS = 400;
-    private static final int SOLVE_TRIES = 10000;
 
     public Basic(Selection selection, Expansion expansion, Simulation simulation, Backpropagation backpropagation) {
         super(selection, expansion, simulation, backpropagation);
     }
 
     @Override
-    public Action[][] solve(Node root) {
+    public Action[][] solve(Node root, boolean limitSolveTries) {
         Action[][] solution = null;
         int cores = Runtime.getRuntime().availableProcessors();
         ExecutorService executorService = Executors.newFixedThreadPool(cores);
@@ -38,7 +37,7 @@ public class Basic extends MonteCarloTreeSearch {
                 return runMCTS(node1);
             });
         }
-        for (; i.get() < SOLVE_TRIES && solution == null; i.incrementAndGet()) {
+        for (; (!limitSolveTries || i.get() < SOLVE_TRIES) && solution == null; i.incrementAndGet()) {
             Node node = null;
             try {
                 List<Future<Node>> futures = executorService.invokeAll(callableList);
