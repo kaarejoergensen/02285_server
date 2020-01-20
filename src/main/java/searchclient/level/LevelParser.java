@@ -87,7 +87,7 @@ public class LevelParser {
         requireArraysInitialized();
 
         level.numAgents = 0;
-        LevelNode[][] tiles  = new LevelNode[level.width][level.height];
+        LevelNode[][] tiles  = new LevelNode[level.height][level.width];
         String line = file.readLine();
         if(print_debugger)System.err.println(line);
         int row = 0;
