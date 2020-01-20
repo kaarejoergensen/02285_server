@@ -5,7 +5,7 @@
 ### -- set the job Name --
 #BSUB -J Benchmark-NN
 ### -- ask for number of cores (default: 1) --
-#BSUB -n 1
+#BSUB -n 12
 ### -- specify that the cores must be on the same host --
 #BSUB -R "span[hosts=1]"
 ### -- Select the resources: 1 gpu in exclusive process mode --
