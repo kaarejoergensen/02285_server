@@ -58,7 +58,6 @@ def main(gpu):
             probability_vector, win = nnet.predict(state)
             flush_print(probability_vector)
             flush_print(win)
-            flush_print(0)
         elif method == "saveModel":
             nnet.save_checkpoint(lines[0])
             flush_print("done")

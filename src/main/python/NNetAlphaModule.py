@@ -80,3 +80,14 @@ class NNetAlphaModule(nn.Module):
             s = getattr(self, "res_%i" % block)(s)
         s = self.outblock(s)
         return s
+
+
+class AlphaLoss(torch.nn.Module):
+    def __init__(self):
+        super(AlphaLoss, self).__init__()
+
+    def forward(self, v_out, v, pv_out, pv):
+        value_error = (v - v_out) ** 2
+        policy_error = torch.sum((-pv * pv_out.float()).float().log())
+        total_error = (value_error.view(-1).float() + policy_error).mean()
+        return total_error

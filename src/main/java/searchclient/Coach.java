@@ -38,6 +38,7 @@ public class Coach {
     private NNet nNet;
     private MonteCarloTreeSearch monteCarloTreeSearch;
     private Integer gpus;
+    private boolean limitSolveTries;
     
     public void train(State root, boolean loadCheckpoint) throws IOException, ClassNotFoundException {
         this.train(Collections.singletonList(root), loadCheckpoint);
@@ -123,7 +124,7 @@ public class Coach {
         NNet pythonNNet = new PythonNNet(((PythonNNet)this.nNet).getPythonPath(), gpu);
         pythonNNet.loadModel(modelPath);
         mcts.setNNet(pythonNNet);
-        Action[][] plan = mcts.solve(new Node(state));
+        Action[][] plan = mcts.solve(new Node(state), this.limitSolveTries);
         pythonNNet.close();
         return plan;
     }
@@ -193,7 +194,7 @@ public class Coach {
         AtomicInteger numberOfSolvedEpisodes = new AtomicInteger(0);
         ProgressBar progressBar = new ProgressBarBuilder()
                 .setPrintStream(System.err)
-                .setUpdateIntervalMillis(300)
+                .setUpdateIntervalMillis((int) TimeUnit.SECONDS.toMillis(10))
                 .setInitialMax(totalNumberOfEpisodes)
                 .setTaskName("Episodes")
                 .setStyle(ProgressBarStyle.ASCII)

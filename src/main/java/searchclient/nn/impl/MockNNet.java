@@ -44,8 +44,7 @@ public class MockNNet extends NNet {
             }
         }
         float score = state.isGoalState() ? 1f : 0;
-        float loss = 0;
-        return new PredictResult(probabilityVector, score, loss);
+        return new PredictResult(probabilityVector, score);
     }
 
     @Override

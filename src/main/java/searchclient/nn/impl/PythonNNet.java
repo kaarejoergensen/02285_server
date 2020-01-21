@@ -76,8 +76,7 @@ public class PythonNNet extends NNet {
     private PredictResult readPredictResult(BufferedReader clientReader) {
         double[] probabilityVector = parseProbabilityVector(this.readFromPython());
         float score = Float.parseFloat(this.readFromPython().replaceAll("[\\[\\]]", ""));
-        float loss = Float.parseFloat(this.readFromPython());
-        return new PredictResult(probabilityVector, score, loss);
+        return new PredictResult(probabilityVector, score);
     }
 
     private static double[] parseProbabilityVector(String string) {

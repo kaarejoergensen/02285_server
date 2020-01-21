@@ -6,5 +6,4 @@ import lombok.Data;
 public class PredictResult {
     private final double[] probabilityVector;
     private final float score;
-    private final float loss;
 }
