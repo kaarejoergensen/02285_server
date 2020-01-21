@@ -39,7 +39,7 @@ class NNet():
                         states.to(self.device), probability_vectors.to(self.device), wins.to(self.device)
                 self.optimizer.zero_grad()
                 out_probability_vectors, out_wins = self.model(states)
-                total_loss = self.criterion(out_wins, wins, out_probability_vectors, probability_vectors)
+                total_loss = self.criterion(out_wins[:, 0], wins, out_probability_vectors, probability_vectors)
                 total_loss.backward()
                 self.optimizer.step()
                 running_loss += total_loss.item()
