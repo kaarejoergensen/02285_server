@@ -94,7 +94,7 @@ public class Coach {
                 return;
             }
 
-            String resultString = "New plan is better " + better + " times, and worse " + worse + " times.";
+            String resultString = "New plan is better " + better + " times, and worse " + worse + " times. They are the same " + same + " times.";
             if (better >= worse) {
                 System.err.println("Accepting new model. " + resultString);
                 this.nNet.loadModel(getTmpNewPath());
@@ -119,12 +119,20 @@ public class Coach {
         oldPlan = oldPlanFuture.get();
         System.err.println("Old plan: " + (oldPlan != null ? oldPlan.length : "null") +
                 " New plan: " + (newPlan != null ? newPlan.length : "null"));
-        if (oldPlan != null && newPlan != null) {
+        if (oldPlan == null && newPlan == null) {
             return PitResult.SAME;
+        } else if (newPlan == null) {
+            return PitResult.WORSE;
         } else if (oldPlan == null) {
             return PitResult.BETTER;
         } else {
-            return PitResult.WORSE;
+            if (newPlan.length < oldPlan.length) {
+                return PitResult.BETTER;
+            } else if (newPlan.length > oldPlan.length) {
+                return PitResult.WORSE;
+            } else {
+                return PitResult.SAME;
+            }
         }
     }
 
