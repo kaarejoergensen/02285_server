@@ -73,31 +73,40 @@ public class Coach {
             System.err.println("Training done. Loss: " + loss);
 
             System.err.println("Solving " + states.size() + " different levels.");
-            int difference = 0;
-            List<Callable<Integer>> callables = states.stream()
-                    .map(s -> (Callable<Integer>) () -> pit(executorService, s))
+            int better = 0, same = 0, worse = 0;
+            List<Callable<PitResult>> callables = states.stream()
+                    .map(s -> (Callable<PitResult>) () -> pit(executorService, s))
                     .collect(Collectors.toList());
             try {
-                for (Future<Integer> future : executorService.invokeAll(callables)) {
-                    difference += future.get();
+                for (Future<PitResult> future : executorService.invokeAll(callables)) {
+                    switch (future.get()) {
+                        case BETTER:
+                            better++;
+                            break;
+                        case SAME:
+                            same++;
+                        case WORSE:
+                            worse++;
+                    }
                 }
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
                 return;
             }
 
-            if (difference >= 0) {
-                System.err.println("Accepting new model. New plan is " + difference + " shorter.");
+            String resultString = "New plan is better " + better + " times, and worse " + worse + " times.";
+            if (better >= worse) {
+                System.err.println("Accepting new model. " + resultString);
                 this.nNet.loadModel(getTmpNewPath());
                 this.nNet.saveModel(getBestPath());
             } else {
-                System.err.println("Rejecting new model. Old plan is " + Math.abs(difference) + " shorter.");
+                System.err.println("Rejecting new model. " + resultString);
             }
         }
         executorService.shutdown();
     }
 
-    private int pit(ExecutorService executorService, State state) throws ExecutionException, InterruptedException {
+    private PitResult pit(ExecutorService executorService, State state) throws ExecutionException, InterruptedException {
         Callable<Action[][]> newModelCallable = () -> getActions(state, getTmpNewPath(), 0);
         Callable<Action[][]> oldModelCallable = () -> getActions(state, getTmpOldPath(), this.gpus > 1 ? 1 : 0);
 
@@ -111,11 +120,11 @@ public class Coach {
         System.err.println("Old plan: " + (oldPlan != null ? oldPlan.length : "null") +
                 " New plan: " + (newPlan != null ? newPlan.length : "null"));
         if (oldPlan != null && newPlan != null) {
-            return  (oldPlan.length - newPlan.length);
+            return PitResult.SAME;
         } else if (oldPlan == null) {
-            return 1;
+            return PitResult.BETTER;
         } else {
-            return -1;
+            return PitResult.WORSE;
         }
     }
 
@@ -261,6 +270,9 @@ public class Coach {
             }
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
+            if (e.getCause() != null) {
+                e.getCause().printStackTrace();
+            }
         }
         executorService.shutdown();
         progressBar.close();
@@ -321,5 +333,11 @@ public class Coach {
                     Arrays.toString(probabilityVector) + "|" +
                     (this.solved.booleanValue() ? "1" : "-1");
         }
+    }
+
+    private enum PitResult {
+        BETTER,
+        SAME,
+        WORSE
     }
 }
