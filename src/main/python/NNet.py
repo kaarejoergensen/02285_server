@@ -25,12 +25,11 @@ class NNet():
     # Kjøre MCTS en gang til for valideringsett
     # Teste accuracien til nettverket
     def train(self, trainSet, epochs=20, batch_size=64):
-        running_loss = 0
+        running_loss = 0.0
         for epoch in range(epochs):
             self.model.train()
             train_loader = DataLoader(dataset=trainSet, batch_size=batch_size, shuffle=True, drop_last=True)
 
-            running_loss = 0.0
             for batch in train_loader:
                 states, probability_vectors, wins = batch
                 if torch.cuda.is_available():
