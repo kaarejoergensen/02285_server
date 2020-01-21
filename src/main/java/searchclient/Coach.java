@@ -194,7 +194,7 @@ public class Coach {
         AtomicInteger numberOfSolvedEpisodes = new AtomicInteger(0);
         ProgressBar progressBar = new ProgressBarBuilder()
                 .setPrintStream(System.err)
-                .setUpdateIntervalMillis(300)
+                .setUpdateIntervalMillis((int) TimeUnit.SECONDS.toMillis(10))
                 .setInitialMax(totalNumberOfEpisodes)
                 .setTaskName("Episodes")
                 .setStyle(ProgressBarStyle.ASCII)
