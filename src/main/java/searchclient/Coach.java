@@ -85,8 +85,10 @@ public class Coach {
                             break;
                         case SAME:
                             same++;
+                            break;
                         case WORSE:
                             worse++;
+                            break;
                     }
                 }
             } catch (InterruptedException | ExecutionException e) {
