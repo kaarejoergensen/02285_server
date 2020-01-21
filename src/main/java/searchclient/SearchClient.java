@@ -145,6 +145,7 @@ public class SearchClient {
                             numberOfGeneratedStates = Integer.parseInt(args[i + 1]);
                             generateAlgorithm = args[i + 2];
                             complexityString = args[i + 3];
+                            break;
                         case "-nolimit":
                             limitSolveTries = false;
                             break;
