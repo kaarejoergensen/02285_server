@@ -14,7 +14,7 @@ class NNet():
         if torch.cuda.is_available():
             self.model = self.model.to("cuda")
             self.model = self.model.to(self.device)
-        self.optimizer = optim.SGD(self.model.parameters(), lr=0.001, momentum=0.9, weight_decay=10e-4)
+        self.optimizer = optim.SGD(self.model.parameters(), lr=0.01, momentum=0.9, weight_decay=10e-4)
         self.criterion = AlphaLoss()
 
     # State skal ta inn staten + scoren gitt fra mcts

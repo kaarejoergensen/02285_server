@@ -1,3 +1,5 @@
+import sys
+
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -37,19 +39,14 @@ class ResBlock(nn.Module):
         return out
 
 
-class OutBlock(nn.Module):
-    def __init__(self, channels, x, y, action_size, planes=128):
-        super(OutBlock, self).__init__()
-        self.channels, self.x, self.y, self.action_size = channels, x, y, action_size
+class ValueHeadBlock(nn.Module):
+    def __init__(self, channels, x, y, planes=128):
+        super(ValueHeadBlock, self).__init__()
+        self.channels, self.x, self.y, = channels, x, y
         self.conv = nn.Conv2d(planes, channels, kernel_size=1)  # value head
         self.bn = nn.BatchNorm2d(channels)
         self.fc1 = nn.Linear(channels * x * y, 32)
         self.fc2 = nn.Linear(32, 1)
-
-        self.conv1 = nn.Conv2d(planes, 32, kernel_size=1)  # policy head
-        self.bn1 = nn.BatchNorm2d(32)
-        self.logsoftmax = nn.LogSoftmax(dim=1)
-        self.fc = nn.Linear(x * y * 32, action_size)
 
     def forward(self, s):
         v = F.relu(self.bn(self.conv(s)))  # value head
@@ -57,11 +54,24 @@ class OutBlock(nn.Module):
         v = F.relu(self.fc1(v))
         v = torch.tanh(self.fc2(v))
 
-        p = F.relu(self.bn1(self.conv1(s)))  # policy head
+        return v
+
+
+class PolicyHeadBlock(nn.Module):
+    def __init__(self, x, y, action_size, planes=128):
+        super(PolicyHeadBlock, self).__init__()
+        self.x, self.y = x, y
+        self.conv = nn.Conv2d(planes, 32, kernel_size=1)  # policy head
+        self.bn = nn.BatchNorm2d(32)
+        self.logsoftmax = nn.LogSoftmax(dim=1)
+        self.fc = nn.Linear(x * y * 32, action_size)
+
+    def forward(self, s):
+        p = F.relu(self.bn(self.conv(s)))  # policy head
         p = p.view(-1, self.x * self.y * 32)
         p = self.fc(p)
         p = self.logsoftmax(p).exp()
-        return p, v
+        return p
 
 
 class NNetAlphaModule(nn.Module):
@@ -72,14 +82,16 @@ class NNetAlphaModule(nn.Module):
         self.conv = ConvBlock(channels, x, y)
         for block in range(self.resblocks):
             setattr(self, "res_%i" % block, ResBlock())
-        self.outblock = OutBlock(channels, x, y, action_size)
+        self.valuehead = ValueHeadBlock(channels, x, y)
+        self.policyhead = PolicyHeadBlock(x, y, action_size)
 
     def forward(self, s):
         s = self.conv(s)
         for block in range(self.resblocks):
             s = getattr(self, "res_%i" % block)(s)
-        s = self.outblock(s)
-        return s
+        p = self.policyhead(s)
+        v = self.valuehead(s)
+        return p, v
 
 
 class AlphaLoss(torch.nn.Module):
@@ -89,5 +101,6 @@ class AlphaLoss(torch.nn.Module):
     def forward(self, v_out, v, pv_out, pv):
         value_error = (v - v_out) ** 2
         policy_error = torch.sum((-pv * (1e-8 + pv_out.float()).float().log()), 1)
+        print("value_loss: " + value_error + " policy_loss: " + policy_error, file=sys.stderr, flush=True)
         total_error = (value_error.view(-1).float() + policy_error).mean()
         return total_error
