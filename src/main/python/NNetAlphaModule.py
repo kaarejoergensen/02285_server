@@ -101,6 +101,6 @@ class AlphaLoss(torch.nn.Module):
     def forward(self, v_out, v, pv_out, pv):
         value_error = (v - v_out) ** 2
         policy_error = torch.sum((-pv * (1e-8 + pv_out.float()).float().log()), 1)
-        print("value_loss: " + value_error + " policy_loss: " + policy_error, file=sys.stderr, flush=True)
+        print("value_loss: ", value_error.view(-1).float().mean(), " policy_loss: ", policy_error.mean(), file=sys.stderr, flush=True)
         total_error = (value_error.view(-1).float() + policy_error).mean()
         return total_error

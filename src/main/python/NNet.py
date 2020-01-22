@@ -29,6 +29,7 @@ class NNet():
         for epoch in range(epochs):
             self.model.train()
             train_loader = DataLoader(dataset=trainSet, batch_size=batch_size, shuffle=True, drop_last=True)
+            bach_count = 0
 
             for batch in train_loader:
                 states, probability_vectors, wins = batch
@@ -43,6 +44,8 @@ class NNet():
                 total_loss.backward()
                 self.optimizer.step()
                 running_loss += total_loss.item()
+                bach_count += 1
+            running_loss /= bach_count
 
         return running_loss / epochs
 
