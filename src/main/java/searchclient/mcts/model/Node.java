@@ -106,7 +106,7 @@ public class Node {
                 return this.actionChildMap.get(actionDoubleEntry.getKey());
             }
         }
-        return null;
+        return this.actionChildMap.get(probabilityList.get(probabilityList.size() - 1).getKey());
     }
 
     public int sumOfActionsTaken() {
