@@ -335,9 +335,11 @@ public class Coach {
         public String toString() {
             int totalNumberOfActionsTaken = this.actionTakenMap.values().stream().reduce(0, Integer::sum);
             double[] probabilityVector = new double[allActions.size()];
-            for (int i = 0; i < probabilityVector.length; i++) {
-                Integer numberOfTimesTaken = this.actionTakenMap.get(allActions.get(i));
-                probabilityVector[i] = numberOfTimesTaken != null ? (float) numberOfTimesTaken / (float) totalNumberOfActionsTaken : 0f;
+            if (totalNumberOfActionsTaken > 0) {
+                for (int i = 0; i < probabilityVector.length; i++) {
+                    Integer numberOfTimesTaken = this.actionTakenMap.get(allActions.get(i));
+                    probabilityVector[i] = numberOfTimesTaken != null ? (float) numberOfTimesTaken / (float) totalNumberOfActionsTaken : 0f;
+                }
             }
             return this.state + "|" +
                     Arrays.toString(probabilityVector) + "|" +
