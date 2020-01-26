@@ -48,13 +48,23 @@ def main(gpu):
             wins = []
             for line in lines:
                 state, probability_vector, won = line.split("|")
-                states.append(ast.literal_eval(state))
-                probability_vectors.append(ast.literal_eval(probability_vector))
+                try:
+                    states.append(ast.literal_eval(state))
+                    probability_vectors.append(ast.literal_eval(probability_vector))
+                except ValueError:
+                    stderr_print("Error parsing line")
+                    stderr_print(line)
+                    raise ValueError
                 wins.append(won)
             train_set = StateDataSet(states, probability_vectors, wins)
             flush_print(nnet.train(train_set))
         elif method == "predict":
-            state = ast.literal_eval(lines[0])
+            try:
+                state = ast.literal_eval(lines[0])
+            except ValueError:
+                stderr_print("Error parsing line")
+                stderr_print(lines[0])
+                raise ValueError
             probability_vector, win = nnet.predict(state)
             flush_print(probability_vector)
             flush_print(win)
