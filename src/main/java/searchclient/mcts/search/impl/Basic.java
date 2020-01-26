@@ -1,6 +1,7 @@
 package searchclient.mcts.search.impl;
 
 import searchclient.mcts.backpropagation.Backpropagation;
+import searchclient.mcts.backpropagation.impl.AdditiveRAVEBackpropagation;
 import searchclient.mcts.expansion.Expansion;
 import searchclient.mcts.model.Node;
 import searchclient.mcts.search.MonteCarloTreeSearch;
@@ -10,6 +11,7 @@ import shared.Action;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -23,6 +25,9 @@ public class Basic extends MonteCarloTreeSearch {
 
     @Override
     public Action[][] solve(Node root, boolean limitSolveTries) {
+        if (this.backpropagation instanceof AdditiveRAVEBackpropagation) {
+            ((AdditiveRAVEBackpropagation) this.backpropagation).setConcurrentEnabled();
+        }
         Action[][] solution = null;
         int cores = Runtime.getRuntime().availableProcessors();
         ExecutorService executorService = Executors.newFixedThreadPool(cores);
@@ -63,13 +68,19 @@ public class Basic extends MonteCarloTreeSearch {
 
     @Override
     public Node runMCTS(Node root) {
+        if (this.backpropagation instanceof AdditiveRAVEBackpropagation) {
+            ((AdditiveRAVEBackpropagation) this.backpropagation).addExpandedNodes(Collections.singletonList(root));
+        }
         for (int i = 0; i < MCTS_LOOP_ITERATIONS; i++) {
             Node promisingNode = this.selection.selectPromisingNode(root);
 
             if (promisingNode.getState().isGoalState())
                 return promisingNode;
 
-            this.expansion.expandNode(promisingNode);
+            List<Node> expandedNodes = this.expansion.expandNode(promisingNode);
+            if (this.backpropagation instanceof AdditiveRAVEBackpropagation) {
+                ((AdditiveRAVEBackpropagation) this.backpropagation).addExpandedNodes(expandedNodes);
+            }
 
             float score = this.simulation.simulatePlayout(promisingNode);
 
