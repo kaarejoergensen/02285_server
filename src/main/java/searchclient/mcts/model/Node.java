@@ -12,6 +12,8 @@ import java.util.*;
 public class Node {
     public static final float explorationProbability = 1;
 
+    private Integer _h = null;
+
     private Map<Action, Integer> numberOfTimesActionTakenMap = new HashMap<>();
     private Map<Action, Double> totalValueOfActionMap = new HashMap<>();
     private Map<Action, Double> meanValueOfActionMap = new HashMap<>();
@@ -165,14 +167,61 @@ public class Node {
                 .orElseThrow(() -> new IllegalArgumentException("Node has no children"));
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        return obj instanceof Node && this.state.equals(((Node) obj).state);
+    public boolean equals(final Object o) {
+        if (o == this) return true;
+        if (!(o instanceof Node)) return false;
+        final Node other = (Node) o;
+        if (!other.canEqual(this)) return false;
+        final Object this$numberOfTimesActionTakenMap = this.getNumberOfTimesActionTakenMap();
+        final Object other$numberOfTimesActionTakenMap = other.getNumberOfTimesActionTakenMap();
+        if (!Objects.equals(this$numberOfTimesActionTakenMap, other$numberOfTimesActionTakenMap))
+            return false;
+        final Object this$totalValueOfActionMap = this.getTotalValueOfActionMap();
+        final Object other$totalValueOfActionMap = other.getTotalValueOfActionMap();
+        if (!Objects.equals(this$totalValueOfActionMap, other$totalValueOfActionMap))
+            return false;
+        final Object this$meanValueOfActionMap = this.getMeanValueOfActionMap();
+        final Object other$meanValueOfActionMap = other.getMeanValueOfActionMap();
+        if (!Objects.equals(this$meanValueOfActionMap, other$meanValueOfActionMap))
+            return false;
+        final Object this$actionProbabilityMap = this.getActionProbabilityMap();
+        final Object other$actionProbabilityMap = other.getActionProbabilityMap();
+        if (!Objects.equals(this$actionProbabilityMap, other$actionProbabilityMap))
+            return false;
+        if (this.getCountToRoot() != other.getCountToRoot()) return false;
+        final Object this$state = this.getState();
+        final Object other$state = other.getState();
+        if (!Objects.equals(this$state, other$state)) return false;
+        if (this.isExpanded() != other.isExpanded()) return false;
+        final Object this$actionPerformed = this.getActionPerformed();
+        final Object other$actionPerformed = other.getActionPerformed();
+        return Objects.equals(this$actionPerformed, other$actionPerformed);
     }
 
-    @Override
+    protected boolean canEqual(final Object other) {
+        return other instanceof Node;
+    }
+
     public int hashCode() {
-        return this.state.hashCode();
+        if (this._h == null) {
+            final int PRIME = 59;
+            int result = 1;
+            final Object $numberOfTimesActionTakenMap = this.getNumberOfTimesActionTakenMap();
+            result = result * PRIME + ($numberOfTimesActionTakenMap == null ? 43 : $numberOfTimesActionTakenMap.hashCode());
+            final Object $totalValueOfActionMap = this.getTotalValueOfActionMap();
+            result = result * PRIME + ($totalValueOfActionMap == null ? 43 : $totalValueOfActionMap.hashCode());
+            final Object $meanValueOfActionMap = this.getMeanValueOfActionMap();
+            result = result * PRIME + ($meanValueOfActionMap == null ? 43 : $meanValueOfActionMap.hashCode());
+            final Object $actionProbabilityMap = this.getActionProbabilityMap();
+            result = result * PRIME + ($actionProbabilityMap == null ? 43 : $actionProbabilityMap.hashCode());
+            result = result * PRIME + this.getCountToRoot();
+            final Object $state = this.getState();
+            result = result * PRIME + ($state == null ? 43 : $state.hashCode());
+            result = result * PRIME + (this.isExpanded() ? 79 : 97);
+            final Object $actionPerformed = this.getActionPerformed();
+            result = result * PRIME + ($actionPerformed == null ? 43 : $actionPerformed.hashCode());
+            this._h = result;
+        }
+        return this._h;
     }
-
 }

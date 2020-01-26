@@ -1,37 +1,35 @@
 package searchclient.mcts.backpropagation.impl;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import searchclient.State;
 import searchclient.mcts.backpropagation.Backpropagation;
 import searchclient.mcts.model.Node;
-import shared.Action;
 
 import java.util.*;
 
-public class AdditiveRAVEBackpropagation extends Backpropagation {
-    Map<StateActionPair, List<Node>> nodeMap = new HashMap<>();
+public class AdditiveRAVEBackpropagation extends AdditiveBackpropagation {
+    private Map<State, Set<Node>> nodeMap = new HashMap<>();
 
     @Override
     public void backpropagate(float score, Node nodeToExplore, Node root) {
-        Node tempNode = nodeToExplore;
-        while (tempNode != null && tempNode.getParent() != null) {
-            Action actionPerformed = tempNode.getActionPerformed();
-            StateActionPair stateActionPair = new StateActionPair(tempNode.getState(), actionPerformed);
-            List<Node> nodeList;
-            if (this.nodeMap.containsKey(stateActionPair)) {
-                nodeList = this.nodeMap.get(stateActionPair);
+        Set<Node> nodes = this.nodeMap.get(nodeToExplore.getState());
+        if (nodes == null) {
+            throw new IllegalArgumentException("List of Nodes from nodeMap cannot be null!");
+        }
+        for (Node node : nodes) {
+            super.backpropagate(score, node, root);
+        }
+    }
+
+    public void addExpandedNodes(List<Node> expandedNodes) {
+        for (Node node : expandedNodes) {
+            Set<Node> nodeList;
+            if (this.nodeMap.containsKey(node.getState())) {
+                nodeList = this.nodeMap.get(node.getState());
             } else {
-                nodeList = new ArrayList<>();
+                nodeList = new HashSet<>();
             }
-            nodeList.add(tempNode);
-            for (Node node : nodeList) {
-                Node parent = node.getParent();
-                parent.incrementVisitCount(actionPerformed);
-                parent.addScore(actionPerformed, score);
-            }
-            tempNode = tempNode.getParent();
-            this.nodeMap.put(stateActionPair, nodeList);
+            nodeList.add(node);
+            this.nodeMap.put(node.getState(), nodeList);
         }
     }
 
@@ -43,12 +41,5 @@ public class AdditiveRAVEBackpropagation extends Backpropagation {
     @Override
     public String toString() {
         return "ARB";
-    }
-
-    @Data
-    @AllArgsConstructor
-    private static class StateActionPair {
-        private State state;
-        private Action action;
     }
 }

@@ -1,6 +1,7 @@
 package searchclient.mcts.search.impl;
 
 import searchclient.mcts.backpropagation.Backpropagation;
+import searchclient.mcts.backpropagation.impl.AdditiveRAVEBackpropagation;
 import searchclient.mcts.expansion.Expansion;
 import searchclient.mcts.model.Node;
 import searchclient.mcts.search.MonteCarloTreeSearch;
@@ -9,10 +10,7 @@ import searchclient.nn.NNet;
 import searchclient.nn.PredictResult;
 import shared.Action;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class AlphaGo extends MonteCarloTreeSearch {
     private static final int MCTS_LOOP_ITERATIONS = 120;
@@ -34,18 +32,22 @@ public class AlphaGo extends MonteCarloTreeSearch {
             if (node.getState().isGoalState()) {
                 solution = node.getState().extractPlan();
             }
-//            Optional<Node> possibleGoalNode = this.extractGoalNodeIfPossible(node);
-//            if (possibleGoalNode.isPresent()) solution = possibleGoalNode.get().getState().extractPlan();
         }
 	    return solution;
     }
 
     @Override
     public Node runMCTS(Node root) {
+        if (this.backpropagation instanceof AdditiveRAVEBackpropagation) {
+            ((AdditiveRAVEBackpropagation) this.backpropagation).addExpandedNodes(Collections.singletonList(root));
+        }
         for (int i = 0; i < MCTS_LOOP_ITERATIONS; i++) {
             Node promisingNode = this.selection.selectPromisingNode(root);
 
-            this.expansion.expandNode(promisingNode);
+            List<Node> expandedNodes = this.expansion.expandNode(promisingNode);
+            if (this.backpropagation instanceof AdditiveRAVEBackpropagation) {
+                ((AdditiveRAVEBackpropagation) this.backpropagation).addExpandedNodes(expandedNodes);
+            }
 
             PredictResult trainResult = this.nNet.predict(promisingNode.getState());
             this.setProbabilityMap(trainResult.getProbabilityVector(), promisingNode);
