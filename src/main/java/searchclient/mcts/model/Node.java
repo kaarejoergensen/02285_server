@@ -93,6 +93,7 @@ public class Node {
         double sumOfActionsTaken = this.sumOfActionsTaken();
         for (Map.Entry<Action, Integer> actionEntry : this.numberOfTimesActionTakenMap.entrySet()) {
             Action action = actionEntry.getKey();
+            if (action.getType().equals(Action.ActionType.NoOp)) continue;
             double probability = (double) actionEntry.getValue() / sumOfActionsTaken;
             probabilityMap.put(action, probability);
         }
