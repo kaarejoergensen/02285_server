@@ -27,13 +27,10 @@ class NNet():
     # Kjøre MCTS en gang til for valideringsett
     # Teste accuracien til nettverket
     def train(self, trainSet, epochs=20, batch_size=64):
-        running_loss = 0.0
-        running_value_loss = 0.0
-        running_policy_loss = 0.0
+        running_loss, running_value_loss, running_policy_loss = [], [], []
         for epoch in range(epochs):
             self.model.train()
             train_loader = DataLoader(dataset=trainSet, batch_size=batch_size, shuffle=True, drop_last=True)
-            bach_count = 0
 
             for batch in train_loader:
                 states, probability_vectors, wins = batch
@@ -47,16 +44,12 @@ class NNet():
                 total_loss, value_error, policy_error = self.criterion(out_wins[:, 0], wins, out_probability_vectors, probability_vectors)
                 total_loss.backward()
                 self.optimizer.step()
-                running_loss += total_loss.item()
-                running_value_loss += value_error.item()
-                running_policy_loss += policy_error.item()
-                bach_count += 1
-            running_loss /= bach_count
-            running_value_loss /= bach_count
-            running_policy_loss /= bach_count
+                running_loss.append(total_loss.detach())
+                running_value_loss.append(value_error.detach())
+                running_policy_loss.append(policy_error.detach())
 
-        print("value_loss: ", running_value_loss, " policy_loss: ", running_policy_loss, file=sys.stderr, flush=True)
-        return running_loss / epochs
+        print("value_loss: ", sum(running_value_loss)/len(running_value_loss), " policy_loss: ", sum(running_policy_loss)/len(running_policy_loss), file=sys.stderr, flush=True)
+        return sum(running_loss)/len(running_loss)
 
     def predict(self, state):
         state_tensor = torch.tensor(np.array(state), dtype=torch.float)
