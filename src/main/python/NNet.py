@@ -26,7 +26,7 @@ class NNet():
     # Train nettverk på denne dataoen
     # Kjøre MCTS en gang til for valideringsett
     # Teste accuracien til nettverket
-    def train(self, trainSet, epochs=20, batch_size=64):
+    def train(self, trainSet, epochs=1, batch_size=64):
         running_loss, running_value_loss, running_policy_loss = [], [], []
         for epoch in range(epochs):
             self.model.train()
@@ -48,8 +48,8 @@ class NNet():
                 running_value_loss.append(value_error.detach())
                 running_policy_loss.append(policy_error.detach())
 
-        print("value_loss: ", sum(running_value_loss)/len(running_value_loss), " policy_loss: ", sum(running_policy_loss)/len(running_policy_loss), file=sys.stderr, flush=True)
-        return sum(running_loss)/len(running_loss)
+        print("value_loss: ", (sum(running_value_loss)/len(running_value_loss)).item(), " policy_loss: ", (sum(running_policy_loss)/len(running_policy_loss)).item(), file=sys.stderr, flush=True)
+        return (sum(running_loss)/len(running_loss)).item()
 
     def predict(self, state):
         state_tensor = torch.tensor(np.array(state), dtype=torch.float)
