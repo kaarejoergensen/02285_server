@@ -9,14 +9,14 @@ from NNetAlphaModule import NNetAlphaModule, AlphaLoss
 
 
 class NNet():
-    def __init__(self, gpu):
+    def __init__(self, args):
         #self.model = NNetModule()
-        self.device = torch.device('cuda:' + str(gpu))
-        self.model = NNetAlphaModule(resblocks=19)
+        self.device = torch.device('cuda:' + str(args.gpu))
+        self.model = NNetAlphaModule(resblocks=args.resblocks)
         if torch.cuda.is_available():
             self.model = self.model.to("cuda")
             self.model = self.model.to(self.device)
-        self.optimizer = optim.SGD(self.model.parameters(), lr=0.01, momentum=0.9, weight_decay=10e-4)
+        self.optimizer = optim.SGD(self.model.parameters(), lr=args.lr, momentum=0.9, weight_decay=10e-4)
         self.criterion = AlphaLoss()
 
     # State skal ta inn staten + scoren gitt fra mcts
@@ -26,7 +26,7 @@ class NNet():
     # Train nettverk på denne dataoen
     # Kjøre MCTS en gang til for valideringsett
     # Teste accuracien til nettverket
-    def train(self, trainSet, epochs=1, batch_size=64):
+    def train(self, trainSet, epochs=20, batch_size=64, print_loss=False):
         running_loss, running_value_loss, running_policy_loss = [], [], []
         for epoch in range(epochs):
             self.model.train()
@@ -48,7 +48,14 @@ class NNet():
                 running_value_loss.append(value_error.detach())
                 running_policy_loss.append(policy_error.detach())
 
-        print("value_loss: ", (sum(running_value_loss)/len(running_value_loss)).item(), " policy_loss: ", (sum(running_policy_loss)/len(running_policy_loss)).item(), file=sys.stderr, flush=True)
+            if print_loss and epoch < epochs - 1:
+                print("value_loss: ", (sum(running_value_loss)/len(running_value_loss)).item(),
+                      " policy_loss: ", (sum(running_policy_loss)/len(running_policy_loss)).item(),
+                      " total_loss: ", (sum(running_loss)/len(running_loss)).item(), file=sys.stderr, flush=True)
+
+        print("value_loss: ", (sum(running_value_loss)/len(running_value_loss)).item(),
+              " policy_loss: ", (sum(running_policy_loss)/len(running_policy_loss)).item(),
+              " total_loss: ", (sum(running_loss)/len(running_loss)).item(), file=sys.stderr, flush=True)
         return (sum(running_loss)/len(running_loss)).item()
 
     def predict(self, state):

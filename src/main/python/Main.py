@@ -35,10 +35,10 @@ class Main:
         return lines
 
 
-def main(gpu):
+def main(args):
     server_messages = sys.stdin
     parser = Main(server_messages)
-    nnet = NNet(gpu)
+    nnet = NNet(args)
     while True:
         lines = parser.receive()
         method = lines.pop(0)
@@ -57,7 +57,7 @@ def main(gpu):
                     raise ValueError
                 wins.append(won)
             train_set = StateDataSet(states, probability_vectors, wins)
-            flush_print(nnet.train(train_set))
+            flush_print(nnet.train(train_set, epochs=args.epochs, batch_size=args.batch_size, print_loss=args.print_loss))
         elif method == "predict":
             try:
                 state = ast.literal_eval(lines[0])
@@ -86,5 +86,10 @@ def main(gpu):
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument("--gpu", type=float, default=0, help="GPU to use")
+    parser.add_argument("--lr", type=float, default=0.01, help="Learning rate")
+    parser.add_argument("--epochs", type=int, default=20, help="Epochs")
+    parser.add_argument("--batch_size", type=int, default=64, help="Batch size")
+    parser.add_argument("--resblocks", type=int, default=19, help="Number of resblocks")
+    parser.add_argument("--print_loss", type=bool, default=False, help="Print loss at each epoch")
     args = parser.parse_args()
-    main(args.gpu)
+    main(args)
