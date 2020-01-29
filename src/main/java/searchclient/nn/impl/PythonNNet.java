@@ -155,6 +155,18 @@ public class PythonNNet extends NNet {
 
     private void writeToPython(String method, String args) {
         try {
+            if (method.equalsIgnoreCase("train")) {
+                //Create file to the correct destination
+                File tmpFile = new File("input.in");
+                //I like to say, that you're my only fear
+                try(PrintWriter out = new PrintWriter(tmpFile)){
+                    out.println(method);
+                    out.println(args);
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+                System.exit(0);
+            }
             this.clientWriter.write(method + System.lineSeparator());
             this.clientWriter.flush();
             this.clientWriter.write(args + System.lineSeparator());
