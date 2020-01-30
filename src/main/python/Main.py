@@ -91,5 +91,8 @@ if __name__ == '__main__':
     parser.add_argument("--batch_size", type=int, default=64, help="Batch size")
     parser.add_argument("--resblocks", type=int, default=19, help="Number of resblocks")
     parser.add_argument("--print_loss", type=bool, default=False, help="Print loss at each epoch")
+    parser.add_argument("--loss_function", default="MSE",
+                        choices=["MSE", "MAE"], help="Choose loss function")
+
     args = parser.parse_args()
     main(args)

@@ -17,7 +17,7 @@ class NNet():
             self.model = self.model.to("cuda")
             self.model = self.model.to(self.device)
         self.optimizer = optim.SGD(self.model.parameters(), lr=args.lr, momentum=0.9, weight_decay=10e-4)
-        self.criterion = AlphaLoss()
+        self.criterion = AlphaLoss(loss_function=args.loss_function)
 
     # State skal ta inn staten + scoren gitt fra mcts
 

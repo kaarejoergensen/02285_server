@@ -95,11 +95,15 @@ class NNetAlphaModule(nn.Module):
 
 
 class AlphaLoss(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, loss_function="MSE"):
         super(AlphaLoss, self).__init__()
+        self.loss_function = loss_function
 
     def forward(self, v_out, v, pv_out, pv):
-        value_error = (v - v_out) ** 2
+        if self.loss_function == "MSE":
+            value_error = (v - v_out) ** 2
+        else:
+            value_error = abs((v - v_out))
         policy_error = torch.sum((-pv * (1e-8 + pv_out.float()).float().log()), 1)
         total_error = (value_error.view(-1).float() + policy_error).mean()
         return total_error, value_error.view(-1).float().mean(), policy_error.mean()
