@@ -93,6 +93,7 @@ if __name__ == '__main__':
     parser.add_argument("--print_loss", type=bool, default=False, help="Print loss at each epoch")
     parser.add_argument("--loss_function", default="MSE",
                         choices=["MSE", "MAE"], help="Choose loss function")
+    parser.add_argument("--features", type=int, default=128, help="Number of features in each layer")
 
     args = parser.parse_args()
     main(args)

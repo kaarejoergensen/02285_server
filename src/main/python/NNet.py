@@ -12,7 +12,7 @@ class NNet():
     def __init__(self, args):
         #self.model = NNetModule()
         self.device = torch.device('cuda:' + str(args.gpu))
-        self.model = NNetAlphaModule(resblocks=args.resblocks)
+        self.model = NNetAlphaModule(resblocks=args.resblocks, features=args.features)
         if torch.cuda.is_available():
             self.model = self.model.to("cuda")
             self.model = self.model.to(self.device)
