@@ -20,28 +20,73 @@ public class PythonNNet extends NNet {
     private static final String TEMP_NAME = "temp.pth";
 
     @Getter private String pythonPath;
+    @Getter private Integer gpu;
+    @Getter private Float lr;
+    @Getter private Integer epochs;
+    @Getter private Integer batchSize;
+    @Getter private Integer resBlocks;
+    @Getter private String lossFunction;
+    @Getter private Integer features;
 
     private Process process;
     private BufferedReader clientReader;
     private BufferedWriter clientWriter;
 
-    public PythonNNet(String pythonPath) throws IOException {
+    public PythonNNet(String pythonPath, Integer gpu, Float lr, Integer epochs, Integer batchSize, Integer resBlocks, String lossFunction, Integer features) throws IOException {
         this.pythonPath = pythonPath;
-        this.run(null);
+        this.gpu = gpu;
+        this.lr = lr;
+        this.epochs = epochs;
+        this.batchSize = batchSize;
+        this.resBlocks = resBlocks;
+        this.lossFunction = lossFunction;
+        this.features = features;
+        this.run();
     }
 
-    public PythonNNet(String pythonPath, int gpu) throws IOException {
-        this.pythonPath = pythonPath;
-        this.run(gpu);
+    public PythonNNet(PythonNNet pythonNNet, int gpu) throws IOException {
+        this.pythonPath = pythonNNet.getPythonPath();
+        this.gpu = gpu;
+        this.lr = pythonNNet.lr;
+        this.epochs = pythonNNet.epochs;
+        this.batchSize = pythonNNet.batchSize;
+        this.resBlocks = pythonNNet.resBlocks;
+        this.lossFunction = pythonNNet.lossFunction;
+        this.features = pythonNNet.features;
+        this.run();
     }
 
-    private void run(Integer gpu) throws IOException {
+    private void run() throws IOException {
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdownPython));
         ProcessBuilder processBuilder = new ProcessBuilder(this.pythonPath, SCRIPT_PATH).redirectError(ProcessBuilder.Redirect.INHERIT);
         if (gpu != null) {
             processBuilder.command().add("--gpu");
             processBuilder.command().add(gpu.toString());
         }
+        if (lr != null) {
+            processBuilder.command().add("--lr");
+            processBuilder.command().add(lr.toString());
+        }
+        if (epochs != null) {
+            processBuilder.command().add("--epochs");
+            processBuilder.command().add(epochs.toString());
+        }
+        if (batchSize != null) {
+            processBuilder.command().add("--batch_size");
+            processBuilder.command().add(batchSize.toString());
+        }
+        if (resBlocks != null) {
+            processBuilder.command().add("--resblocks");
+            processBuilder.command().add(resBlocks.toString());
+        }
+        if (lossFunction != null) {
+            processBuilder.command().add("--loss_function");
+            processBuilder.command().add(lossFunction);
+        }if (features != null) {
+            processBuilder.command().add("--features");
+            processBuilder.command().add(features.toString());
+        }
+
         this.process = processBuilder.start();
 
         InputStream clientIn = process.getInputStream();
@@ -112,7 +157,7 @@ public class PythonNNet extends NNet {
     @Override
     public NNet clone() {
         try {
-            return new PythonNNet(this.pythonPath);
+            return new PythonNNet(this.pythonPath, this.gpu, this.lr, this.epochs, this.batchSize, this.resBlocks, this.lossFunction, this.features);
         } catch (IOException e) {
             e.printStackTrace();
             return null;

@@ -117,6 +117,10 @@ public class SearchClient {
         Integer gpus = null, numberOfGeneratedStates = null;
         boolean train = false, loadCheckpoint = false, loadBest = false, generate = false, limitSolveTries = true;
         String pythonPath = PYTHON_PATH, complexityString = null, generateAlgorithm = null;
+
+        Float lr = null;
+        Integer epochs = null, batchSize = null, resblocks = null, features = null;
+        String lossFunction = null;
         Backpropagation backpropagation = new AdditiveBackpropagation();
         if (args.length > 0) {
             if (args.length > 1) {
@@ -148,6 +152,24 @@ public class SearchClient {
                             break;
                         case "-nolimit":
                             limitSolveTries = false;
+                            break;
+                        case "-lr":
+                            lr = Float.parseFloat(args[i + 1]);
+                            break;
+                        case "-epochs":
+                            epochs = Integer.parseInt(args[i + 1]);
+                            break;
+                        case "-batchSize":
+                            batchSize = Integer.parseInt(args[i + 1]);
+                            break;
+                        case "-resblocks":
+                            resblocks = Integer.parseInt(args[i + 1]);
+                            break;
+                        case "-lossFunction":
+                            lossFunction = args[i + 1];
+                            break;
+                        case "features":
+                            features = Integer.parseInt(args[i + 1]);
                             break;
                     }
                 }
@@ -186,7 +208,7 @@ public class SearchClient {
                             new AllPairsShortestPath(initialState), backpropagation);
                     break;
                 case "-alpha":
-                    nNet = new PythonNNet(pythonPath);
+                    nNet = new PythonNNet(pythonPath, 0, lr, epochs, batchSize, resblocks, lossFunction, features);
                     monteCarloTreeSearch = new AlphaGo(new AlphaGoSelection(), new AllActionsExpansion(),
                             backpropagation, nNet);
                     break;

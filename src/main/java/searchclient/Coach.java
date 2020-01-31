@@ -140,7 +140,7 @@ public class Coach {
 
     private Action[][] getActions(State state, Path modelPath, int gpu) throws IOException {
         MonteCarloTreeSearch mcts = this.monteCarloTreeSearch.clone();
-        NNet pythonNNet = new PythonNNet(((PythonNNet)this.nNet).getPythonPath(), gpu);
+        NNet pythonNNet = new PythonNNet((PythonNNet) this.nNet, gpu);
         pythonNNet.loadModel(modelPath);
         mcts.setNNet(pythonNNet);
         Action[][] plan = mcts.solve(new Node(state), this.limitSolveTries);
@@ -241,7 +241,7 @@ public class Coach {
                             gpu.incrementAndGet();
                             gpuUsed.set(0);
                         }
-                        newNNet = new PythonNNet(((PythonNNet)this.nNet).getPythonPath(), gpu.intValue());
+                        newNNet = new PythonNNet((PythonNNet) this.nNet, gpu.intValue());
                         gpuUsed.incrementAndGet();
                     }
                 } else {
