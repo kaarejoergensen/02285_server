@@ -67,7 +67,7 @@ class NNet():
         with torch.no_grad():
             probability_vector, win = self.model(state_tensor)
 
-        return torch.exp(probability_vector).data.cpu().numpy()[0].tolist(), win.data.cpu().numpy()[0].tolist()
+        return probability_vector.data.cpu().numpy()[0].tolist(), win.data.cpu().numpy()[0].tolist()
 
     def save_checkpoint(self, filepath):
         torch.save(self.model.state_dict(), filepath)
