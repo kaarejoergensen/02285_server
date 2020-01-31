@@ -168,7 +168,7 @@ public class SearchClient {
                         case "-lossFunction":
                             lossFunction = args[i + 1];
                             break;
-                        case "features":
+                        case "-features":
                             features = Integer.parseInt(args[i + 1]);
                             break;
                     }
