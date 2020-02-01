@@ -115,10 +115,10 @@ public class PythonNNet extends NNet {
     @Override
     public PredictResult predict(State state) {
         this.writeToPython("predict", state.toMLString());
-        return this.readPredictResult(clientReader);
+        return this.readPredictResult();
     }
 
-    private PredictResult readPredictResult(BufferedReader clientReader) {
+    private PredictResult readPredictResult() {
         double[] probabilityVector = parseProbabilityVector(this.readFromPython());
         float score = Float.parseFloat(this.readFromPython().replaceAll("[\\[\\]]", ""));
         return new PredictResult(probabilityVector, score);

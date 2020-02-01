@@ -25,10 +25,12 @@ import searchclient.nn.impl.PythonNNet;
 import shared.Action;
 
 import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -58,45 +60,23 @@ public class SearchClient {
         System.err.format("Starting %s.\n", frontier.getName());
 
         frontier.add(initialState);
-
-        int cores = Runtime.getRuntime().availableProcessors();
-        ExecutorService executorService = Executors.newFixedThreadPool(cores);
-        List<Callable<Action[][]>> callableList = new ArrayList<>(cores);
-        for (int j = 0; j < cores; j++) {
-            callableList.add(() -> {
-                while (true) {
-                    if (frontier.isEmpty()) {
-                        return null;
-                    }
-
-                    State leafState = frontier.pop();
-                    if (leafState == null) continue;
-                    if (leafState.isGoalState()) {
-                        return leafState.extractPlan();
-                    }
-
-                    explored.add(leafState);
-                    for (State s : leafState.getExpandedStates()) {
-                        if (!explored.contains(s) && !frontier.contains(s)) {
-                            frontier.add(s);
-                        }
-                    }
-                }
-            });
-        }
-        Action[][] plan = null;
-        try {
-            List<Future<Action[][]>> futures = executorService.invokeAll(callableList);
-            for (var future : futures) {
-                Action[][] tempPlan = future.get();
-                if (tempPlan != null) plan = tempPlan;
+        while (true) {
+            if (frontier.isEmpty()) {
+                return null;
             }
-            return plan;
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-            return null;
-        } finally {
-            executorService.shutdown();
+
+            State leafState = frontier.pop();
+            if (leafState == null) continue;
+            if (leafState.isGoalState()) {
+                return leafState.extractPlan();
+            }
+
+            explored.add(leafState);
+            for (State s : leafState.getExpandedStates()) {
+                if (!explored.contains(s) && !frontier.contains(s)) {
+                    frontier.add(s);
+                }
+            }
         }
     }
 
@@ -105,17 +85,25 @@ public class SearchClient {
     public static void main(String[] args) throws IOException {
         // Send client name to server.
         System.out.println("SearchClient");
-
-        // Parse the level.
         BufferedReader serverMessages = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.US_ASCII));
-        State initialState = SearchClient.parseLevel(serverMessages);
+        List<State> states = new ArrayList<>();
+        if (args.length > 3 && args[1].equalsIgnoreCase("-loadlevels")) {
+            String path = args[2];
+            String[] levels = args[3].split(",");
+            for (String level : levels) {
+                BufferedReader bufferedReader = Files.newBufferedReader(Path.of(path + level), StandardCharsets.US_ASCII);
+                states.add(SearchClient.parseLevel(bufferedReader));
+            }
+        } else {
+            states.add(SearchClient.parseLevel(serverMessages));
+        }
 
         // Select search strategy.
         Frontier frontier = null;
         MonteCarloTreeSearch monteCarloTreeSearch = null;
-        NNet nNet = new MockNNet(new HeuristicAStar(initialState));
+        NNet nNet = new MockNNet(new HeuristicAStar(states.get(0)));
         Integer gpus = null, numberOfGeneratedStates = null;
-        boolean train = false, loadCheckpoint = false, loadBest = false, generate = false, limitSolveTries = true;
+        boolean train = false, loadCheckpoint = false, loadBest = false, generate = false, limitSolveTries = true, incremental = false;
         String pythonPath = PYTHON_PATH, complexityString = null, generateAlgorithm = null;
 
         Float lr = null;
@@ -171,6 +159,9 @@ public class SearchClient {
                         case "-features":
                             features = Integer.parseInt(args[i + 1]);
                             break;
+                        case "-incremental":
+                            incremental = true;
+                            break;
                     }
                 }
             }
@@ -182,7 +173,7 @@ public class SearchClient {
                     frontier = new FrontierDFS();
                     break;
                 case "-astar":
-                    frontier = new FrontierBestFirst(new HeuristicAStar(initialState));
+                    frontier = new FrontierBestFirst(new HeuristicAStar(states.get(0)));
                     break;
                 case "-wastar":
                     int w = 5;
@@ -193,19 +184,19 @@ public class SearchClient {
                             System.err.println("Couldn't parse weight argument to -wastar as integer, using default.");
                         }
                     }
-                    frontier = new FrontierBestFirst(new HeuristicWeightedAStar(initialState, w));
+                    frontier = new FrontierBestFirst(new HeuristicWeightedAStar(states.get(0), w));
                     break;
                 case "-greedy":
-                    frontier = new FrontierBestFirst(new HeuristicGreedy(initialState));
+                    frontier = new FrontierBestFirst(new HeuristicGreedy(states.get(0)));
                     break;
                 case "-basic":
                     monteCarloTreeSearch = new Basic(new AlphaGoSelection(), new AllActionsExpansion(),
                             new RandomSimulation(), backpropagation);
                     break;
                 case "-onetree":
-                    nNet = new MockNNet(new HeuristicAStar(initialState));
-                    monteCarloTreeSearch = new OneTree(new UCTSelection(0.4), new AllActionsNoDuplicatesExpansion(initialState),
-                            new AllPairsShortestPath(initialState), backpropagation);
+                    nNet = new MockNNet(new HeuristicAStar(states.get(0)));
+                    monteCarloTreeSearch = new OneTree(new UCTSelection(0.4), new AllActionsNoDuplicatesExpansion(states.get(0)),
+                            new AllPairsShortestPath(states.get(0)), backpropagation);
                     break;
                 case "-alpha":
                     nNet = new PythonNNet(pythonPath, 0, lr, epochs, batchSize, resblocks, lossFunction, features);
@@ -213,12 +204,12 @@ public class SearchClient {
                             backpropagation, nNet);
                     break;
                 default:
-                    frontier = new FrontierBestFirst(new HeuristicAStar(initialState));
+                    frontier = new FrontierBestFirst(new HeuristicAStar(states.get(0)));
                     System.err.println("Defaulting to astar search. Use arguments -bfs, -dfs, -astar, -wastar, or " +
                             "-greedy to set the search strategy.");
             }
         } else {
-            frontier = new FrontierBestFirst(new HeuristicAStar(initialState));
+            frontier = new FrontierBestFirst(new HeuristicAStar(states.get(0)));
             System.err.println("Defaulting to astar search. Use arguments -bfs, -dfs, -astar, -wastar, or -greedy to " +
                     "set the search strategy.");
         }
@@ -236,7 +227,7 @@ public class SearchClient {
                 StatusThread statusThread = new StatusThread(startTime, explored, frontier);
                 statusThread.start();
                 try {
-                    plan = SearchClient.search(initialState, frontier, explored);
+                    plan = SearchClient.search(states.get(0), frontier, explored);
                 } catch (Exception e) {
                     System.err.println("Exception caught in Search");
                     e.printStackTrace(System.err);
@@ -270,16 +261,17 @@ public class SearchClient {
                             }
                             generatedStates.add(pgl.toState());
                         }
-                        coach.train(generatedStates, loadCheckpoint);
+                        coach.train(generatedStates, loadCheckpoint, incremental);
                     } else {
-                        coach.train(initialState, loadCheckpoint);
+                        coach.train(states, loadCheckpoint, incremental);
                     }
+                } else {
+                    StatusThread statusThread = new StatusThread(startTime, monteCarloTreeSearch.getExpandedStates());
+                    statusThread.start();
+                    plan = monteCarloTreeSearch.solve(new Node(states.get(0)), limitSolveTries);
+                    nNet.close();
+                    statusThread.interrupt();
                 }
-                StatusThread statusThread = new StatusThread(startTime, monteCarloTreeSearch.getExpandedStates());
-                statusThread.start();
-                plan = monteCarloTreeSearch.solve(new Node(initialState), limitSolveTries);
-                nNet.close();
-                statusThread.interrupt();
             }
         } catch (OutOfMemoryError ex) {
             System.err.println("Maximum memory usage exceeded.");

@@ -6,6 +6,9 @@ import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
 import me.tongfei.progressbar.ProgressBarStyle;
 import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.apache.commons.lang3.tuple.Triple;
+import org.javatuples.Pair;
+import org.javatuples.Triplet;
 import searchclient.mcts.model.Node;
 import searchclient.mcts.search.MonteCarloTreeSearch;
 import searchclient.nn.NNet;
@@ -39,12 +42,14 @@ public class Coach {
     private MonteCarloTreeSearch monteCarloTreeSearch;
     private Integer gpus;
     private boolean limitSolveTries;
-    
-    public void train(State root, boolean loadCheckpoint) throws IOException, ClassNotFoundException {
-        this.train(Collections.singletonList(root), loadCheckpoint);
-    }
 
-    public void train(List<State> states, boolean loadCheckpoint) throws IOException, ClassNotFoundException {
+    public void train(List<State> states, boolean loadCheckpoint, boolean incremental) throws IOException, ClassNotFoundException {
+        List<State> currentLevels = new ArrayList<>(states.size());
+        if (incremental) {
+            currentLevels.add(states.get(0));
+        } else {
+            currentLevels.addAll(states);
+        }
         this.createFolders();
         Deque<List<String>> trainingExamples = new ArrayDeque<>();
         int cores = Runtime.getRuntime().availableProcessors();
@@ -52,10 +57,12 @@ public class Coach {
         if (loadCheckpoint && Files.exists(getCheckpointPath())) {
             trainingExamples = this.loadTrainingData();
         }
+        int solvedCount = 0, lossWithinMarginCount = 0;
+        float previousLoss = Integer.MAX_VALUE;
         for (int i = 0; i < NUMBER_OF_TRAINING_ITERATIONS; i++) {
             System.err.println("------------ITERATION " + (i + 1) + " ------");
             if (!loadCheckpoint || trainingExamples.isEmpty() || i != 0) {
-                List<String> trainingData = this.runEpisodes(states);
+                List<String> trainingData = this.runEpisodes(currentLevels);
                 if (trainingExamples.size() >= MAX_NUMBER_OF_TRAINING_EPISODES) {
                     trainingExamples.pop();
                 }
@@ -69,17 +76,28 @@ public class Coach {
             this.nNet.saveModel(getTmpOldPath());
 
             float loss = this.nNet.train(finalTrainingData);
+            if (incremental) {
+                if (Math.abs(previousLoss - loss) < 0.05) {
+                    lossWithinMarginCount++;
+                } else {
+                    lossWithinMarginCount = 0;
+                }
+                previousLoss = loss;
+            }
             this.nNet.saveModel(getTmpNewPath());
             System.err.println("Training done. Loss: " + loss);
 
-            System.err.println("Solving " + states.size() + " different levels.");
+            System.err.println("Solving " + currentLevels.size() + " different levels.");
             int better = 0, same = 0, worse = 0;
-            List<Callable<PitResult>> callables = states.stream()
-                    .map(s -> (Callable<PitResult>) () -> pit(executorService, s))
+            List<Callable<Triplet<PitResult, Boolean, Boolean>>> callables = currentLevels.stream()
+                    .map(s -> (Callable<Triplet<PitResult, Boolean, Boolean>>) () -> pit(executorService, s))
                     .collect(Collectors.toList());
             try {
-                for (Future<PitResult> future : executorService.invokeAll(callables)) {
-                    switch (future.get()) {
+                boolean allSolvedOld = true;
+                boolean allSolvedNew = true;
+                for (Future<Triplet<PitResult, Boolean, Boolean>> future : executorService.invokeAll(callables)) {
+                    Triplet<PitResult, Boolean, Boolean> resultBooleanPair = future.get();
+                    switch (resultBooleanPair.getValue0()) {
                         case BETTER:
                             better++;
                             break;
@@ -90,9 +108,26 @@ public class Coach {
                             worse++;
                             break;
                     }
+                    allSolvedOld &= resultBooleanPair.getValue1();
+                    allSolvedNew &= resultBooleanPair.getValue2();
+                }
+                if (incremental && (allSolvedOld || allSolvedNew)) {
+                    solvedCount++;
+                    if (solvedCount >= 5 && currentLevels.size() < states.size()) {
+                        if (lossWithinMarginCount >= 5) {
+                            currentLevels.add(states.get(currentLevels.size()));
+                            solvedCount = 0;
+                            lossWithinMarginCount = 0;
+                        }
+                    }
                 }
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
+                Throwable e1 = e;
+                while (e1.getCause() != null) {
+                    e1.printStackTrace();
+                    e1 = e1.getCause();
+                }
                 return;
             }
 
@@ -109,9 +144,9 @@ public class Coach {
         executorService.shutdown();
     }
 
-    private PitResult pit(ExecutorService executorService, State state) throws ExecutionException, InterruptedException {
+    private Triplet<PitResult, Boolean, Boolean> pit(ExecutorService executorService, State state) throws ExecutionException, InterruptedException {
         Callable<Action[][]> newModelCallable = () -> getActions(state, getTmpNewPath(), 0);
-        Callable<Action[][]> oldModelCallable = () -> getActions(state, getTmpOldPath(), this.gpus > 1 ? 1 : 0);
+        Callable<Action[][]> oldModelCallable = () -> getActions(state, getTmpOldPath(), this.gpus != null && this.gpus > 1 ? 1 : 0);
 
         Future<Action[][]> newPlanFuture = executorService.submit(newModelCallable);
         Future<Action[][]> oldPlanFuture = executorService.submit(oldModelCallable);
@@ -120,23 +155,30 @@ public class Coach {
         Action[][] oldPlan;
         newPlan = newPlanFuture.get();
         oldPlan = oldPlanFuture.get();
-        System.err.println("Old plan: " + (oldPlan != null ? oldPlan.length : "null") +
-                " New plan: " + (newPlan != null ? newPlan.length : "null"));
+        String format = "%-40s%s%n";
+        String plan = "Old plan: " + (oldPlan != null ? oldPlan.length : "null") +
+                " New plan: " + (newPlan != null ? newPlan.length : "null");
+        System.err.printf(format, plan, "Level: " + state.levelName);
+        boolean oldPlanSolved = oldPlan != null;
+        boolean newPlanSolved = newPlan != null;
+        PitResult result;
         if (oldPlan == null && newPlan == null) {
-            return PitResult.SAME;
+            result = PitResult.SAME;
         } else if (newPlan == null) {
-            return PitResult.WORSE;
+            result = PitResult.WORSE;
+
         } else if (oldPlan == null) {
-            return PitResult.BETTER;
+            result = PitResult.BETTER;
         } else {
             if (newPlan.length < oldPlan.length) {
-                return PitResult.BETTER;
+                result = PitResult.BETTER;
             } else if (newPlan.length > oldPlan.length) {
-                return PitResult.WORSE;
+                result = PitResult.WORSE;
             } else {
-                return PitResult.SAME;
+                result = PitResult.SAME;
             }
         }
+        return Triplet.with(result, oldPlanSolved, newPlanSolved);
     }
 
     private Action[][] getActions(State state, Path modelPath, int gpu) throws IOException {
