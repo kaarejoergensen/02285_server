@@ -111,14 +111,18 @@ public class Coach {
                     allSolvedOld &= resultBooleanPair.getValue1();
                     allSolvedNew &= resultBooleanPair.getValue2();
                 }
-                if (incremental && (allSolvedOld || allSolvedNew)) {
-                    solvedCount++;
-                    if (solvedCount >= 5 && currentLevels.size() < states.size()) {
-                        if (lossWithinMarginCount >= 5) {
-                            currentLevels.add(states.get(currentLevels.size()));
-                            solvedCount = 0;
-                            lossWithinMarginCount = 0;
+                if (incremental) {
+                    if (allSolvedOld || allSolvedNew) {
+                        solvedCount++;
+                        if (solvedCount >= 5 && currentLevels.size() < states.size()) {
+                            if (lossWithinMarginCount >= 5) {
+                                currentLevels.add(states.get(currentLevels.size()));
+                                solvedCount = 0;
+                                lossWithinMarginCount = 0;
+                            }
                         }
+                    } else {
+                        solvedCount = 0;
                     }
                 }
             } catch (InterruptedException | ExecutionException e) {
