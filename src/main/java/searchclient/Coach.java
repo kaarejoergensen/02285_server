@@ -102,6 +102,7 @@ public class Coach {
                 this.nNet.loadModel(getTmpNewPath());
                 this.nNet.saveModel(getBestPath());
             } else {
+                this.nNet.loadModel(getTmpOldPath());
                 System.err.println("Rejecting new model. " + resultString);
             }
         }
