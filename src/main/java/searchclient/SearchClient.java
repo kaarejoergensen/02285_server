@@ -1,29 +1,44 @@
 package searchclient;
 
+import levelgenerator.Complexity;
+import levelgenerator.pgl.Dungeon.Dungeon;
+import levelgenerator.pgl.RandomLevel;
+import levelgenerator.pgl.RandomWalk.RandomWalk;
 import searchclient.level.Level;
+import searchclient.mcts.backpropagation.Backpropagation;
 import searchclient.mcts.backpropagation.impl.AdditiveBackpropagation;
-import searchclient.mcts.backpropagation.impl.ForwardAdditiveBackpropagation;
+import searchclient.mcts.backpropagation.impl.AdditiveRAVEBackpropagation;
 import searchclient.mcts.expansion.impl.AllActionsExpansion;
 import searchclient.mcts.expansion.impl.AllActionsNoDuplicatesExpansion;
 import searchclient.mcts.model.Node;
 import searchclient.mcts.search.MonteCarloTreeSearch;
+import searchclient.mcts.search.impl.AlphaGo;
 import searchclient.mcts.search.impl.Basic;
 import searchclient.mcts.search.impl.OneTree;
-import searchclient.mcts.selection.impl.RandomSelection;
+import searchclient.mcts.selection.impl.AlphaGoSelection;
 import searchclient.mcts.selection.impl.UCTSelection;
 import searchclient.mcts.simulation.impl.AllPairsShortestPath;
 import searchclient.mcts.simulation.impl.RandomSimulation;
+import searchclient.nn.NNet;
+import searchclient.nn.impl.MockNNet;
+import searchclient.nn.impl.PythonNNet;
 import shared.Action;
 
 import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class SearchClient {
+    private static final String PYTHON_PATH = "./venv/bin/python";
+
     public static State parseLevel(BufferedReader serverMessages) throws IOException {
         // We can assume that the level file is conforming to specification, since the server verifies this.
         Level level = new Level(serverMessages);
@@ -42,7 +57,6 @@ public class SearchClient {
      * Implements the Graph-Search algorithm from R&N figure 3.7.
      */
     public static Action[][] search(State initialState, Frontier frontier, HashSet<State> explored) {
-
         System.err.format("Starting %s.\n", frontier.getName());
 
         frontier.add(initialState);
@@ -52,7 +66,7 @@ public class SearchClient {
             }
 
             State leafState = frontier.pop();
-
+            if (leafState == null) continue;
             if (leafState.isGoalState()) {
                 return leafState.extractPlan();
             }
@@ -71,15 +85,86 @@ public class SearchClient {
     public static void main(String[] args) throws IOException {
         // Send client name to server.
         System.out.println("SearchClient");
-
-        // Parse the level.
         BufferedReader serverMessages = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.US_ASCII));
-        State initialState = SearchClient.parseLevel(serverMessages);
+        List<State> states = new ArrayList<>();
+        if (args.length > 3 && args[1].equalsIgnoreCase("-loadlevels")) {
+            String path = args[2];
+            String[] levels = args[3].split(",");
+            for (String level : levels) {
+                BufferedReader bufferedReader = Files.newBufferedReader(Path.of(path + level), StandardCharsets.US_ASCII);
+                states.add(SearchClient.parseLevel(bufferedReader));
+            }
+        } else {
+            states.add(SearchClient.parseLevel(serverMessages));
+        }
 
         // Select search strategy.
         Frontier frontier = null;
         MonteCarloTreeSearch monteCarloTreeSearch = null;
+        NNet nNet = new MockNNet(new HeuristicAStar(states.get(0)));
+        Integer gpus = null, numberOfGeneratedStates = null;
+        boolean train = false, loadCheckpoint = false, loadBest = false, generate = false, limitSolveTries = true, incremental = false;
+        String pythonPath = PYTHON_PATH, complexityString = null, generateAlgorithm = null;
+
+        Float lr = null;
+        Integer epochs = null, batchSize = null, resblocks = null, features = null;
+        String lossFunction = null;
+        Backpropagation backpropagation = new AdditiveBackpropagation();
         if (args.length > 0) {
+            if (args.length > 1) {
+                for (int i = 1; i < args.length; i++) {
+                    switch (args[i]) {
+                        case "-train":
+                            train = true;
+                            break;
+                        case "-checkpoint":
+                            loadCheckpoint = true;
+                            break;
+                        case "-best":
+                            loadBest = true;
+                            break;
+                        case "-rave":
+                            backpropagation = new AdditiveRAVEBackpropagation();
+                            break;
+                        case  "-python":
+                            pythonPath = args[i + 1];
+                            break;
+                        case "-gpus":
+                            gpus = Integer.parseInt(args[i + 1]);
+                            break;
+                        case "-generate":
+                            generate = true;
+                            numberOfGeneratedStates = Integer.parseInt(args[i + 1]);
+                            generateAlgorithm = args[i + 2];
+                            complexityString = args[i + 3];
+                            break;
+                        case "-nolimit":
+                            limitSolveTries = false;
+                            break;
+                        case "-lr":
+                            lr = Float.parseFloat(args[i + 1]);
+                            break;
+                        case "-epochs":
+                            epochs = Integer.parseInt(args[i + 1]);
+                            break;
+                        case "-batchSize":
+                            batchSize = Integer.parseInt(args[i + 1]);
+                            break;
+                        case "-resblocks":
+                            resblocks = Integer.parseInt(args[i + 1]);
+                            break;
+                        case "-lossFunction":
+                            lossFunction = args[i + 1];
+                            break;
+                        case "-features":
+                            features = Integer.parseInt(args[i + 1]);
+                            break;
+                        case "-incremental":
+                            incremental = true;
+                            break;
+                    }
+                }
+            }
             switch (args[0].toLowerCase(Locale.ROOT)) {
                 case "-bfs":
                     frontier = new FrontierBFS();
@@ -88,7 +173,7 @@ public class SearchClient {
                     frontier = new FrontierDFS();
                     break;
                 case "-astar":
-                    frontier = new FrontierBestFirst(new HeuristicAStar(initialState));
+                    frontier = new FrontierBestFirst(new HeuristicAStar(states.get(0)));
                     break;
                 case "-wastar":
                     int w = 5;
@@ -99,28 +184,38 @@ public class SearchClient {
                             System.err.println("Couldn't parse weight argument to -wastar as integer, using default.");
                         }
                     }
-                    frontier = new FrontierBestFirst(new HeuristicWeightedAStar(initialState, w));
+                    frontier = new FrontierBestFirst(new HeuristicWeightedAStar(states.get(0), w));
                     break;
                 case "-greedy":
-                    frontier = new FrontierBestFirst(new HeuristicGreedy(initialState));
+                    frontier = new FrontierBestFirst(new HeuristicGreedy(states.get(0)));
                     break;
                 case "-basic":
-                    monteCarloTreeSearch = new Basic(new UCTSelection(0.4), new AllActionsNoDuplicatesExpansion(initialState),
-                            new RandomSimulation(), new AdditiveBackpropagation());
+                    monteCarloTreeSearch = new Basic(new AlphaGoSelection(), new AllActionsExpansion(),
+                            new RandomSimulation(), backpropagation);
                     break;
-                    case "-onetree":
-                    monteCarloTreeSearch = new OneTree(new UCTSelection(0.4), new AllActionsNoDuplicatesExpansion(initialState),
-                            new AllPairsShortestPath(initialState), new AdditiveBackpropagation());
+                case "-onetree":
+                    nNet = new MockNNet(new HeuristicAStar(states.get(0)));
+                    monteCarloTreeSearch = new OneTree(new UCTSelection(0.4), new AllActionsNoDuplicatesExpansion(states.get(0)),
+                            new AllPairsShortestPath(states.get(0)), backpropagation);
+                    break;
+                case "-alpha":
+                    nNet = new PythonNNet(pythonPath, 0, lr, epochs, batchSize, resblocks, lossFunction, features);
+                    monteCarloTreeSearch = new AlphaGo(new AlphaGoSelection(), new AllActionsExpansion(),
+                            backpropagation, nNet);
                     break;
                 default:
-                    frontier = new FrontierBestFirst(new HeuristicAStar(initialState));
+                    frontier = new FrontierBestFirst(new HeuristicAStar(states.get(0)));
                     System.err.println("Defaulting to astar search. Use arguments -bfs, -dfs, -astar, -wastar, or " +
                             "-greedy to set the search strategy.");
             }
         } else {
-            frontier = new FrontierBestFirst(new HeuristicAStar(initialState));
+            frontier = new FrontierBestFirst(new HeuristicAStar(states.get(0)));
             System.err.println("Defaulting to astar search. Use arguments -bfs, -dfs, -astar, -wastar, or -greedy to " +
                     "set the search strategy.");
+        }
+
+        if (generate && (!(monteCarloTreeSearch instanceof AlphaGo) || !train)) {
+            throw new IllegalArgumentException("Cannot generate levels if not training and mcts instanceof alphago");
         }
 
         // Search for a plan.
@@ -131,56 +226,58 @@ public class SearchClient {
                 HashSet<State> explored = new HashSet<>(65536);
                 StatusThread statusThread = new StatusThread(startTime, explored, frontier);
                 statusThread.start();
-                plan = SearchClient.search(initialState, frontier, explored);
-                statusThread.interrupt();
+                try {
+                    plan = SearchClient.search(states.get(0), frontier, explored);
+                } catch (Exception e) {
+                    System.err.println("Exception caught in Search");
+                    e.printStackTrace(System.err);
+                } finally {
+                    statusThread.interrupt();
+                }
             }
             else {
-                //StatusThread statusThread = new StatusThread(startTime, monteCarloTreeSearch.getExpandedStates());
-                //statusThread.start();
-                if (monteCarloTreeSearch instanceof Basic && "a".equalsIgnoreCase("b")) {
-                    Coach coach = new Coach();
-                    coach.train(new Node(initialState));
-                    ((Basic)monteCarloTreeSearch).setNNet(coach.getNNet());
+                if (loadBest && Files.exists(Coach.getBestPath())) {
+                    nNet.loadModel(Coach.getBestPath());
                 }
-                plan = monteCarloTreeSearch.solve(new Node(initialState));
-                //statusThread.interrupt();
+                if (train) {
+                    Coach coach = new Coach(nNet, monteCarloTreeSearch, gpus, limitSolveTries);
+                    if (generate) {
+                        Complexity complexity = Complexity.fromString(complexityString);
+                        List<State> generatedStates = new ArrayList<>(numberOfGeneratedStates);
+                        RandomLevel pgl;
+                        for(int i = 0 ; i < numberOfGeneratedStates; i++){
+                            switch (generateAlgorithm.toLowerCase()){
+                                case "random walk":
+                                case "randomwalk":
+                                    pgl = new RandomWalk(complexity, i);
+                                    break;
+                                case "dungeon":
+                                    pgl = new Dungeon(complexity, i);
+                                    break;
+                                case "basic":
+                                default:
+                                    pgl = new levelgenerator.pgl.Basic.Basic(complexity, i);
+                                    break;
+                            }
+                            generatedStates.add(pgl.toState());
+                        }
+                        coach.train(generatedStates, loadCheckpoint, incremental);
+                    } else {
+                        coach.train(states, loadCheckpoint, incremental);
+                    }
+                } else {
+                    StatusThread statusThread = new StatusThread(startTime, monteCarloTreeSearch.getExpandedStates());
+                    statusThread.start();
+                    plan = monteCarloTreeSearch.solve(new Node(states.get(0)), limitSolveTries);
+                    nNet.close();
+                    statusThread.interrupt();
+                }
             }
         } catch (OutOfMemoryError ex) {
             System.err.println("Maximum memory usage exceeded.");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
         }
-
-//        try {
-//            long fastest = Long.MAX_VALUE;
-//            double fastestConstant = 0;
-//            int shortest = Integer.MAX_VALUE;
-//            double shortestConstant = 0;
-//            for (double constant = 0.1; constant < 10; constant = constant + 0.1) {
-//                monteCarloTreeSearch = new Basic(new UCTSelection(constant), new AllActionsExpansion(), new RandomSimulation(), new AdditiveBackpropagation());
-//                long startTime = System.nanoTime();
-//                plan = monteCarloTreeSearch.solve(new Node(initialState));
-//                long elapsedTime = System.nanoTime() - startTime;
-//                if (elapsedTime < fastest || plan.length < shortest) {
-//                    System.out.println("----------------------------");
-//                    if (elapsedTime < fastest) {
-//                        fastest = elapsedTime;
-//                        fastestConstant = constant;
-//                        System.out.println("NEW FASTEST: Constant: " + constant + " time: " + elapsedTime / 1_000_000_000d);
-//                    }
-//                    if (plan.length < shortest) {
-//                        shortest = plan.length;
-//                        shortestConstant = constant;
-//                        System.out.println("NEW SHORTEST: Constant: " + constant + " length: " + plan.length + " time: " + elapsedTime / 1_000_000_000d);
-//                    }
-//                    System.out.println("Explored: " + monteCarloTreeSearch.getExpandedStates().size() + " Solution: " + plan.length);
-//                    System.out.println("----------------------------");
-//                }
-//                //if (plan.length == shortest) System.out.println("EQUAL: " + constant);
-//            }
-//            System.out.println("constant: " + fastestConstant + " time: " + fastest);
-//            System.out.println("DONE");
-//        } catch (OutOfMemoryError e) {
-//            System.err.println("Maximum memory usage exceeded.");
-//        }
 
         // Print plan to server.
         if (plan == null) {
@@ -203,22 +300,22 @@ public class SearchClient {
     }
 
     private static class StatusThread implements Runnable {
-        private static long SECONDS_BETWEEN_PRINTS = 2;
+        private static final long SECONDS_BETWEEN_PRINTS = 2;
 
         private long startTime;
-        private Collection explored;
+        private Collection<?> explored;
         private Frontier frontier;
 
         private AtomicBoolean running = new AtomicBoolean(false);
         private Thread worker;
 
-        StatusThread(long startTime, Collection explored, Frontier frontier) {
+        StatusThread(long startTime, Collection<?> explored, Frontier frontier) {
             this.startTime = startTime;
             this.explored = explored;
             this.frontier = frontier;
         }
 
-        StatusThread(long startTime, Collection explored) {
+        StatusThread(long startTime, Collection<?> explored) {
             this.startTime = startTime;
             this.explored = explored;
         }
@@ -253,6 +350,7 @@ public class SearchClient {
                 this.printSearchStatusFrontier();
             else
                 this.printSearchStatusNoFrontier();
+            System.out.println("#memory " + Memory.used());
         }
 
         private void printSearchStatusFrontier() {

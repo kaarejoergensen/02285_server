@@ -7,7 +7,7 @@ import searchclient.mcts.simulation.Simulation;
 import java.util.HashSet;
 import java.util.Set;
 
-public class RandomSimulation implements Simulation {
+public class RandomSimulation extends Simulation {
     private static final int GOAL_SEARCH_LIMIT = 180;
 
     @Override
@@ -25,5 +25,10 @@ public class RandomSimulation implements Simulation {
             }
         }
         return tempNode.getState().isGoalState() ? (float) (1f / Math.sqrt(tempNode.getCountToRoot())) : 0f;
+    }
+
+    @Override
+    public String toString() {
+        return "RS";
     }
 }

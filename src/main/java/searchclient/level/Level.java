@@ -39,8 +39,11 @@ public class Level {
     final static int MAX_BOXES = 26;
 
     public Level(BufferedReader file){
+        this();
         parse = new LevelParser(file,this);
+    }
 
+    public Level() {
         agentColors = new Farge[MAX_AGENTS];
         boxColors = new Farge[MAX_BOXES];
 
@@ -51,7 +54,6 @@ public class Level {
         width = 0;
 
         numAgents = 0;
-
     }
 
     public void setMapDetails(int width, int height){
@@ -63,11 +65,11 @@ public class Level {
     public void initiateMapDependentArrays(){
         goals = new HashMap<>();
         boxMap = new HashMap<>();
-        walls = new boolean[width][height];
+        walls = new boolean[height][width];
 
     }
 
     public State toState(){
-        return new State(distanceMap, agentRows, agentCols, agentColors, walls, boxMap, goals);
+        return new State(name, distanceMap, agentRows, agentCols, agentColors, walls, boxMap, goals);
     }
 }

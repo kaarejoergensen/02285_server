@@ -7,15 +7,22 @@ import levelgenerator.pgl.RandomLevel;
 import levelgenerator.pgl.RandomWalk.RandomWalk;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class Generator {
-
-
-
     private Writer writer;
 
     public Generator(int amountOfLevels, String algorithm, Complexity complexity){
-        writer = new Writer("generated");
+        String folder = "generated/" + algorithm + "/" + complexity;
+        writer = new Writer(folder);
+        if (!Files.isDirectory(Path.of(writer.getPath() + folder))) {
+            try {
+                Files.createDirectories(Path.of(writer.getPath() + folder));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         RandomLevel pgl = null;
         for(int i = 0 ; i < amountOfLevels; i++){
             switch (algorithm.toLowerCase()){
@@ -33,14 +40,17 @@ public class Generator {
             }
             writer.toFile(pgl.toString(), pgl.getName());
         }
-
-
     }
 
 
     public static void main(String[] args)throws IOException {
         System.out.println("Generator Initated");
-        new Generator(1, "dungeon", Complexity.fromString("medium_2"));
+
+        new Generator(10, "dungeon", Complexity.fromString("easy_1"));
+        new Generator(10, "dungeon", Complexity.fromString("easy_2"));
+        new Generator(10, "dungeon", Complexity.fromString("easy_3"));
+        new Generator(10, "dungeon", Complexity.fromString("medium_1"));
+        new Generator(10, "dungeon", Complexity.fromString("medium_2"));
     }
 
 }

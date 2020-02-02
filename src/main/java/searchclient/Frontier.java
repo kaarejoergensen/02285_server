@@ -27,6 +27,7 @@ public abstract class Frontier {
     }
 }
 
+
 class FrontierBFS extends Frontier {
     private final ArrayDeque<State> queue = new ArrayDeque<>(65536);
 

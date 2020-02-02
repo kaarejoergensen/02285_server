@@ -65,6 +65,22 @@ public class Hospital2Domain implements Domain {
         return runner.getStatus();
     }
 
+    public double getNumActions() {
+        return runner.getNumActions();
+    }
+
+    public double getTime() {
+        return runner.getTimeTaken();
+    }
+
+    public double getMaxMemoryUsage() {
+        return runner.getMaxMemoryUsage();
+    }
+
+    public boolean isSolved() {
+        return runner.isLatestStateSolved();
+    }
+
     @Override
     public int getNumStates() {
         return this.runner.getNumStates();

@@ -1,0 +1,25 @@
+#domain
+hospital2
+#levelname
+6_Basic_Medium_2
+#colors
+Brown:0,1,A,B,C,D,E
+#initial
++++++++++++++++
++             +
++B      0 D   +
++             +
++ E 1       C +
++         A   +
++             +
++++++++++++++++
+#goal
++++++++++++++++
++   C B       +
++             +
++             +
++     A   D  0+
++  1 E        +
++             +
++++++++++++++++
+#end

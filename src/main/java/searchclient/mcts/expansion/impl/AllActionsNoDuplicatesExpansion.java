@@ -8,7 +8,7 @@ import searchclient.mcts.model.Node;
 import java.util.*;
 
 @RequiredArgsConstructor
-public class AllActionsNoDuplicatesExpansion implements Expansion {
+public class AllActionsNoDuplicatesExpansion extends Expansion {
     private final State root;
     private HashMap<State, Node> expandedStates = new HashMap<>();
 
@@ -19,14 +19,14 @@ public class AllActionsNoDuplicatesExpansion implements Expansion {
         for (State state : newExpandedStates) {
             if (state.equals(this.root)) continue;
             if (!this.expandedStates.containsKey(state)) {
-                Node node = new Node(state, root);
+                Node node = new Node(state, root, state.jointAction[0]);
                 this.expandedStates.put(state, node);
-                nodes.add(new Node(state, root));
+                nodes.add(new Node(state, root, state.jointAction[0]));
             } else {
                 nodes.add(this.expandedStates.get(state));
             }
         }
-        root.getChildren().addAll(nodes);
+        root.addChildren(nodes);
         root.setExpanded(true);
         return nodes;
     }
@@ -34,5 +34,15 @@ public class AllActionsNoDuplicatesExpansion implements Expansion {
     @Override
     public Collection<State> getExpandedStates() {
         return this.expandedStates.keySet();
+    }
+
+    @Override
+    public Expansion clone() {
+        return new AllActionsNoDuplicatesExpansion(this.root);
+    }
+
+    @Override
+    public String toString() {
+        return "AANDE";
     }
 }

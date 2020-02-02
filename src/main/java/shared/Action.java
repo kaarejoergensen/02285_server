@@ -1,16 +1,17 @@
 package shared;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
+import java.util.function.Function;
 
 
 @Getter
+@EqualsAndHashCode
 public class Action {
-    @Getter
-    private static final List<Action> allActions = generateALlActions();
+    private static List<Action> allActions;
 
     private String name;
     private final ActionType type;
@@ -45,6 +46,21 @@ public class Action {
         this.name = this.generateName();
     }
 
+    public Action(String name, ActionType type, MoveDirection agentMoveDirection, MoveDirection boxMoveDirection, Farge color) {
+        this.name = name;
+        this.type = type;
+        this.agentMoveDirection = agentMoveDirection;
+        this.boxMoveDirection = boxMoveDirection;
+        this.color = color;
+    }
+
+    public static List<Action> getAllActions() {
+        if (Action.allActions == null) {
+            Action.allActions = Action.generateALlActions();
+        }
+        return Action.allActions;
+    }
+
     private String generateName(){
         if (type.equals(ActionType.NoOp)) return type.name();
         StringBuilder stringBuilder = new StringBuilder(type.name());
@@ -57,6 +73,51 @@ public class Action {
         }
         stringBuilder.append(")");
         return stringBuilder.toString();
+    }
+
+    public static Action transposeVertical(Action org) {
+        return transpose(org, Action::transposeVertical);
+    }
+
+    public static Action transposeHorizontal(Action org) {
+        return transpose(org, Action::transposeHorizontal);
+    }
+
+    public static Action transposeBoth(Action org) {
+        return transpose(org, m -> transposeVertical(transposeHorizontal(m)));
+    }
+
+    private static Action transpose(Action org, Function<MoveDirection, MoveDirection> transposeMove) {
+        return new Action(org.name, org.type,
+                transposeMove.apply(org.agentMoveDirection), transposeMove.apply(org.boxMoveDirection), org.color);
+    }
+
+    private static MoveDirection transposeVertical(MoveDirection moveDirection) {
+        switch (moveDirection) {
+            case EAST:
+                return MoveDirection.WEST;
+            case WEST:
+                return MoveDirection.EAST;
+            case NORTH:
+            case SOUTH:
+            case NONE:
+            default:
+                return moveDirection;
+        }
+    }
+
+    private static MoveDirection transposeHorizontal(MoveDirection moveDirection) {
+        switch (moveDirection) {
+            case NORTH:
+                return MoveDirection.SOUTH;
+            case SOUTH:
+                return MoveDirection.NORTH;
+            case EAST:
+            case WEST:
+            case NONE:
+            default:
+                return moveDirection;
+        }
     }
 
     public short getAgentDeltaRow() {
@@ -77,7 +138,7 @@ public class Action {
     }
 
     public static Action parse(String action) {
-        for(Action a: allActions){
+        for(Action a: getAllActions()){
             if(a.getName().equals(action)) return a;
         }
         return generateNoOp();
@@ -134,6 +195,10 @@ public class Action {
         return actions;
     }
 
+    public String toString() {
+        return "Action(" + this.getName() + ")";
+    }
+
     public enum ActionType {
         NoOp,
         Move,
@@ -159,7 +224,5 @@ public class Action {
             this.deltaRow = (short) deltaRow;
             this.deltaCol = (short) deltaCol;
         }
-
-
     }
 }

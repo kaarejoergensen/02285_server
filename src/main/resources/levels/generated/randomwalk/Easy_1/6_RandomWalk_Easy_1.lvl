@@ -1,0 +1,19 @@
+#domain
+hospital2
+#levelname
+6_RandomWalk_Easy_1
+#colors
+Red:0,A
+#initial
++++++
++ +++
++0+++
++A  +
++++++
+#goal
++++++
++ +++
++ +++
++0A +
++++++
+#end

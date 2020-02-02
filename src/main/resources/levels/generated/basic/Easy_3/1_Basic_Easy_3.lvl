@@ -1,0 +1,29 @@
+#domain
+hospital2
+#levelname
+1_Basic_Easy_3
+#colors
+Brown:0,A,B,C,D,E
+#initial
++++++++++++++++
++D            +
++             +
++             +
++  0          +
++         C   +
++        E    +
++        A    +
++    B        +
++++++++++++++++
+#goal
++++++++++++++++
++B         A  +
++    E        +
++     D       +
++             +
++             +
++             +
++    0        +
++C            +
++++++++++++++++
+#end

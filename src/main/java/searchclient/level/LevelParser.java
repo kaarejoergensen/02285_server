@@ -17,7 +17,7 @@ public class LevelParser {
 
     final int BUFFER_SIZE = 1000; //Brukes til å markere i filen for å refreransepunkter. Tallet representerer hvor mange linjer fremover den skal huske
 
-    final boolean print_debugger = true;
+    final boolean print_debugger = false;
 
     public LevelParser(BufferedReader file, Level level){
         this.level = level;
@@ -32,7 +32,7 @@ public class LevelParser {
         // Read Level name.
         file.readLine(); // #levelname
         level.name =  file.readLine(); // <name>
-        if(print_debugger)System.err.println("Credentials extracted [Name: '" + level.name + "' -  Domain: '" + level.domain + "']");
+        if(print_debugger) System.err.println("Credentials extracted [Name: '" + level.name + "' -  Domain: '" + level.domain + "']");
 
     }
 
@@ -78,7 +78,7 @@ public class LevelParser {
             line = file.readLine();
         }
         if(print_debugger) System.err.println("Map Details Determined. Height:[" + height + "] Width:[" + width + "]");
-        level.setMapDetails(height, width);
+        level.setMapDetails(width, height);
     }
 
     public void initialState() throws IOException{
@@ -87,7 +87,7 @@ public class LevelParser {
         requireArraysInitialized();
 
         level.numAgents = 0;
-        LevelNode[][] tiles  = new LevelNode[level.width][level.height];
+        LevelNode[][] tiles  = new LevelNode[level.height][level.width];
         String line = file.readLine();
         if(print_debugger)System.err.println(line);
         int row = 0;
@@ -137,7 +137,7 @@ public class LevelParser {
         requireArraysInitialized();
 
         String line = file.readLine();
-        System.err.println(line);
+        if (print_debugger) System.err.println(line);
         int row = 0;
         while (!line.startsWith("#")) {
             file.mark(BUFFER_SIZE);

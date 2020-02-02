@@ -13,11 +13,16 @@ public class RandomSelection extends Selection {
     @Override
     public Node selectPromisingNode(Node rootNode) {
         Node node = rootNode;
-        while (!node.getChildren().isEmpty() && !node.isExpanded()) {
-            if (node.getChildren().isEmpty() && node.isExpanded()) node = rootNode;
-            node = node.getChildren().get(this.random.nextInt(node.getChildren().size()));
+        while (!node.childrenEmpty() && !node.isExpanded()) {
+            if (node.childrenEmpty() && node.isExpanded()) node = rootNode;
+            node = node.getRandomChild();
         }
         return node;
+    }
+
+    @Override
+    public String toString() {
+        return "RS";
     }
 
     @Override

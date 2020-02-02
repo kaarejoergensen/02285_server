@@ -9,16 +9,16 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class AllActionsExpansion implements Expansion {
+public class AllActionsExpansion extends Expansion {
     List<State> expandedStates = new ArrayList<>();
 
     @Override
     public List<Node> expandNode(Node root) {
         List<State> expandedStates = root.getState().getExpandedStates();
         List<Node> expandedNodes = expandedStates.stream().
-                map(state -> new Node(state, root)).collect(Collectors.toList());
+                map(state -> new Node(state, root, state.jointAction[0])).collect(Collectors.toList());
         this.expandedStates.addAll(expandedStates);
-        root.getChildren().addAll(expandedNodes);
+        root.addChildren(expandedNodes);
         root.setExpanded(true);
         return expandedNodes;
     }
@@ -27,4 +27,15 @@ public class AllActionsExpansion implements Expansion {
     public Collection<State> getExpandedStates() {
         return this.expandedStates;
     }
+
+    @Override
+    public Expansion clone() {
+        return new AllActionsExpansion();
+    }
+
+    @Override
+    public String toString() {
+        return "AAE";
+    }
+
 }

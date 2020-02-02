@@ -1,5 +1,6 @@
 package searchclient.mcts.search.impl;
 
+import searchclient.NotImplementedException;
 import searchclient.mcts.backpropagation.Backpropagation;
 import searchclient.mcts.expansion.Expansion;
 import searchclient.mcts.expansion.impl.AllActionsNoDuplicatesExpansion;
@@ -24,8 +25,9 @@ public class OneTree extends MonteCarloTreeSearch {
     }
 
     @Override
-    public Action[][] solve(Node root) {
-        while (true) {
+    public Action[][] solve(Node root, boolean limitSolveTries) {
+        Action[][] solution = null;
+        for (int i = 0; (!limitSolveTries || i < SOLVE_TRIES) && solution == null; i++) {
             Node promisingNode = this.selection.selectPromisingNode(root);
             List<Node> expandedNodes = this.expansion.expandNode(promisingNode);
             if (expandedNodes.isEmpty()) {
@@ -37,7 +39,7 @@ public class OneTree extends MonteCarloTreeSearch {
             }
             for (Node node : expandedNodes) {
                 if (node.getState().isGoalState()) {
-                    return node.getState().extractPlan();
+                    solution = node.getState().extractPlan();
                 }
 
                 float score = this.simulation.simulatePlayout(node);
@@ -52,11 +54,27 @@ public class OneTree extends MonteCarloTreeSearch {
                 root = this.nextRoot(root);
             }
         }
+        return solution;
     }
 
     @Override
-    public Collection getExpandedStates() {
+    public Node runMCTS(Node root) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public Collection<?> getExpandedStates() {
         return this.expansion.getExpandedStates();
+    }
+
+    @Override
+    public MonteCarloTreeSearch clone() {
+        return new OneTree(this.selection, this.expansion.clone(), this.simulation, this.backpropagation.clone());
+    }
+
+    @Override
+    public String toString() {
+        return "OT_" + this.selection.toString() + "_" + this.expansion.toString() + "_" + this.backpropagation.toString();
     }
 
     private Node nextRoot(Node root) {

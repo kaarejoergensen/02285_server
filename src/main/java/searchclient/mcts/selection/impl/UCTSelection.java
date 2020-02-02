@@ -6,6 +6,7 @@ import searchclient.mcts.selection.Selection;
 
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Random;
 
 @RequiredArgsConstructor
 public class UCTSelection extends Selection {
@@ -14,7 +15,7 @@ public class UCTSelection extends Selection {
     @Override
     public Node selectPromisingNode(Node rootNode) {
         Node node = rootNode;
-        while (node.getChildren().size() != 0) {
+        while (!node.childrenEmpty()) {
             if (node.getState().isGoalState())
                 return node;
             node = this.findBestNodeWithUCT(node);
@@ -22,14 +23,23 @@ public class UCTSelection extends Selection {
         return node;
     }
 
+    @Override
+    public String toString() {
+        return "UCTS";
+    }
+
     private Node findBestNodeWithUCT(Node node) {
-        return Collections.max(node.getChildren(), Comparator.comparing(this::uctValue));
+        return null;
+        //TODO: Fix this
+//        return Collections.max(node.getChildren(), Comparator.comparing(this::uctValue));
     }
 
     private double uctValue(Node node) {
-        int parentVisit = node.getParent() == null ? 0 : node.getParent().getVisitCount();
-        if (parentVisit == 0) return Integer.MAX_VALUE;
-        return (node.getWinScore() / (double) parentVisit) + this.constant * Math.sqrt(Math.log(parentVisit) / (double) node.getVisitCount());
+        //TODO: Fix this
+//        int parentVisit = node.getParent() == null ? 0 : node.getParent().getVisitCount();
+//        if (parentVisit == 0) return Integer.MAX_VALUE;
+//        return (node.getTotalScore() / (double) parentVisit) + this.constant * Math.sqrt(Math.log(parentVisit) / (double) node.getVisitCount());
+        return new Random().nextDouble();
     }
 
     @Override

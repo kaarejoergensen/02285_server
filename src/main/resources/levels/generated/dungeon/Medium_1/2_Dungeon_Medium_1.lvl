@@ -1,0 +1,25 @@
+#domain
+hospital2
+#levelname
+2_Dungeon_Medium_1
+#colors
+Purple:0,1,A,B
+#initial
+++++++++
+++++  ++
++   01++
++B +++++
+++ +++++
+++   +++
+++  A+++
+++++++++
+#goal
+++++++++
+++++  ++
++   10++
++  +++++
+++ +++++
+++ B +++
+++  A+++
+++++++++
+#end

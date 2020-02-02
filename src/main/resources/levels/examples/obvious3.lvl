@@ -1,0 +1,19 @@
+#domain
+hospital2
+#levelname
+Obvious3
+#colors
+Blue:0,A
+#initial
++++++++
++    A+
++     +
++0    +
++++++++
+#goal
++++++++
++    0+
++     +
++A    +
++++++++
+#end

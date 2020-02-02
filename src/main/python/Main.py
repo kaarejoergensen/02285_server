@@ -1,9 +1,12 @@
 import ast
 import sys
 import threading
+import time
+from argparse import ArgumentParser
 from queue import Queue
 
 from NNet import NNet
+import numpy as np
 from StateDataSet import StateDataSet
 
 
@@ -23,6 +26,7 @@ class Main:
         lines = []
         line = self.server_messages.readline().rstrip()
         while line and line != "done":
+            # stderr_print(line)
             lines.append(line)
             line = self.server_messages.readline().rstrip()
         if len(lines) == 0:
@@ -31,28 +35,39 @@ class Main:
         return lines
 
 
-def main():
+def main(args):
     server_messages = sys.stdin
     parser = Main(server_messages)
-    q = Queue()
-    nnet = NNet()
-    workerThread = threading.Thread(target=worker, args=(q, nnet))
-    workerThread.start()
+    nnet = NNet(args)
     while True:
         lines = parser.receive()
         method = lines.pop(0)
         if method == "train":
-            # stderr_print("Received train call")
-            states = ast.literal_eval(lines[0])
-            scores = ast.literal_eval(lines[1])
-            trainSet = StateDataSet(states, scores)
-            q.put(trainSet)
-            # flush_print(nnet.train(states, scores))
-            # stderr_print("Parsing done")
+            states = []
+            probability_vectors = []
+            wins = []
+            for line in lines:
+                state, probability_vector, won = line.split("|")
+                try:
+                    states.append(ast.literal_eval(state))
+                    probability_vectors.append(ast.literal_eval(probability_vector))
+                except ValueError:
+                    stderr_print("Error parsing line")
+                    stderr_print(line)
+                    raise ValueError
+                wins.append(won)
+            train_set = StateDataSet(states, probability_vectors, wins)
+            flush_print(nnet.train(train_set, epochs=args.epochs, batch_size=args.batch_size, print_loss=args.print_loss))
         elif method == "predict":
-            state = ast.literal_eval(lines[0])
-            output = nnet.predict(state).item()
-            flush_print(output)
+            try:
+                state = ast.literal_eval(lines[0])
+            except ValueError:
+                stderr_print("Error parsing line")
+                stderr_print(lines[0])
+                raise ValueError
+            probability_vector, win = nnet.predict(state)
+            flush_print(probability_vector)
+            flush_print(win)
         elif method == "saveModel":
             nnet.save_checkpoint(lines[0])
             flush_print("done")
@@ -61,8 +76,6 @@ def main():
             flush_print("done")
         elif method == "close":
             nnet.close()
-            q.put(None)
-            workerThread.join()
             flush_print("done")
             break
         else:
@@ -70,15 +83,17 @@ def main():
             exit(-1)
 
 
-def worker(queue, nnet):
-    while True:
-        item = queue.get(block=True, timeout=None)
-        if item is None:
-            break
-        # stderr_print("Training")
-        flush_print(nnet.train(item))
-        # stderr_print("Trained!")
-
-
 if __name__ == '__main__':
-    main()
+    parser = ArgumentParser()
+    parser.add_argument("--gpu", type=float, default=0, help="GPU to use")
+    parser.add_argument("--lr", type=float, default=0.01, help="Learning rate")
+    parser.add_argument("--epochs", type=int, default=20, help="Epochs")
+    parser.add_argument("--batch_size", type=int, default=64, help="Batch size")
+    parser.add_argument("--resblocks", type=int, default=19, help="Number of resblocks")
+    parser.add_argument("--print_loss", type=bool, default=False, help="Print loss at each epoch")
+    parser.add_argument("--loss_function", default="MSE",
+                        choices=["MSE", "MAE"], help="Choose loss function")
+    parser.add_argument("--features", type=int, default=128, help="Number of features in each layer")
+
+    args = parser.parse_args()
+    main(args)
